@@ -1,0 +1,188 @@
+name: Build SAMANVAY Browser Operations Portal
+# Rebuild final reference assets and public transparency dashboard from latest app code.
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+      - feature/alpha-03-integrated-platform
+    paths:
+      - 'app/**'
+      - '!app/assets/brand/*.part*'
+      - '.github/workflows/build-web.yml'
+
+concurrency:
+  group: samanvay-web-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  build-web:
+    name: Build and package browser portal
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v4
+
+      - name: Install Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Generate browser project
+        run: |
+          flutter create \
+            --project-name samanvay \
+            --org in.samanvay \
+            --platforms web \
+            /tmp/samanvay_web_scaffold
+
+          cp -R /tmp/samanvay_web_scaffold/web .
+          cp /tmp/samanvay_web_scaffold/pubspec.yaml .
+          cp /tmp/samanvay_web_scaffold/analysis_options.yaml .
+          cp /tmp/samanvay_web_scaffold/.metadata .
+
+          mkdir -p lib assets/reference assets/brand
+          cp app/main.dart lib/main.dart
+          cp app/asset_evidence_page.dart lib/asset_evidence_page.dart
+          cp app/public_excavation_tracker_page.dart lib/public_excavation_tracker_page.dart
+          cp app/ai_assistant_page.dart lib/ai_assistant_page.dart
+          cp app/samanvay_ai_chat_page.dart lib/samanvay_ai_chat_page.dart
+          cp app/coordinated_work_calendar_page.dart lib/coordinated_work_calendar_page.dart
+          cp app/public_transparency_dashboard_page.dart lib/public_transparency_dashboard_page.dart
+          cp -R app/assets/brand/. assets/brand/
+          cp app/joint_work_coordination_page.dart lib/joint_work_coordination_page.dart
+          cp -R app/assets/reference/. assets/reference/
+
+          # Keep both published Coimbatore reference layers available to Flutter Web.
+          for asset in \
+            assets/reference/coimbatore/coimbatore_wards_2024_public_domain.geojson \
+            assets/reference/coimbatore/groundwater_telemetry_2026_2030.geojson; do
+            if [ ! -s "$asset" ]; then
+              echo "ERROR: Required reference layer is missing: $asset"
+              exit 1
+            fi
+          done
+
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path("web/index.html")
+          html = p.read_text()
+          html = html.replace("<title>samanvay</title>", "<title>SAMANVAY | Towards Our Development</title>")
+          p.write_text(html)
+          PY
+
+      - name: Install Flutter dependencies
+        run: |
+          flutter pub add supabase_flutter:2.18.3
+          flutter pub add flutter_svg
+          flutter pub add maplibre_gl:0.27.1
+          flutter pub add latlong2
+          flutter pub add google_fonts
+          flutter pub add url_launcher
+          flutter pub add file_picker
+          flutter pub add geolocator
+          flutter pub add image_picker
+          flutter pub add csv
+          flutter pub add permission_handler
+          flutter pub add http
+          flutter pub add crypto:3.0.8
+          flutter pub add shared_preferences
+          python3 - <<'PY'
+          from pathlib import Path
+          path = Path("pubspec.yaml")
+          content = path.read_text()
+          asset_entries = [
+              "    - assets/reference/coimbatore/coimbatore_wards_2024_public_domain.geojson",
+              "    - assets/reference/coimbatore/groundwater_telemetry_2026_2030.geojson",
+              "    - assets/brand/samanvay_logo.jpg",
+              "    - assets/brand/home_city_banner.jpg",
+              "    - assets/brand/profile_avatar.jpg",
+              "    - assets/brand/profile_footer.jpg",
+              "    - assets/brand/splash_city.jpg",
+          ]
+          if chr(10) + "flutter:" + chr(10) not in content:
+              raise SystemExit("Flutter section not found in generated pubspec.yaml")
+          if "  assets:" + chr(10) not in content:
+              content = content.replace(
+                  chr(10) + "flutter:" + chr(10),
+                  chr(10) + "flutter:" + chr(10) + "  assets:" + chr(10),
+                  1,
+              )
+          for asset_entry in asset_entries:
+              if asset_entry not in content:
+                  content = content.replace(
+                      "  assets:" + chr(10),
+                      "  assets:" + chr(10) + asset_entry + chr(10),
+                      1,
+                  )
+          path.write_text(content)
+          PY
+          echo "Verifying Flutter Web GIS asset declarations..."
+          grep -F "assets/reference/coimbatore/coimbatore_wards_2024_public_domain.geojson" pubspec.yaml
+          grep -F "assets/reference/coimbatore/groundwater_telemetry_2026_2030.geojson" pubspec.yaml
+          flutter pub get
+
+      - name: Analyze Dart code
+        run: flutter analyze --no-fatal-infos --no-fatal-warnings
+
+      - name: Build browser portal
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_PUBLISHABLE_KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
+          MAPTILER_API_KEY: ${{ secrets.MAPTILER_API_KEY }}
+        run: |
+          if [ -z "$SUPABASE_URL" ] || [ -z "$SUPABASE_PUBLISHABLE_KEY" ]; then
+            echo "Required Supabase public configuration is missing."
+            exit 1
+          fi
+
+          flutter build web --release \
+            --base-href "/" \
+            --dart-define=SUPABASE_URL="$SUPABASE_URL" \
+            --dart-define=SUPABASE_PUBLISHABLE_KEY="$SUPABASE_PUBLISHABLE_KEY" \
+            --dart-define=MAPTILER_API_KEY="$MAPTILER_API_KEY"
+
+      - name: Smoke-test browser output and bundled GIS assets
+        run: |
+          set -euo pipefail
+          test -s build/web/index.html
+          test -s build/web/flutter_bootstrap.js
+          test -s build/web/main.dart.js
+          for asset in \
+            build/web/assets/assets/reference/coimbatore/coimbatore_wards_2024_public_domain.geojson \
+            build/web/assets/assets/reference/coimbatore/groundwater_telemetry_2026_2030.geojson \
+            build/web/assets/assets/brand/samanvay_logo.jpg \
+            build/web/assets/assets/brand/home_city_banner.jpg \
+            build/web/assets/assets/brand/profile_avatar.jpg \
+            build/web/assets/assets/brand/profile_footer.jpg \
+            build/web/assets/assets/brand/splash_city.jpg; do
+            if [ ! -s "$asset" ]; then
+              echo "ERROR: Compiled browser bundle is missing GIS asset: $asset"
+              exit 1
+            fi
+            echo "PASS: $asset"
+          done
+          echo "PASS: Flutter Web entrypoint and required GIS assets are present."
+
+      - name: Package browser portal
+        run: |
+          test -s build/web/index.html
+          mkdir -p dist
+          cd build
+          zip -qr ../dist/SAMANVAY-Browser-Portal.zip web
+          cd ..
+          sha256sum dist/SAMANVAY-Browser-Portal.zip
+          ls -lh dist/SAMANVAY-Browser-Portal.zip
+
+      - name: Upload browser portal
+        uses: actions/upload-artifact@v4
+        with:
+          name: SAMANVAY-Browser-Portal
+          path: dist/SAMANVAY-Browser-Portal.zip
+          if-no-files-found: error
+          retention-days: 30

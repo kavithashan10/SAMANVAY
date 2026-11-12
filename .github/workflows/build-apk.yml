@@ -2,12 +2,26 @@
 
 
 name: Build SAMANVAY Android APK
+# Rebuild final reference assets and splash/locator transition from latest app code.
 
 on:
   workflow_dispatch:
   push:
     branches:
       - main
+      - feature/alpha-03-integrated-platform
+    paths:
+      - 'app/**'
+      - '!app/assets/brand/*.part*'
+      - 'lib/**'
+      - 'android/**'
+      - 'pubspec.yaml'
+      - 'assets/**'
+      - '.github/workflows/build-apk.yml'
+
+concurrency:
+  group: samanvay-android-${{ github.ref }}
+  cancel-in-progress: true
 
 permissions:
   contents: write
@@ -27,7 +41,7 @@ jobs:
         uses: actions/setup-java@v5
         with:
           distribution: temurin
-          java-version: '17'
+          java-version: '21'
 
       # 3. Install Flutter
       - name: Install Flutter
@@ -41,7 +55,7 @@ jobs:
         run: |
           flutter create \
             --project-name samanvay \
-            --org in.samanvay \
+            --org org.samanvay \
             --platforms android \
             /tmp/samanvay_scaffold
 
@@ -53,15 +67,18 @@ jobs:
           manifest = Path("android/app/src/main/AndroidManifest.xml")
           content = manifest.read_text()
 
-          permission = '    <uses-permission android:name="android.permission.INTERNET" />'
-
+          permissions = """
+              <uses-permission android:name="android.permission.INTERNET" />
+              <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+              <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+          """
           if "android.permission.INTERNET" not in content:
               if "<application" not in content:
                   raise SystemExit("Android application tag not found")
 
               content = content.replace(
                   "<application",
-                  permission + "\n    <application",
+                  permissions + "\n    <application",
                   1,
               )
           deep_link_filter = """
@@ -84,113 +101,324 @@ jobs:
           manifest.write_text(content)
           PY
 
+          # Verify the generated Android namespace and application ID.
+          if [ -f android/app/build.gradle.kts ]; then
+            grep -Eq 'namespace[[:space:]]*=[[:space:]]*"org.samanvay.samanvay"' android/app/build.gradle.kts || {
+              echo "ERROR: Android namespace is not org.samanvay.samanvay."
+              exit 1
+            }
+            grep -Eq 'applicationId[[:space:]]*=[[:space:]]*"org.samanvay.samanvay"' android/app/build.gradle.kts || {
+              echo "ERROR: Android applicationId is not org.samanvay.samanvay."
+              exit 1
+            }
+          elif [ -f android/app/build.gradle ]; then
+            (grep -Eq "namespace[[:space:]]*=[[:space:]]*['\"]org.samanvay.samanvay['\"]" android/app/build.gradle ||
+              grep -Eq "namespace[[:space:]]+'org.samanvay.samanvay'" android/app/build.gradle) || {
+              echo "ERROR: Android namespace is not org.samanvay.samanvay."
+              exit 1
+            }
+            (grep -Eq "applicationId[[:space:]]*=[[:space:]]*['\"]org.samanvay.samanvay['\"]" android/app/build.gradle ||
+              grep -Eq "applicationId[[:space:]]+'org.samanvay.samanvay'" android/app/build.gradle) || {
+              echo "ERROR: Android applicationId is not org.samanvay.samanvay."
+              exit 1
+            }
+          else
+            echo "ERROR: Android app Gradle file was not generated."
+            exit 1
+          fi
+          echo "PASS: Android namespace and applicationId verified."
+
+          # Use the uploaded SAMANVAY mark for the Android launcher icon.
+          python3 -m pip install --quiet pillow cairosvg
+          python3 - <<'PY'
+          from pathlib import Path
+          from PIL import Image
+          import cairosvg
+          import xml.etree.ElementTree as ET
+
+          logo_svg = Path('app/assets/brand/samanvay_logo.svg')
+          if not logo_svg.is_file() or '<svg' not in logo_svg.read_text():
+              raise SystemExit('ERROR: SAMANVAY vector logo is missing or malformed.')
+          rendered_logo = Path('/tmp/samanvay_logo_launcher.png')
+          cairosvg.svg2png(url=str(logo_svg), write_to=str(rendered_logo), output_width=768, output_height=768)
+          with Image.open(rendered_logo) as check:
+              if check.format != 'PNG' or check.size != (768, 768):
+                  raise SystemExit('ERROR: SAMANVAY launcher logo did not render at 768x768.')
+              check.verify()
+          source = Image.open(rendered_logo).convert('RGBA')
+          res = Path('android/app/src/main/res')
+          sizes = {'mdpi':48, 'hdpi':72, 'xhdpi':96, 'xxhdpi':144, 'xxxhdpi':192}
+          for density, pixels in sizes.items():
+              folder = res / f'mipmap-{density}'
+              folder.mkdir(parents=True, exist_ok=True)
+              icon = Image.new('RGBA', (pixels, pixels), (4, 17, 36, 255))
+              mark = source.copy()
+              mark.thumbnail((int(pixels*.88), int(pixels*.88)), Image.Resampling.LANCZOS)
+              icon.alpha_composite(mark, ((pixels-mark.width)//2, (pixels-mark.height)//2))
+              icon.save(folder / 'ic_launcher.png')
+              icon.save(folder / 'ic_launcher_round.png')
+          drawable = res / 'drawable'
+          drawable.mkdir(parents=True, exist_ok=True)
+          foreground = Image.new('RGBA', (432, 432), (0,0,0,0))
+          mark = source.copy()
+          mark.thumbnail((286,286), Image.Resampling.LANCZOS)
+          foreground.alpha_composite(mark, ((432-mark.width)//2, (432-mark.height)//2))
+          foreground.save(drawable / 'ic_launcher_foreground.png')
+          values = res / 'values'
+          values.mkdir(parents=True, exist_ok=True)
+          (values / 'ic_launcher_background.xml').write_text('<resources><color name="ic_launcher_background">#041124</color></resources>')
+          adaptive = '<adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android"><background android:drawable="@color/ic_launcher_background"/><foreground android:drawable="@drawable/ic_launcher_foreground"/></adaptive-icon>'
+          mipmap = res / 'mipmap-anydpi-v26'
+          mipmap.mkdir(parents=True, exist_ok=True)
+          (mipmap / 'ic_launcher.xml').write_text(adaptive)
+          (mipmap / 'ic_launcher_round.xml').write_text(adaptive)
+          manifest = Path('android/app/src/main/AndroidManifest.xml')
+          manifest.write_text(manifest.read_text().replace('android:label="samanvay"','android:label="SAMANVAY"'))
+          PY
+
           cp /tmp/samanvay_scaffold/pubspec.yaml .
           cp /tmp/samanvay_scaffold/analysis_options.yaml .
           cp /tmp/samanvay_scaffold/.metadata .
 
-          mkdir -p lib
+          mkdir -p lib assets/reference/coimbatore assets/brand
+          if [ ! -d app/assets/reference ]; then
+            echo "ERROR: Source GIS reference directory app/assets/reference is missing."
+            exit 1
+          fi
+          cp -R app/assets/reference/. assets/reference/
+          cp -R app/assets/brand/. assets/brand/
+          test -s assets/brand/samanvay_logo.svg
+          python3 - <<'PY'
+          from PIL import Image
+          import cairosvg
+
+          logo_svg = 'assets/brand/samanvay_logo.svg'
+          rendered = '/tmp/samanvay_logo_asset_check.png'
+          cairosvg.svg2png(url=logo_svg, write_to=rendered, output_width=768, output_height=768)
+          with Image.open(rendered) as logo:
+              if logo.size != (768, 768):
+                  raise SystemExit('ERROR: packaged logo failed its 768x768 render check.')
+              logo.verify()
+          print('PASS: packaged SAMANVAY vector logo parsed and decoded at 768x768.')
+          PY
+          cp app/public_transparency_dashboard_page.dart lib/public_transparency_dashboard_page.dart
           cp app/main.dart lib/main.dart
+          cp app/asset_evidence_page.dart lib/asset_evidence_page.dart
+          cp app/public_excavation_tracker_page.dart lib/public_excavation_tracker_page.dart
+          cp app/ai_assistant_page.dart lib/ai_assistant_page.dart
+          cp app/samanvay_ai_chat_page.dart lib/samanvay_ai_chat_page.dart
+          cp app/coordinated_work_calendar_page.dart lib/coordinated_work_calendar_page.dart
+          cp app/joint_work_coordination_page.dart lib/joint_work_coordination_page.dart
+
+          if [ ! -s assets/reference/coimbatore/coimbatore_wards_2024_public_domain.geojson ]; then
+            echo "ERROR: Coimbatore ward reference GeoJSON is missing from the repository."
+            exit 1
+          fi
+
+          if [ ! -s assets/reference/coimbatore/groundwater_telemetry_2026_2030.geojson ]; then
+            echo "ERROR: Coimbatore groundwater telemetry GeoJSON is missing from the repository."
+            exit 1
+          fi
+          test -s assets/brand/samanvay_logo.jpg
+          test -s assets/brand/home_city_banner.jpg
+          test -s assets/brand/profile_avatar.jpg
+          test -s assets/brand/profile_footer.jpg
+          test -s assets/brand/splash_city.jpg
+          test -s assets/brand/samanvay_city_background.svg
+          test -s assets/brand/samanvay_home_banner.svg
+          test -s assets/brand/samanvay_profile_footer.svg
+          test -s assets/brand/samanvay_logo.svg
+          test -s assets/brand/samanvay_profile_avatar.svg
+          test -s lib/public_transparency_dashboard_page.dart
+          test -s lib/samanvay_ai_chat_page.dart
 
       # 5. Install dependencies
       - name: Install Flutter dependencies
         run: |
-          flutter pub add supabase_flutter
+          flutter pub add supabase_flutter:2.18.3
+          flutter pub add maplibre_gl:0.27.1
+          flutter pub add latlong2
+          flutter pub add google_fonts
+          flutter pub add flutter_svg
+          flutter pub add url_launcher
+          flutter pub add file_picker
+          flutter pub add geolocator
+          flutter pub add image_picker
+          flutter pub add csv
+          # Pin the permission plugin to the Android-36-compatible release line.
+          flutter pub add permission_handler:12.0.3
+          flutter pub add http
+          flutter pub add crypto:3.0.8
+          flutter pub add shared_preferences
+          python3 - <<'PY'
+          from pathlib import Path
+          path = Path("pubspec.yaml")
+          content = path.read_text()
+          if "dependency_overrides:" not in content:
+              content += chr(10) + "dependency_overrides:" + chr(10) + "  permission_handler_android: 13.0.1" + chr(10)
+
+          asset_entry = "    - assets/reference/coimbatore/coimbatore_wards_2024_public_domain.geojson"
+          if asset_entry not in content:
+              if chr(10) + "flutter:" + chr(10) not in content:
+                  raise SystemExit("Flutter section not found in generated pubspec.yaml")
+              content = content.replace(
+                  chr(10) + "flutter:" + chr(10),
+                  chr(10) + "flutter:" + chr(10) + "  assets:" + chr(10) + asset_entry + chr(10),
+                  1,
+              )
+
+          groundwater_entry = "    - assets/reference/coimbatore/groundwater_telemetry_2026_2030.geojson"
+          brand_entries = [
+              "    - assets/brand/samanvay_logo.jpg",
+              "    - assets/brand/home_city_banner.jpg",
+              "    - assets/brand/profile_avatar.jpg",
+              "    - assets/brand/profile_footer.jpg",
+              "    - assets/brand/splash_city.jpg",
+              "    - assets/brand/samanvay_city_background.svg",
+              "    - assets/brand/samanvay_home_banner.svg",
+              "    - assets/brand/samanvay_profile_footer.svg",
+              "    - assets/brand/samanvay_logo.svg",
+              "    - assets/brand/samanvay_profile_avatar.svg",
+          ]
+          if groundwater_entry not in content:
+              if asset_entry not in content:
+                  raise SystemExit("Coimbatore ward asset entry not found")
+              content = content.replace(
+                  asset_entry,
+                  asset_entry + chr(10) + groundwater_entry,
+                  1,
+              )
+          for brand_entry in brand_entries:
+              if brand_entry not in content:
+                  content = content.replace(groundwater_entry, groundwater_entry + chr(10) + brand_entry, 1)
+                  groundwater_entry = brand_entry
+          path.write_text(content)
+          PY
+          echo "Verifying Flutter asset declarations before build..."
+          grep -F "assets/reference/coimbatore/coimbatore_wards_2024_public_domain.geojson" pubspec.yaml
+          grep -F "assets/reference/coimbatore/groundwater_telemetry_2026_2030.geojson" pubspec.yaml
+          test -s assets/reference/coimbatore/coimbatore_wards_2024_public_domain.geojson
+          test -s assets/reference/coimbatore/groundwater_telemetry_2026_2030.geojson
           flutter pub get
 
       # 6. Check Dart code
       - name: Analyze Dart code
-        run: flutter analyze
+        run: flutter analyze --no-fatal-infos --no-fatal-warnings
 
       # 7. Build APK
       - name: Build release APK
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_PUBLISHABLE_KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
+          MAPTILER_API_KEY: ${{ secrets.MAPTILER_API_KEY }}
         run: |
-          flutter build apk --release \
+          flutter build apk --release --split-per-abi \
             --dart-define=SUPABASE_URL="$SUPABASE_URL" \
-            --dart-define=SUPABASE_PUBLISHABLE_KEY="$SUPABASE_PUBLISHABLE_KEY"
+            --dart-define=SUPABASE_PUBLISHABLE_KEY="$SUPABASE_PUBLISHABLE_KEY" \
+            --dart-define=MAPTILER_API_KEY="$MAPTILER_API_KEY"
 
-      # 8. Copy APK before diagnostics
-      - name: Prepare downloadable APK
+      # 8. Prepare smaller ABI-specific APKs for Android devices
+      - name: Prepare downloadable APKs
         run: |
-          APK="build/app/outputs/flutter-apk/app-release.apk"
-
-          if [ ! -s "$APK" ]; then
-            echo "ERROR: APK was not generated."
-            exit 1
-          fi
-
+          set -euo pipefail
           mkdir -p dist
-          cp "$APK" dist/SAMANVAY-Alpha-0.2.apk
 
-          echo "APK successfully prepared:"
-          ls -lh dist/SAMANVAY-Alpha-0.2.apk
+          for ABI in arm64-v8a armeabi-v7a x86_64; do
+            SOURCE="build/app/outputs/flutter-apk/app-${ABI}-release.apk"
+            DEST="dist/SAMANVAY-Alpha-0.3-${ABI}.apk"
 
-          sha256sum dist/SAMANVAY-Alpha-0.2.apk
+            if [ ! -s "$SOURCE" ]; then
+              echo "ERROR: Expected APK not found: $SOURCE"
+              exit 1
+            fi
 
-      # 9. Diagnose APK (diagnostic failures won't block download)
-      - name: Inspect APK package and signing
-        continue-on-error: true
+            cp "$SOURCE" "$DEST"
+          done
+
+          echo "Prepared ABI-specific APKs:"
+          ls -lh dist/*.apk
+          sha256sum dist/*.apk
+
+      # 9. APK checks are required; failures fail the build
+      - name: Verify APK package, signature and alignment
         run: |
-          APK="dist/SAMANVAY-Alpha-0.2.apk"
-
-          echo "========== APK FILE =========="
-          file "$APK"
-          ls -lh "$APK"
-
-          echo "========== APK INTEGRITY =========="
-          unzip -t "$APK"
-
-          echo "========== ANDROID BUILD TOOLS =========="
+          set -euo pipefail
           BUILD_TOOLS="$(find "$ANDROID_HOME/build-tools" \
             -mindepth 1 -maxdepth 1 -type d | sort -V | tail -n 1)"
 
           if [ -z "$BUILD_TOOLS" ]; then
-            echo "Android build-tools unavailable; skipping detailed inspection."
-            exit 0
+            echo "ERROR: Android build-tools unavailable."
+            exit 1
           fi
 
-          echo "Build tools: $BUILD_TOOLS"
+          for APK in dist/*.apk; do
+            echo "========== VERIFYING $APK =========="
+            file "$APK"
+            unzip -t "$APK" >/dev/null
+            "$BUILD_TOOLS/aapt" dump badging "$APK"
+            PACKAGE_NAME="$("$BUILD_TOOLS/aapt" dump badging "$APK" | sed -n "s/^package: name='\([^']*\)'.*/\1/p")"
+            if [ "$PACKAGE_NAME" != "org.samanvay.samanvay" ]; then
+              echo "ERROR: Unexpected APK package name: $PACKAGE_NAME"
+              exit 1
+            fi
+            echo "PASS: APK package name is $PACKAGE_NAME"
+            "$BUILD_TOOLS/apksigner" verify --verbose --print-certs "$APK"
+            "$BUILD_TOOLS/zipalign" -c -v 4 "$APK"
 
-          echo "========== PACKAGE INFORMATION =========="
-          "$BUILD_TOOLS/aapt" dump badging "$APK" || true
+            for REQUIRED_ASSET in \
+              "assets/flutter_assets/assets/reference/coimbatore/coimbatore_wards_2024_public_domain.geojson" \
+              "assets/flutter_assets/assets/reference/coimbatore/groundwater_telemetry_2026_2030.geojson" \
+              "assets/flutter_assets/assets/brand/samanvay_logo.jpg" \
+              "assets/flutter_assets/assets/brand/home_city_banner.jpg" \
+              "assets/flutter_assets/assets/brand/profile_avatar.jpg" \
+              "assets/flutter_assets/assets/brand/profile_footer.jpg" \
+              "assets/flutter_assets/assets/brand/splash_city.jpg" \
+              "assets/flutter_assets/assets/brand/samanvay_city_background.svg" \
+              "assets/flutter_assets/assets/brand/samanvay_home_banner.svg" \
+              "assets/flutter_assets/assets/brand/samanvay_profile_footer.svg" \
+              "assets/flutter_assets/assets/brand/samanvay_logo.svg" \
+              "assets/flutter_assets/assets/brand/samanvay_profile_avatar.svg"; do
+              if ! unzip -l "$APK" | grep -Fq "$REQUIRED_ASSET"; then
+                echo "ERROR: Required GIS data asset missing from APK: $REQUIRED_ASSET"
+                exit 1
+              fi
+              echo "Verified GIS data asset in APK: $REQUIRED_ASSET"
+            done
+          done
 
-          echo "========== SIGNATURE VERIFICATION =========="
-          "$BUILD_TOOLS/apksigner" verify \
-            --verbose \
-            --print-certs "$APK" || true
-
-          echo "========== ALIGNMENT CHECK =========="
-          "$BUILD_TOOLS/zipalign" -c -v 4 "$APK" || true
-
-      # 10. ALWAYS upload APK as a downloadable artifact
-      - name: Upload APK download
-        if: always() && hashFiles('dist/SAMANVAY-Alpha-0.2.apk') != ''
+      # 10. Upload all ABI-specific APKs
+      - name: Upload APK downloads
+        if: always() && hashFiles('dist/*.apk') != ''
         uses: actions/upload-artifact@v4
         with:
-          name: SAMANVAY-Alpha-0.2-APK
-          path: dist/SAMANVAY-Alpha-0.2.apk
+          name: SAMANVAY-Alpha-0.3-APK
+          path: dist/*.apk
           if-no-files-found: error
           retention-days: 30
 
-      # 11. Publish GitHub Release when manually triggered
-      - name: Publish SAMANVAY Alpha 0.2
-        if: github.event_name == 'workflow_dispatch' && hashFiles('dist/SAMANVAY-Alpha-0.2.apk') != ''
+      # 11. Publish/update the Alpha 0.3 prerelease on successful builds
+      - name: Publish SAMANVAY Alpha 0.3
+        if: hashFiles('dist/*.apk') != ''
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: samanvay-alpha-0.2
-          name: SAMANVAY Alpha 0.2
+          tag_name: samanvay-alpha-0.3
+          name: SAMANVAY Alpha 0.3
           body: |
             SAMANVAY Android Application
-            Version: Alpha 0.2
+            Version: Alpha 0.3
 
             Includes:
-            - Flutter release APK
+            - ABI-specific Flutter release APKs (ARM64, ARMv7, x86_64)
+            - Coimbatore 2024 Public Domain ward-boundary reference layer (OpenCity.in)
+            - 21 Coimbatore district groundwater telemetry station points from NWDP 2026–2030 snapshot
+            - Verified department-owned GIS asset map layer (when owner data is registered and verified)
+            - Device GPS coordinate display and OpenStreetMap place search fallback
             - Supabase integration foundation
-            - APK package and signing diagnostics
+            - Required APK integrity, signature and alignment checks
+
+            Note: The ward boundary layer is a 2024 public reference and is not a statutory boundary certification or an underground utility dataset.
 
           prerelease: true
           make_latest: false
           overwrite_files: true
-          files: dist/SAMANVAY-Alpha-0.2.apk
+          files: dist/*.apk
