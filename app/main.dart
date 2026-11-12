@@ -24,6 +24,7 @@ import 'public_excavation_tracker_page.dart';
 import 'samanvay_ai_chat_page.dart';
 import 'coordinated_work_calendar_page.dart';
 import 'public_transparency_dashboard_page.dart';
+import 'lpu_demo_app.dart';
 
 const String supabaseUrl =
     String.fromEnvironment('SUPABASE_URL');
@@ -35,8 +36,16 @@ const String supabasePublishableKey =
 // so slow storage/network initialization cannot hide the opening animation.
 Future<void> _samanvayBootFuture = Future<void>.value();
 
+/// `--dart-define=SAMANVAY_START=lpu-demo` builds a presentation APK that opens
+/// straight into the offline LPU demonstration (no backend required).
+const String samanvayStartMode = String.fromEnvironment('SAMANVAY_START');
+
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  if (samanvayStartMode == 'lpu-demo') {
+    runApp(const LpuDemoApp());
+    return;
+  }
   runApp(const SamanvayApp());
   _samanvayBootFuture = _initialiseSamanvayServices();
 }
@@ -62,9 +71,6 @@ Future<void> _initialiseSamanvayServices() async {
 
 final supabase = Supabase.instance.client;
 
-/// Supabase's REST API returns at most 1,000 rows per request, so a single
-/// `.limit(n)` above that silently truncates results. This pages through a
-/// deterministically ordered query until every row (up to [maxRows]) is read.
 /// Maps samanvay-case-assistant error codes (or an HTTP status) to user text.
 String caseAssistantErrorMessage(Object? code) {
   switch (code?.toString()) {
@@ -89,6 +95,9 @@ String caseAssistantErrorMessage(Object? code) {
   }
 }
 
+/// Supabase's REST API returns at most 1,000 rows per request, so a single
+/// `.limit(n)` above that silently truncates results. This pages through a
+/// deterministically ordered query until every row (up to [maxRows]) is read.
 Future<List<Map<String, dynamic>>> fetchAllRows(
   PostgrestTransformBuilder<PostgrestList> Function(int from, int to) page, {
   int pageSize = 1000,
@@ -4620,6 +4629,15 @@ class _AuthPageState extends State<AuthPage> {
                   Text(
                     'Tap any portal to open its interactive demonstration workspace. Citizen guest requests and official sample updates run locally in this session; live records and protected actions still require an authorised account.',
                     style: TextStyle(fontSize: 10, color: mutedInk, height: 1.35),
+                  ),
+                  const SizedBox(height: 12),
+                  SizedBox(
+                    width: double.infinity,
+                    child: OutlinedButton.icon(
+                      onPressed: () => openLpuDemo(context),
+                      icon: const Icon(Icons.map_outlined),
+                      label: const Text('Open the LPU campus demo · all four roles, offline'),
+                    ),
                   ),
                   const SizedBox(height: 16),
                                     const SizedBox(height: 16),

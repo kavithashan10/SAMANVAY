@@ -201,14 +201,8 @@ jobs:
               logo.verify()
           print('PASS: packaged SAMANVAY vector logo parsed and decoded at 768x768.')
           PY
-          cp app/public_transparency_dashboard_page.dart lib/public_transparency_dashboard_page.dart
-          cp app/main.dart lib/main.dart
-          cp app/asset_evidence_page.dart lib/asset_evidence_page.dart
-          cp app/public_excavation_tracker_page.dart lib/public_excavation_tracker_page.dart
-          cp app/ai_assistant_page.dart lib/ai_assistant_page.dart
-          cp app/samanvay_ai_chat_page.dart lib/samanvay_ai_chat_page.dart
-          cp app/coordinated_work_calendar_page.dart lib/coordinated_work_calendar_page.dart
-          cp app/joint_work_coordination_page.dart lib/joint_work_coordination_page.dart
+          # Copy every app module so new pages are never left out of the build.
+          cp app/*.dart lib/
 
           if [ ! -s assets/reference/coimbatore/coimbatore_wards_2024_public_domain.geojson ]; then
             echo "ERROR: Coimbatore ward reference GeoJSON is missing from the repository."

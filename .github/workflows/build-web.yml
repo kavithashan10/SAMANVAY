@@ -47,15 +47,9 @@ jobs:
           cp /tmp/samanvay_web_scaffold/.metadata .
 
           mkdir -p lib assets/reference assets/brand
-          cp app/main.dart lib/main.dart
-          cp app/asset_evidence_page.dart lib/asset_evidence_page.dart
-          cp app/public_excavation_tracker_page.dart lib/public_excavation_tracker_page.dart
-          cp app/ai_assistant_page.dart lib/ai_assistant_page.dart
-          cp app/samanvay_ai_chat_page.dart lib/samanvay_ai_chat_page.dart
-          cp app/coordinated_work_calendar_page.dart lib/coordinated_work_calendar_page.dart
-          cp app/public_transparency_dashboard_page.dart lib/public_transparency_dashboard_page.dart
+          # Copy every app module so new pages are never left out of the build.
+          cp app/*.dart lib/
           cp -R app/assets/brand/. assets/brand/
-          cp app/joint_work_coordination_page.dart lib/joint_work_coordination_page.dart
           cp -R app/assets/reference/. assets/reference/
 
           # Keep both published Coimbatore reference layers available to Flutter Web.
