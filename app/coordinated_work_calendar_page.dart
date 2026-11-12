@@ -27,7 +27,7 @@ class _CoordinatedWorkCalendarPageState
   String _windowFilter = '90';
   String _searchText = '';
   Set<String> _overlapIds = <String>{};
-  DateTime _today = DateUtils.dateOnly(DateTime.now());
+  final DateTime _today = DateUtils.dateOnly(DateTime.now());
 
   Color get _background => Theme.of(context).scaffoldBackgroundColor;
   Color get _panel => Theme.of(context).colorScheme.surface;

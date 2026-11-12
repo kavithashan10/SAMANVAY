@@ -305,12 +305,56 @@ jobs:
       - name: Analyze Dart code
         run: flutter analyze --no-fatal-infos --no-fatal-warnings
 
+      # 6b. Persistent release signing (opt-in). Without these secrets the APK is
+      # signed with CI's temporary debug key, which changes between runs and
+      # blocks in-place upgrades (users must uninstall, losing app data).
+      - name: Configure release signing
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          set -euo pipefail
+          if [ -z "$ANDROID_KEYSTORE_BASE64" ] || [ -z "$ANDROID_KEYSTORE_PASSWORD" ] \
+             || [ -z "$ANDROID_KEY_ALIAS" ] || [ -z "$ANDROID_KEY_PASSWORD" ]; then
+            echo "::warning::Release keystore secrets are not configured; this APK is debug-signed and cannot upgrade a build signed by a different run."
+            exit 0
+          fi
+          echo "$ANDROID_KEYSTORE_BASE64" | base64 --decode > android/app/upload-keystore.jks
+          test -s android/app/upload-keystore.jks
+          python3 - <<'PY2'
+          from pathlib import Path
+          gradle = Path("android/app/build.gradle.kts")
+          content = gradle.read_text()
+          debug_line = 'signingConfig = signingConfigs.getByName("debug")'
+          if content.count(debug_line) != 1 or content.count("    buildTypes {") != 1:
+              raise SystemExit("ERROR: Unexpected Gradle layout; release signing was not applied.")
+          signing = (
+              "    signingConfigs {\n"
+              "        create(\"release\") {\n"
+              "            storeFile = file(\"upload-keystore.jks\")\n"
+              "            storePassword = System.getenv(\"ANDROID_KEYSTORE_PASSWORD\")\n"
+              "            keyAlias = System.getenv(\"ANDROID_KEY_ALIAS\")\n"
+              "            keyPassword = System.getenv(\"ANDROID_KEY_PASSWORD\")\n"
+              "        }\n"
+              "    }\n\n"
+          )
+          content = content.replace("    buildTypes {", signing + "    buildTypes {", 1)
+          content = content.replace(debug_line, 'signingConfig = signingConfigs.getByName("release")', 1)
+          gradle.write_text(content)
+          print("PASS: release signing configured from repository secrets.")
+          PY2
+
       # 7. Build APK
       - name: Build release APK
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_PUBLISHABLE_KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
           MAPTILER_API_KEY: ${{ secrets.MAPTILER_API_KEY }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
         run: |
           flutter build apk --release --split-per-abi \
             --dart-define=SUPABASE_URL="$SUPABASE_URL" \

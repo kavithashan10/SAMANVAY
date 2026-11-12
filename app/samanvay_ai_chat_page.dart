@@ -199,7 +199,7 @@ class _SamanvayAiChatPageState extends State<SamanvayAiChatPage> {
               child: InkWell(
                 onTap: canOpen ? () async {
                   try {
-                    await launchUrl(uri!, mode: LaunchMode.externalApplication);
+                    await launchUrl(uri, mode: LaunchMode.externalApplication);
                   } catch (_) {
                     if (mounted) setState(() => _error = 'Unable to open the source reference.');
                   }

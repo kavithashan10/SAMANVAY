@@ -10,9 +10,24 @@ on conflict (name) do nothing;
 
 alter table public.excavation_requests
   drop constraint if exists excavation_requests_case_category_check;
-update public.excavation_requests
-set case_category='legacy_excavation'
-where case_category='road_reconstruction';
+-- Rows that only received 'road_reconstruction' as the earlier column default are
+-- relabelled once. Guarded on the column default so a replay of this migration
+-- never reclassifies genuine road-reconstruction cases created afterwards.
+do $relabel$
+begin
+  if exists (
+    select 1 from information_schema.columns
+    where table_schema = 'public'
+      and table_name = 'excavation_requests'
+      and column_name = 'case_category'
+      and column_default like '''road_reconstruction''%'
+  ) then
+    update public.excavation_requests
+    set case_category = 'legacy_excavation'
+    where case_category = 'road_reconstruction';
+  end if;
+end
+$relabel$;
 alter table public.excavation_requests
   alter column case_category set default 'legacy_excavation';
 alter table public.excavation_requests

@@ -72,7 +72,7 @@ class _SamanvayAiAssistantPageState extends State<SamanvayAiAssistantPage> {
     if (value.contains('AI_NOT_CONFIGURED')) {
       return 'The built-in case assistant is temporarily unavailable. Check your connection and try again.';
     }
-    if (value.contains('DAILY_AI_LIMIT_REACHED') || value.contains('429')) {
+    if (value.contains('DAILY_RULE_LIMIT_REACHED') || value.contains('DAILY_AI_LIMIT_REACHED') || value.contains('429')) {
       return 'The per-user daily rule-based assessment limit has been reached. Try again after the 24-hour usage window.';
     }
     if (value.contains('STAFF_ACCESS_REQUIRED') ||

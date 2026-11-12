@@ -86,13 +86,13 @@ jobs:
           encrypted = folder / "SAMANVAY-database.dump.fernet"
           encrypted.write_bytes(b"SAM2" + salt + Fernet(key).encrypt(raw))
           digest = hashlib.sha256(encrypted.read_bytes()).hexdigest()
-          (folder / "SHA256SUM").write_text(f"{digest}  {encrypted.name}\\n")
+          (folder / "SHA256SUM").write_text(f"{digest}  {encrypted.name}\n")
           (folder / "BACKUP-METADATA.txt").write_text(
-              "SAMANVAY encrypted PostgreSQL custom-format backup\\n"
-              f"Created UTC: {__import__('datetime').datetime.now(__import__('datetime').timezone.utc).isoformat()}\\n"
-              f"Encrypted size: {encrypted.stat().st_size} bytes\\n"
-              f"SHA-256: {digest}\\n"
-              "Encryption: Fernet / PBKDF2-HMAC-SHA256, 600000 iterations\\n"
+              "SAMANVAY encrypted PostgreSQL custom-format backup\n"
+              f"Created UTC: {__import__('datetime').datetime.now(__import__('datetime').timezone.utc).isoformat()}\n"
+              f"Encrypted size: {encrypted.stat().st_size} bytes\n"
+              f"SHA-256: {digest}\n"
+              "Encryption: Fernet / PBKDF2-HMAC-SHA256, 600000 iterations\n"
           )
           (folder / "samanvay.dump").unlink()
           print(f"Encrypted backup prepared ({encrypted.stat().st_size} bytes).")

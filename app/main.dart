@@ -21,7 +21,6 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'asset_evidence_page.dart';
 import 'public_excavation_tracker_page.dart';
-import 'ai_assistant_page.dart';
 import 'samanvay_ai_chat_page.dart';
 import 'coordinated_work_calendar_page.dart';
 import 'public_transparency_dashboard_page.dart';
@@ -62,6 +61,47 @@ Future<void> _initialiseSamanvayServices() async {
 }
 
 final supabase = Supabase.instance.client;
+
+/// Supabase's REST API returns at most 1,000 rows per request, so a single
+/// `.limit(n)` above that silently truncates results. This pages through a
+/// deterministically ordered query until every row (up to [maxRows]) is read.
+/// Maps samanvay-case-assistant error codes (or an HTTP status) to user text.
+String caseAssistantErrorMessage(Object? code) {
+  switch (code?.toString()) {
+    case 'DAILY_RULE_LIMIT_REACHED':
+    case '429':
+      return 'Daily case-assistant limit reached (10 assessments per 24 hours). Try again later.';
+    case 'STAFF_ACCESS_REQUIRED':
+    case 'CASE_NOT_ASSIGNED_TO_YOUR_DEPARTMENT':
+    case 'DEPARTMENT_NOT_ASSIGNED':
+    case '403':
+      return 'This account is not authorised to assess this case.';
+    case 'CASE_NOT_FOUND':
+      return 'The case could not be found or is no longer visible to you.';
+    case 'AUTHENTICATION_REQUIRED':
+    case 'INVALID_SESSION':
+    case '401':
+      return 'Your session has expired. Sign in again to use the case assistant.';
+    case '404':
+      return 'The samanvay-case-assistant Edge Function is not deployed in this project.';
+    default:
+      return 'The case assistant could not complete this assessment. Try again shortly.';
+  }
+}
+
+Future<List<Map<String, dynamic>>> fetchAllRows(
+  PostgrestTransformBuilder<PostgrestList> Function(int from, int to) page, {
+  int pageSize = 1000,
+  int maxRows = 20000,
+}) async {
+  final rows = <Map<String, dynamic>>[];
+  while (rows.length < maxRows) {
+    final batch = await page(rows.length, rows.length + pageSize - 1);
+    rows.addAll(batch.map((raw) => Map<String, dynamic>.from(raw)));
+    if (batch.length < pageSize) break;
+  }
+  return rows;
+}
 
 final ValueNotifier<ThemeMode> samanvayThemeMode = ValueNotifier(ThemeMode.dark);
 
@@ -467,9 +507,8 @@ class _SamanvayBrandLogo extends StatelessWidget {
 }
 
 class _AnimatedDevelopmentTagline extends StatefulWidget {
-  const _AnimatedDevelopmentTagline({this.fontSize = 14, this.textAlign = TextAlign.center});
+  const _AnimatedDevelopmentTagline({this.fontSize = 14});
   final double fontSize;
-  final TextAlign textAlign;
   @override
   State<_AnimatedDevelopmentTagline> createState() => _AnimatedDevelopmentTaglineState();
 }
@@ -486,7 +525,7 @@ class _AnimatedDevelopmentTaglineState extends State<_AnimatedDevelopmentTagline
   @override
   Widget build(BuildContext context) => AnimatedBuilder(
     animation: controller,
-    builder: (_, __) => ShaderMask(
+    builder: (_, _) => ShaderMask(
       blendMode: BlendMode.srcIn,
       shaderCallback: (bounds) => LinearGradient(
         begin: Alignment(-1 + 2 * controller.value, 0),
@@ -495,7 +534,7 @@ class _AnimatedDevelopmentTaglineState extends State<_AnimatedDevelopmentTagline
           ? const [Color(0xFF13A89E), Color(0xFF10243A), Color(0xFF3D83F6)]
           : const [Color(0xFF20D6C2), Color(0xFFB9E8FF), Color(0xFF3D83F6)],
       ).createShader(bounds),
-      child: Text('TOWARDS OUR DEVELOPMENT 📈', textAlign: widget.textAlign,
+      child: Text('TOWARDS OUR DEVELOPMENT 📈', textAlign: TextAlign.center,
         style: GoogleFonts.inter(fontSize: widget.fontSize, fontWeight: FontWeight.w900, letterSpacing: .45)),
     ),
   );
@@ -513,7 +552,7 @@ class _SamanvaySplashReveal extends StatelessWidget {
   @override
   Widget build(BuildContext context) => AnimatedBuilder(
     animation: Listenable.merge([controller, ambientController]),
-    builder: (_, __) {
+    builder: (_, _) {
       final progress = Curves.easeOutCubic.transform(controller.value);
       final size = math.min(
         356.0,
@@ -973,186 +1012,6 @@ class _SamanvayOpeningScreen extends StatelessWidget {
       ),
     );
   }
-}
-
-class _SamanvayRoadPipeMarkPainter extends CustomPainter {
-  const _SamanvayRoadPipeMarkPainter({
-    required this.progress,
-    required this.ambient,
-  });
-
-  final double progress;
-  final double ambient;
-
-  Path _sPath(Size size, double verticalShift) {
-    return Path()
-      ..moveTo(size.width * 0.79, size.height * 0.17 + verticalShift)
-      ..cubicTo(
-        size.width * 0.99, size.height * 0.12 + verticalShift,
-        size.width * 0.96, size.height * 0.39 + verticalShift,
-        size.width * 0.69, size.height * 0.43 + verticalShift,
-      )
-      ..cubicTo(
-        size.width * 0.39, size.height * 0.47 + verticalShift,
-        size.width * 0.20, size.height * 0.54 + verticalShift,
-        size.width * 0.34, size.height * 0.66 + verticalShift,
-      )
-      ..cubicTo(
-        size.width * 0.47, size.height * 0.79 + verticalShift,
-        size.width * 0.76, size.height * 0.70 + verticalShift,
-        size.width * 0.72, size.height * 0.83 + verticalShift,
-      )
-      ..cubicTo(
-        size.width * 0.69, size.height * 0.98 + verticalShift,
-        size.width * 0.42, size.height * 0.91 + verticalShift,
-        size.width * 0.25, size.height * 0.89 + verticalShift,
-      );
-  }
-
-  Path _drawProgress(Path path, double amount) {
-    final metrics = path.computeMetrics().toList();
-    if (metrics.isEmpty || amount <= 0) return Path();
-    final metric = metrics.first;
-    return metric.extractPath(0, metric.length * amount.clamp(0.0, 1.0).toDouble());
-  }
-
-  void _drawPipe(Canvas canvas, Path path, Color color, double width, double amount) {
-    final visiblePath = _drawProgress(path, amount);
-    if (visiblePath.computeMetrics().isEmpty) return;
-    canvas.drawPath(
-      visiblePath,
-      Paint()
-        ..color = background
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = width + 7
-        ..strokeCap = StrokeCap.round
-        ..strokeJoin = StrokeJoin.round,
-    );
-    canvas.drawPath(
-      visiblePath,
-      Paint()
-        ..color = color.withValues(alpha: 0.84)
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = width
-        ..strokeCap = StrokeCap.round
-        ..strokeJoin = StrokeJoin.round,
-    );
-    canvas.drawPath(
-      visiblePath,
-      Paint()
-        ..color = Colors.white.withValues(alpha: 0.32)
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = math.max(1.2, width * 0.20).toDouble()
-        ..strokeCap = StrokeCap.round,
-    );
-    final metric = path.computeMetrics().first;
-    final dot = metric.getTangentForOffset(
-      metric.length * ((ambient + 0.12) % 1.0),
-    );
-    if (dot != null && amount >= 0.96) {
-      canvas.drawCircle(
-        dot.position,
-        width * 0.85,
-        Paint()
-          ..color = color.withValues(alpha: 0.45)
-          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 5),
-      );
-      canvas.drawCircle(dot.position, width * 0.24, Paint()..color = Colors.white);
-    }
-  }
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final centerPath = _sPath(size, 0);
-    final cyanPipe = _sPath(size, size.height * 0.055);
-    final greenPipe = _sPath(size, -size.height * 0.055);
-    final pipeProgress = Curves.easeInOutCubic.transform(
-      ((progress - 0.08) / 0.80).clamp(0.0, 1.0),
-    );
-
-    final halo = Paint()
-      ..color = const Color(0xFF21D9CB).withValues(alpha: 0.10 + 0.08 * math.sin(ambient * math.pi * 2).abs())
-      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 22);
-    canvas.drawCircle(
-      Offset(size.width * 0.52, size.height * 0.52),
-      size.width * 0.43,
-      halo,
-    );
-
-    _drawPipe(canvas, greenPipe, const Color(0xFF21C783), 7, pipeProgress);
-    _drawPipe(canvas, cyanPipe, const Color(0xFF18C9F5), 7, pipeProgress);
-    _drawPipe(canvas, centerPath, const Color(0xFFE5A34B), 5, pipeProgress);
-
-    final roadProgress = Curves.easeOutCubic.transform(
-      ((progress - 0.02) / 0.66).clamp(0.0, 1.0),
-    );
-    final road = _drawProgress(centerPath, roadProgress);
-    canvas.drawPath(
-      road,
-      Paint()
-        ..color = const Color(0xFF9EABB7).withValues(alpha: 0.96)
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = size.width * 0.16
-        ..strokeCap = StrokeCap.round
-        ..strokeJoin = StrokeJoin.round,
-    );
-    canvas.drawPath(
-      road,
-      Paint()
-        ..color = const Color(0xFF263544)
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = size.width * 0.13
-        ..strokeCap = StrokeCap.round
-        ..strokeJoin = StrokeJoin.round,
-    );
-
-    // Animated center markings make the road itself draw in, rather than
-    // simply fading a static monogram onto the screen.
-    final metrics = centerPath.computeMetrics().toList();
-    if (metrics.isNotEmpty && roadProgress > 0.08) {
-      final metric = metrics.first;
-      final dashPaint = Paint()
-        ..color = const Color(0xFFFFD36A)
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 2.5
-        ..strokeCap = StrokeCap.round;
-      final travelled = metric.length * roadProgress;
-      for (double d = 0; d < travelled; d += 12) {
-        canvas.drawPath(
-          metric.extractPath(d, math.min(d + 5, travelled).toDouble()),
-          dashPaint,
-        );
-      }
-    }
-
-    if (progress > 0.35) {
-      final pinProgress = Curves.easeOutBack.transform(
-        ((progress - 0.35) / 0.35).clamp(0.0, 1.0),
-      );
-      final pin = Offset(size.width * 0.79, size.height * 0.17);
-      canvas.drawCircle(
-        pin,
-        size.width * 0.055 * pinProgress,
-        Paint()
-          ..color = const Color(0xFFFF4E69).withValues(alpha: 0.22)
-          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 7),
-      );
-      canvas.drawCircle(
-        pin,
-        size.width * 0.034 * pinProgress,
-        Paint()..color = const Color(0xFFFF4E69),
-      );
-      canvas.drawCircle(
-        pin,
-        size.width * 0.012 * pinProgress,
-        Paint()..color = Colors.white,
-      );
-    }
-  }
-
-  @override
-  bool shouldRepaint(covariant _SamanvayRoadPipeMarkPainter oldDelegate) =>
-      oldDelegate.progress != progress || oldDelegate.ambient != ambient;
 }
 
 class _SamanvayOpeningCityPainter extends CustomPainter {
@@ -8070,7 +7929,7 @@ class _RoadCutPermitBoardState extends State<RoadCutPermitBoard> {
                     Expanded(child: Text(_requestLabel(req),
                       style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 12))),
                     Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                      decoration: BoxDecoration(color: _stateColor(state).withOpacity(.12),
+                      decoration: BoxDecoration(color: _stateColor(state).withValues(alpha: .12),
                         borderRadius: BorderRadius.circular(20)),
                       child: Text(_pretty(state), style: TextStyle(color: _stateColor(state),
                         fontSize: 9, fontWeight: FontWeight.w800))),
@@ -8197,7 +8056,7 @@ class _RoadWorkScheduleBoardState extends State<RoadWorkScheduleBoard> {
                       style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700))),
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                      decoration: BoxDecoration(color: _stateColor(state).withOpacity(.12),
+                      decoration: BoxDecoration(color: _stateColor(state).withValues(alpha: .12),
                         borderRadius: BorderRadius.circular(20)),
                       child: Text(_stateLabel(state),
                         style: TextStyle(color: _stateColor(state), fontSize: 9, fontWeight: FontWeight.w800)),
@@ -9892,7 +9751,7 @@ class _IndiaCoverageExplorerPageState extends State<IndiaCoverageExplorerPage> {
                   await Navigator.of(context).push(MaterialPageRoute(
                     builder: (_) => const IndiaLgdCsvImportPage(),
                   ));
-                  if (mounted) _load();
+                  if (mounted) await _load();
                 },
                 icon: const Icon(Icons.upload_file, size: 15),
                 label: const Text('Import official CSV'),
@@ -10527,7 +10386,7 @@ class _IndiaAdministrativeHierarchyPageState
                       child: ExpansionTile(
                         initiallyExpanded: false,
                         title: Text(
-                          'Urban local bodies — ${selectedStateName}',
+                          'Urban local bodies — $selectedStateName',
                           style: TextStyle(color: ink, fontWeight: FontWeight.w800, fontSize: 12),
                         ),
                         subtitle: Text(
@@ -11624,13 +11483,14 @@ class _BuildingApprovalRegisterBoardState extends State<BuildingApprovalRegister
     if (!mounted) return;
     setState(() { loading = true; errorMessage = ''; });
     try {
-      final rows = await supabase
+      final rows = await fetchAllRows((from, to) => supabase
           .from('building_approval_public_register_records')
           .select('authority,jurisdiction,source_document_title,source_url,approval_status,approved_floor_count,approved_height_m')
-          .limit(3000);
+          .order('id')
+          .range(from, to));
       if (!mounted) return;
       setState(() {
-        records = List<Map<String, dynamic>>.from(rows);
+        records = rows;
         loading = false;
       });
     } catch (_) {
@@ -13981,8 +13841,6 @@ class _MapPageState extends State<MapPage> {
   String _layerStatus =
       'Underground visibility requires authorised, verified GIS records.';
   bool _routing = false;
-  String _routeSummary = '';
-  List<String> _routeInstructions = [];
   Map<String, dynamic>? _activeRouteGeoJson;
 
   String get _mapStyle {
@@ -15090,8 +14948,6 @@ class _MapPageState extends State<MapPage> {
 
     setState(() {
       _routing = true;
-      _routeSummary = '';
-      _routeInstructions = [];
     });
 
     try {
@@ -15171,8 +15027,6 @@ class _MapPageState extends State<MapPage> {
       if (!mounted) return;
       setState(() {
         _activeRouteGeoJson = featureCollection;
-        _routeSummary = summary;
-        _routeInstructions = instructions;
       });
       await _renderActiveRoute();
 
@@ -16579,17 +16433,16 @@ class _MapPageState extends State<MapPage> {
     var approvalFloors = 0;
     var utilityCount = 0;
     var utilityPending = 0;
-    var utilityUnverified = 0;
     var utilityOperational = 0;
     var groundwaterJurisdictions = 0;
     var groundwaterGaps = 0;
 
     try {
-      final rawRows = await supabase
+      final rows = await fetchAllRows((from, to) => supabase
           .from('building_approval_public_register_records')
           .select('id,geometry_status,approved_floor_count')
-          .limit(2500);
-      final rows = rawRows.map((raw) => Map<String, dynamic>.from(raw as Map)).toList();
+          .order('id')
+          .range(from, to));
       approvalCount = rows.length;
       approvalMapped = rows.where((row) => row['geometry_status'] == 'verified_geocoded').length;
       approvalFloors = rows.where((row) => row['approved_floor_count'] != null).length;
@@ -17995,7 +17848,9 @@ class _MapPageState extends State<MapPage> {
                     onTap: _openAttribution,
                     child: Text(
                       _satellite
-                          ? '© MapTiler · © OpenStreetMap contributors'
+                          ? (_mapTilerKey.isNotEmpty
+                              ? '© MapTiler · © OpenStreetMap contributors'
+                              : 'Source: Esri, Maxar, Earthstar Geographics, USDA FSA, USGS and the GIS User Community')
                           : '© OpenFreeMap · © OpenStreetMap contributors',
                       style: const TextStyle(
                         color: Color(0xFFE1EAF1),
@@ -18875,9 +18730,11 @@ class _ProfilePageState extends State<ProfilePage> {
         icon: const Icon(Icons.refresh_rounded)),
     ]),
     body: FutureBuilder<Map<String, dynamic>>(future: _future, builder: (context, snapshot) {
-      if (snapshot.connectionState == ConnectionState.waiting && !snapshot.hasData)
+      if (snapshot.connectionState == ConnectionState.waiting && !snapshot.hasData) {
         return const Center(child: CircularProgressIndicator());
-      if (snapshot.hasError) return Center(child: Padding(
+      }
+      if (snapshot.hasError) {
+        return Center(child: Padding(
         padding: const EdgeInsets.all(24),
         child: Column(mainAxisSize: MainAxisSize.min, children: [
            Icon(Icons.account_circle_outlined, size: 44, color: electricBlue),
@@ -18890,6 +18747,7 @@ class _ProfilePageState extends State<ProfilePage> {
             child: const Text('Retry')),
         ]),
       ));
+      }
 
       final data = snapshot.data!;
       final accountRole = data['role'].toString();
@@ -19598,6 +19456,7 @@ class _CaseWorkspacePageState extends State<CaseWorkspacePage> {
     var capturingPhoto = false;
     Position? capturedPosition;
     XFile? capturedPhoto;
+    DateTime? capturedPhotoAt;
     final notes = TextEditingController();
 
     final submit = await showDialog<bool>(
@@ -19713,7 +19572,11 @@ class _CaseWorkspacePageState extends State<CaseWorkspacePage> {
                             throw StateError('Photo must be non-empty and no larger than 20 MB.');
                           }
                           if (!dialogContext.mounted) return;
-                          setDialog(() => capturedPhoto = photo);
+                          final takenAt = DateTime.now().toUtc();
+                          setDialog(() {
+                            capturedPhoto = photo;
+                            capturedPhotoAt = takenAt;
+                          });
                         }
                       } catch (error) {
                         if (dialogContext.mounted) {
@@ -19796,7 +19659,7 @@ class _CaseWorkspacePageState extends State<CaseWorkspacePage> {
         uploadedPath = '${widget.requestId}/${user.id}/$filename';
         try {
           await supabase.storage.from(_bucket).uploadBinary(
-            uploadedPath!,
+            uploadedPath,
             photoBytes,
             fileOptions: const FileOptions(contentType: 'image/jpeg', upsert: false),
           );
@@ -19809,7 +19672,7 @@ class _CaseWorkspacePageState extends State<CaseWorkspacePage> {
             'attachment_type': 'site_photo',
             'uploaded_by': user.id,
             'inspection_id': inspectionId,
-            'captured_at': DateTime.now().toUtc().toIso8601String(),
+            'captured_at': (capturedPhotoAt ?? DateTime.now().toUtc()).toIso8601String(),
             'captured_latitude': position?.latitude,
             'captured_longitude': position?.longitude,
             'location_accuracy_m': position?.accuracy,
@@ -19818,7 +19681,7 @@ class _CaseWorkspacePageState extends State<CaseWorkspacePage> {
           uploadedPath = null;
         } catch (_) {
           if (uploadedPath != null) {
-            try { await supabase.storage.from(_bucket).remove([uploadedPath!]); } catch (_) {}
+            try { await supabase.storage.from(_bucket).remove([uploadedPath]); } catch (_) {}
           }
           _toast('Inspection saved, but the photo could not be attached. Retry the photo upload from the case evidence panel.');
           return;
@@ -19844,9 +19707,9 @@ class _CaseWorkspacePageState extends State<CaseWorkspacePage> {
         body: {'request_id': widget.requestId, 'purpose': purpose});
       final data = result.data;
       if (data is! Map || data['assessment'] is! Map) {
-        _toast(data is Map && data['error'] == 'AI_NOT_CONFIGURED'
-          ? 'AI is deployed but needs the OPENAI_API_KEY secret.'
-          : 'No valid assessment returned by the AI service.');
+        _toast(data is Map && data['error'] != null
+          ? caseAssistantErrorMessage(data['error'])
+          : 'No valid assessment returned by the case assistant.');
         return;
       }
       final assessment = Map<String,dynamic>.from(data['assessment'] as Map);
@@ -19903,9 +19766,11 @@ class _CaseWorkspacePageState extends State<CaseWorkspacePage> {
         ),
       );
     } on FunctionException catch (e) {
-      _toast('AI service unavailable: ${e.reasonPhrase ?? e.status.toString()}');
+      final details = e.details;
+      _toast(caseAssistantErrorMessage(
+        details is Map && details['error'] != null ? details['error'] : e.status));
     } catch (_) {
-      _toast('AI assessment failed. Check Edge Function and provider configuration.');
+      _toast('The case assistant could not be reached. Check your connection and try again.');
     } finally {
       if (mounted) setState(() => _aiBusy = false);
     }

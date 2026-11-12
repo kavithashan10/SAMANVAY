@@ -166,7 +166,7 @@ function validateFeature(feature: unknown, source: ImportSource): Json {
 }
 
 function sha256Hex(bytes: Uint8Array): Promise<string> {
-  return crypto.subtle.digest("SHA-256", bytes).then((digest) =>
+  return crypto.subtle.digest("SHA-256", bytes as BufferSource).then((digest) =>
     Array.from(new Uint8Array(digest)).map((value) => value.toString(16).padStart(2, "0")).join("")
   );
 }
