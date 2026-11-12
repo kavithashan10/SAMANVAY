@@ -10,6 +10,7 @@ on:
     branches:
       - main
       - feature/alpha-03-integrated-platform
+      - 'claude/**'
     paths:
       - 'app/**'
       - '!app/assets/brand/*.part*'
@@ -377,6 +378,38 @@ jobs:
           ls -lh dist/*.apk
           sha256sum dist/*.apk
 
+      # 8b. Offline LPU demonstration build for presentations. It opens straight
+      # into the demo (no backend or secrets needed) and uses its own package ID
+      # and launcher name so it installs alongside the main app.
+      - name: Build LPU demo APK
+        env:
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          gradle = Path("android/app/build.gradle.kts")
+          content = gradle.read_text()
+          old_id = 'applicationId = "org.samanvay.samanvay"'
+          if content.count(old_id) != 1:
+              raise SystemExit("ERROR: applicationId line not found; demo package ID not applied.")
+          gradle.write_text(content.replace(old_id, 'applicationId = "org.samanvay.samanvay.lpudemo"'))
+          manifest = Path("android/app/src/main/AndroidManifest.xml")
+          text = manifest.read_text()
+          if 'android:label="SAMANVAY"' not in text:
+              raise SystemExit("ERROR: launcher label not found; demo label not applied.")
+          manifest.write_text(text.replace('android:label="SAMANVAY"', 'android:label="SAMANVAY Demo"', 1))
+          print("PASS: demo package org.samanvay.samanvay.lpudemo, label 'SAMANVAY Demo'.")
+          PY
+          flutter build apk --release --dart-define=SAMANVAY_START=lpu-demo
+          SOURCE="build/app/outputs/flutter-apk/app-release.apk"
+          test -s "$SOURCE" || { echo "ERROR: LPU demo APK was not generated."; exit 1; }
+          cp "$SOURCE" dist/SAMANVAY-LPU-Demo-universal.apk
+          ls -lh dist/SAMANVAY-LPU-Demo-universal.apk
+          sha256sum dist/SAMANVAY-LPU-Demo-universal.apk
+
       # 9. APK checks are required; failures fail the build
       - name: Verify APK package, signature and alignment
         run: |
@@ -395,7 +428,9 @@ jobs:
             unzip -t "$APK" >/dev/null
             "$BUILD_TOOLS/aapt" dump badging "$APK"
             PACKAGE_NAME="$("$BUILD_TOOLS/aapt" dump badging "$APK" | sed -n "s/^package: name='\([^']*\)'.*/\1/p")"
-            if [ "$PACKAGE_NAME" != "org.samanvay.samanvay" ]; then
+            EXPECTED_PACKAGE="org.samanvay.samanvay"
+            case "$APK" in *LPU-Demo*) EXPECTED_PACKAGE="org.samanvay.samanvay.lpudemo" ;; esac
+            if [ "$PACKAGE_NAME" != "$EXPECTED_PACKAGE" ]; then
               echo "ERROR: Unexpected APK package name: $PACKAGE_NAME"
               exit 1
             fi
@@ -430,13 +465,27 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: SAMANVAY-Alpha-0.3-APK
-          path: dist/*.apk
+          path: dist/SAMANVAY-Alpha-0.3-*.apk
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Upload LPU demo APK
+        if: always() && hashFiles('dist/SAMANVAY-LPU-Demo-*.apk') != ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: SAMANVAY-LPU-Demo-APK
+          path: dist/SAMANVAY-LPU-Demo-*.apk
           if-no-files-found: error
           retention-days: 30
 
       # 11. Publish/update the Alpha 0.3 prerelease on successful builds
+      # Branch builds (e.g. claude/**) only upload artifacts; they never overwrite the release.
       - name: Publish SAMANVAY Alpha 0.3
-        if: hashFiles('dist/*.apk') != ''
+        if: >-
+          hashFiles('dist/*.apk') != '' &&
+          (github.event_name == 'workflow_dispatch' ||
+           github.ref == 'refs/heads/main' ||
+           github.ref == 'refs/heads/feature/alpha-03-integrated-platform')
         uses: softprops/action-gh-release@v2
         with:
           tag_name: samanvay-alpha-0.3
@@ -453,6 +502,7 @@ jobs:
             - Device GPS coordinate display and OpenStreetMap place search fallback
             - Supabase integration foundation
             - Required APK integrity, signature and alignment checks
+            - SAMANVAY-LPU-Demo-universal.apk: offline LPU campus demonstration (all four roles, synthetic data); installs alongside the main app
 
             Note: The ward boundary layer is a 2024 public reference and is not a statutory boundary certification or an underground utility dataset.
 
