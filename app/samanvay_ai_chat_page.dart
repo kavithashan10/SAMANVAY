@@ -174,7 +174,7 @@ class _SamanvayAiChatPageState extends State<SamanvayAiChatPage> {
       margin: const EdgeInsets.only(top: 12),
       padding: const EdgeInsets.all(10),
       decoration: BoxDecoration(
-        color: _light ? const Color(0xFFE8F0F5) : const Color(0xFF0B2033),
+        color: _light ? const Color(0xFFF6F0E7) : const Color(0xFF211F1D),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: _outline),
       ),
@@ -223,7 +223,7 @@ class _SamanvayAiChatPageState extends State<SamanvayAiChatPage> {
                               style: TextStyle(color: _muted, fontSize: 8, height: 1.3)),
                       ],
                     )),
-                    if (canOpen) const Icon(Icons.open_in_new_rounded, size: 14, color: Color(0xFF31BFD0)),
+                    if (canOpen) const Icon(Icons.open_in_new_rounded, size: 14, color: Color(0xFF5BA667)),
                   ],
                 ),
               ),
@@ -239,7 +239,7 @@ class _SamanvayAiChatPageState extends State<SamanvayAiChatPage> {
 
   Widget _bubble(Map<String, dynamic> message) {
     final fromUser = message['role'] == 'user';
-    final color = fromUser ? _primary : (_light ? const Color(0xFFF0F5F8) : const Color(0xFF142B42));
+    final color = fromUser ? _primary : (_light ? const Color(0xFFF9F5EF) : const Color(0xFF2E2C28));
     return Align(
       alignment: fromUser ? Alignment.centerRight : Alignment.centerLeft,
       child: ConstrainedBox(
@@ -306,7 +306,7 @@ class _SamanvayAiChatPageState extends State<SamanvayAiChatPage> {
                   hintText: signedIn ? 'Ask SAMANVAY…' : 'Sign in to chat',
                   hintStyle: TextStyle(color: _muted, fontSize: 12),
                   filled: true,
-                  fillColor: _light ? const Color(0xFFF4F7FA) : const Color(0xFF0A1C2E),
+                  fillColor: _light ? const Color(0xFFFBF8F3) : const Color(0xFF1E1C1A),
                   contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(18), borderSide: BorderSide(color: _outline)),
                   enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(18), borderSide: BorderSide(color: _outline)),
@@ -346,10 +346,10 @@ class _SamanvayAiChatPageState extends State<SamanvayAiChatPage> {
             height: 34,
             width: 34,
             decoration: BoxDecoration(
-              color: const Color(0xFF31BFD0).withValues(alpha: .16),
+              color: const Color(0xFF5BA667).withValues(alpha: .16),
               borderRadius: BorderRadius.circular(11),
             ),
-            child: const Icon(Icons.smart_toy_rounded, color: Color(0xFF31BFD0), size: 21),
+            child: const Icon(Icons.smart_toy_rounded, color: Color(0xFF5BA667), size: 21),
           ),
           const SizedBox(width: 10),
           const Expanded(child: Text('SAMANVAY ASSISTANT')),
@@ -377,8 +377,8 @@ class _SamanvayAiChatPageState extends State<SamanvayAiChatPage> {
           decoration: BoxDecoration(
             gradient: LinearGradient(
               colors: _light
-                  ? const [Color(0xFFE4F5F3), Color(0xFFE7F0FA)]
-                  : const [Color(0xFF102C45), Color(0xFF123D60)],
+                  ? const [Color(0xFFE7F2E9), Color(0xFFF7F2EA)]
+                  : const [Color(0xFF2D2B28), Color(0xFF3D3A35)],
             ),
             border: Border(bottom: BorderSide(color: _outline)),
           ),
@@ -392,7 +392,7 @@ class _SamanvayAiChatPageState extends State<SamanvayAiChatPage> {
               ),
             ),
             if (signedIn)
-              const Icon(Icons.verified_user_outlined, size: 16, color: Color(0xFF42B98D)),
+              const Icon(Icons.verified_user_outlined, size: 16, color: Color(0xFF58A364)),
           ]),
         ),
         Expanded(
@@ -439,8 +439,8 @@ class _SamanvayAiChatPageState extends State<SamanvayAiChatPage> {
             margin: const EdgeInsets.fromLTRB(12, 4, 12, 0),
             padding: const EdgeInsets.all(11),
             decoration: BoxDecoration(
-              color: _light ? const Color(0xFFFFF0E4) : const Color(0xFF422F25),
-              border: Border.all(color: const Color(0xFFCF8B49)),
+              color: _light ? const Color(0xFFFBF3E8) : const Color(0xFF423625),
+              border: Border.all(color: const Color(0xFFCF9949)),
               borderRadius: BorderRadius.circular(11),
             ),
             child: Text(_error!, style: TextStyle(color: _ink, fontSize: 10, height: 1.35)),

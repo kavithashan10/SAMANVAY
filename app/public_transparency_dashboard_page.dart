@@ -19,10 +19,10 @@ class _PublicTransparencyDashboardPageState extends State<PublicTransparencyDash
   String? error;
   List<Map<String, dynamic>> notices = [];
   List<Map<String, dynamic>> departments = [];
-  Color get ink => Theme.of(context).brightness == Brightness.light ? Colors.black : const Color(0xFFEAF2FA);
-  Color get muted => Theme.of(context).brightness == Brightness.light ? const Color(0xFF242424) : const Color(0xFFA9BACB);
+  Color get ink => Theme.of(context).brightness == Brightness.light ? Colors.black : const Color(0xFFF8F3EC);
+  Color get muted => Theme.of(context).brightness == Brightness.light ? const Color(0xFF272521) : const Color(0xFFC6BCAE);
   Color get panel => Theme.of(context).colorScheme.surface;
-  Color get line => Theme.of(context).brightness == Brightness.light ? const Color(0xFFD8E1E9) : const Color(0xFF29435E);
+  Color get line => Theme.of(context).brightness == Brightness.light ? const Color(0xFFEEE3D3) : const Color(0xFF48443F);
 
   @override
   void initState() { super.initState(); load(); }
@@ -104,9 +104,9 @@ class _PublicTransparencyDashboardPageState extends State<PublicTransparencyDash
           Container(
             padding: const EdgeInsets.all(17),
             decoration: BoxDecoration(
-              gradient: const LinearGradient(colors: [Color(0xFF071A32), Color(0xFF104563), Color(0xFF075B62)],
+              gradient: const LinearGradient(colors: [Color(0xFF1E1D1B), Color(0xFF3E3A35), Color(0xFF25442A)],
                 begin: Alignment.topLeft, end: Alignment.bottomRight),
-              borderRadius: BorderRadius.circular(20), border: Border.all(color: const Color(0x5544D7CE))),
+              borderRadius: BorderRadius.circular(20), border: Border.all(color: const Color(0x556BB077))),
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Row(children: [
                 ClipRRect(borderRadius: BorderRadius.circular(11),
@@ -114,22 +114,22 @@ class _PublicTransparencyDashboardPageState extends State<PublicTransparencyDash
                 const SizedBox(width: 10),
                 const Expanded(child: Text('NATIONAL PUBLIC WORKS DASHBOARD',
                   style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: .5))),
-                const Icon(Icons.public_rounded, color: Color(0xFF54D9F2)),
+                const Icon(Icons.public_rounded, color: Color(0xFF87BF91)),
               ]),
               const SizedBox(height: 13),
               const Text('TOWARDS OUR DEVELOPMENT 📈',
                 style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w900)),
               const SizedBox(height: 7),
               const Text('Published projects, departmental activity and verified outcomes — across services and regions, not roads alone.',
-                style: TextStyle(color: Color(0xFFD6E7F2), fontSize: 11, height: 1.45)),
+                style: TextStyle(color: Color(0xFFF0E6D8), fontSize: 11, height: 1.45)),
               const SizedBox(height: 12),
               Wrap(spacing: 8, runSpacing: 8, children: [
                 OutlinedButton.icon(onPressed: widget.onOpenMap, icon: const Icon(Icons.layers_outlined, size: 16),
                   label: const Text('PUBLIC 3D UNDERGROUND MAP'),
-                  style: OutlinedButton.styleFrom(foregroundColor: Colors.white, side: const BorderSide(color: Color(0x887FE7E0)))),
+                  style: OutlinedButton.styleFrom(foregroundColor: Colors.white, side: const BorderSide(color: Color(0x889CCAA4)))),
                 OutlinedButton.icon(onPressed: widget.onOpenNotices, icon: const Icon(Icons.campaign_outlined, size: 16),
                   label: const Text('PUBLIC NOTICES'),
-                  style: OutlinedButton.styleFrom(foregroundColor: Colors.white, side: const BorderSide(color: Color(0x887FE7E0)))),
+                  style: OutlinedButton.styleFrom(foregroundColor: Colors.white, side: const BorderSide(color: Color(0x889CCAA4)))),
               ]),
             ]),
           ),
@@ -142,10 +142,10 @@ class _PublicTransparencyDashboardPageState extends State<PublicTransparencyDash
               const gap = 9.0;
               final w = (c.maxWidth - gap * (cols - 1)) / cols;
               return Wrap(spacing: gap, runSpacing: gap, children: [
-                SizedBox(width:w, child: metric(active.toString(), 'ACTIVE PROJECTS', 'Published and active notices', Icons.construction_rounded, const Color(0xFF20BFA8))),
-                SizedBox(width:w, child: metric('—', 'AVOIDED EXCAVATIONS', 'Awaiting verified joint-work closure outcomes', Icons.layers_clear_rounded, const Color(0xFF60A5FA))),
-                SizedBox(width:w, child: metric('—', 'PUBLIC FUNDS SAVED', 'Awaiting approved cost baselines and evidence', Icons.account_balance_wallet_outlined, const Color(0xFF34D399))),
-                SizedBox(width:w, child: metric('—', 'COORDINATION RATE', 'No completed public assessments yet', Icons.hub_outlined, const Color(0xFFF59E0B))),
+                SizedBox(width:w, child: metric(active.toString(), 'ACTIVE PROJECTS', 'Published and active notices', Icons.construction_rounded, const Color(0xFF4E9159))),
+                SizedBox(width:w, child: metric('—', 'AVOIDED EXCAVATIONS', 'Awaiting verified joint-work closure outcomes', Icons.layers_clear_rounded, const Color(0xFF8EB2CC))),
+                SizedBox(width:w, child: metric('—', 'PUBLIC FUNDS SAVED', 'Awaiting approved cost baselines and evidence', Icons.account_balance_wallet_outlined, const Color(0xFF5EA96B))),
+                SizedBox(width:w, child: metric('—', 'COORDINATION RATE', 'No completed public assessments yet', Icons.hub_outlined, const Color(0xFFD99227))),
               ]);
             }),
             const SizedBox(height: 20),
@@ -169,8 +169,8 @@ class _PublicTransparencyDashboardPageState extends State<PublicTransparencyDash
                   const SizedBox(height: 5),
                   ClipRRect(borderRadius: BorderRadius.circular(6), child: LinearProgressIndicator(
                     value: e.value / maxValue, minHeight: 7,
-                    backgroundColor: light ? const Color(0xFFE6EBF0) : const Color(0xFF26394C),
-                    valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF20BFA8)))),
+                    backgroundColor: light ? const Color(0xFFF4EDE2) : const Color(0xFF3D3A35),
+                    valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF4E9159)))),
                 ]),
               )),
               const SizedBox(height: 9),
@@ -211,7 +211,7 @@ class _PublicTransparencyDashboardPageState extends State<PublicTransparencyDash
             const SizedBox(height: 14),
             panelCard(Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Row(children: [
-                const Icon(Icons.verified_user_outlined, color: Color(0xFF22A06B), size: 19),
+                const Icon(Icons.verified_user_outlined, color: Color(0xFF447E4E), size: 19),
                 const SizedBox(width: 8),
                 Expanded(child: Text('Data integrity and public accountability',
                   style: TextStyle(color: ink, fontWeight: FontWeight.w900, fontSize: 12))),

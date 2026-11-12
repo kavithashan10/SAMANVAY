@@ -624,3 +624,121 @@ class SvEmptyState extends StatelessWidget {
     );
   }
 }
+
+// ---------------------------------------------------------------------------
+// Full-application theme and display type
+// ---------------------------------------------------------------------------
+
+/// Display headings: the thin high-contrast serif. Legacy callers pass heavy
+/// weights (700–900); the field-journal voice keeps display type light, so
+/// heavy requests map to Regular and everything else to Light.
+TextStyle svDisplayFont({Color? color, double? fontSize, FontWeight? fontWeight, double? letterSpacing}) =>
+    GoogleFonts.fraunces(
+      color: color,
+      fontSize: fontSize,
+      fontWeight: (fontWeight != null && fontWeight.value >= 600) ? FontWeight.w400 : FontWeight.w300,
+      letterSpacing: letterSpacing == null ? null : letterSpacing * .5,
+      height: 1.15,
+    );
+
+/// Theme for the whole SAMANVAY app: the shared field-journal theme plus the
+/// widget themes the operational screens rely on (buttons, cards, chips,
+/// navigation rail, tabs, list tiles).
+ThemeData samanvayAppTheme({required bool dark}) {
+  final base = samanvayFieldTheme(dark: dark);
+  final p = dark ? SvPalette.dark : SvPalette.light;
+  const pill = StadiumBorder();
+  final display = base.textTheme;
+  return base.copyWith(
+    textTheme: display.copyWith(
+      displayLarge: GoogleFonts.fraunces(textStyle: display.displayLarge, fontWeight: FontWeight.w300, color: p.ink),
+      displayMedium: GoogleFonts.fraunces(textStyle: display.displayMedium, fontWeight: FontWeight.w300, color: p.ink),
+      displaySmall: GoogleFonts.fraunces(textStyle: display.displaySmall, fontWeight: FontWeight.w300, color: p.ink),
+      headlineLarge: GoogleFonts.fraunces(textStyle: display.headlineLarge, fontWeight: FontWeight.w300, color: p.ink),
+      headlineMedium: GoogleFonts.fraunces(textStyle: display.headlineMedium, fontWeight: FontWeight.w300, color: p.ink),
+      headlineSmall: GoogleFonts.fraunces(textStyle: display.headlineSmall, fontWeight: FontWeight.w400, color: p.ink),
+    ),
+    appBarTheme: base.appBarTheme.copyWith(
+      titleTextStyle: GoogleFonts.fraunces(color: p.ink, fontSize: 21, fontWeight: FontWeight.w400),
+      iconTheme: IconThemeData(color: p.ink),
+      actionsIconTheme: IconThemeData(color: p.inkSoft),
+    ),
+    filledButtonTheme: FilledButtonThemeData(
+      style: FilledButton.styleFrom(
+        backgroundColor: SvColors.primary,
+        foregroundColor: SvColors.onPrimary,
+        disabledBackgroundColor: p.hairline,
+        shape: pill,
+        minimumSize: const Size(44, 46),
+        padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 13),
+        textStyle: SvType.button(SvColors.onPrimary),
+      ),
+    ),
+    elevatedButtonTheme: ElevatedButtonThemeData(
+      style: ElevatedButton.styleFrom(
+        backgroundColor: p.neutral,
+        foregroundColor: p.onNeutral,
+        elevation: 0,
+        shape: pill,
+        minimumSize: const Size(44, 46),
+        textStyle: SvType.button(p.onNeutral),
+      ),
+    ),
+    outlinedButtonTheme: OutlinedButtonThemeData(
+      style: OutlinedButton.styleFrom(
+        foregroundColor: p.inkSoft,
+        side: BorderSide(color: p.inkSoft.withValues(alpha: .7)),
+        shape: pill,
+        minimumSize: const Size(44, 44),
+        textStyle: SvType.button(p.inkSoft),
+      ),
+    ),
+    textButtonTheme: TextButtonThemeData(
+      style: TextButton.styleFrom(foregroundColor: p.inkSoft, shape: pill, textStyle: SvType.button(p.inkSoft)),
+    ),
+    iconButtonTheme: IconButtonThemeData(style: IconButton.styleFrom(foregroundColor: p.ink)),
+    floatingActionButtonTheme: FloatingActionButtonThemeData(
+      backgroundColor: SvColors.primary,
+      foregroundColor: SvColors.onPrimary,
+      shape: pill,
+      elevation: 1,
+    ),
+    cardTheme: CardThemeData(
+      color: p.surface,
+      surfaceTintColor: Colors.transparent,
+      elevation: 0,
+      margin: EdgeInsets.zero,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(SvRadius.lg), side: BorderSide(color: p.hairline)),
+    ),
+    chipTheme: ChipThemeData(
+      backgroundColor: Colors.transparent,
+      selectedColor: p.surface,
+      side: BorderSide(color: p.hairline),
+      shape: const StadiumBorder(),
+      labelStyle: SvType.ui(p.ink),
+      showCheckmark: false,
+    ),
+    navigationRailTheme: NavigationRailThemeData(
+      backgroundColor: p.canvas,
+      indicatorColor: p.surfaceAlt,
+      selectedIconTheme: IconThemeData(color: p.ink),
+      unselectedIconTheme: IconThemeData(color: p.muted),
+      selectedLabelTextStyle: SvType.caption(p.ink).copyWith(fontWeight: FontWeight.w600),
+      unselectedLabelTextStyle: SvType.caption(p.inkSoft),
+    ),
+    tabBarTheme: TabBarThemeData(
+      labelColor: p.ink,
+      unselectedLabelColor: p.muted,
+      indicatorColor: p.ink,
+      dividerColor: p.hairline,
+      labelStyle: SvType.ui(p.ink).copyWith(fontWeight: FontWeight.w600),
+    ),
+    listTileTheme: ListTileThemeData(iconColor: p.inkSoft, textColor: p.ink),
+    dividerTheme: DividerThemeData(color: p.hairline, thickness: 1),
+    progressIndicatorTheme: ProgressIndicatorThemeData(color: p.inkSoft, linearTrackColor: p.hairline),
+    switchTheme: SwitchThemeData(
+      thumbColor: WidgetStateProperty.resolveWith((s) => s.contains(WidgetState.selected) ? SvColors.canvas : p.muted),
+      trackColor: WidgetStateProperty.resolveWith((s) => s.contains(WidgetState.selected) ? SvColors.forest : p.surfaceAlt),
+    ),
+  );
+}

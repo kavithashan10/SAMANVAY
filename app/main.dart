@@ -25,6 +25,7 @@ import 'samanvay_ai_chat_page.dart';
 import 'coordinated_work_calendar_page.dart';
 import 'public_transparency_dashboard_page.dart';
 import 'lpu_demo_app.dart';
+import 'samanvay_design.dart';
 
 const String supabaseUrl =
     String.fromEnvironment('SUPABASE_URL');
@@ -52,7 +53,7 @@ Future<void> main() async {
 
 Future<void> _initialiseSamanvayServices() async {
   final preferences = await SharedPreferences.getInstance();
-  samanvayThemeMode.value = preferences.getBool('samanvay_light_mode') == true
+  samanvayThemeMode.value = preferences.getBool('samanvay_light_mode') != false
       ? ThemeMode.light
       : ThemeMode.dark;
 
@@ -112,40 +113,39 @@ Future<List<Map<String, dynamic>>> fetchAllRows(
   return rows;
 }
 
-final ValueNotifier<ThemeMode> samanvayThemeMode = ValueNotifier(ThemeMode.dark);
+final ValueNotifier<ThemeMode> samanvayThemeMode = ValueNotifier(ThemeMode.light);
 
 
 bool get _usesLegacyLightPalette => samanvayThemeMode.value == ThemeMode.light;
 
-// Shared semantic colours. These values reproduce Alpha 0.2's light-mode
-// navy / teal / soft-grey palette while keeping the current dark palette.
+// Shared semantic colours — SAMANVAY field-journal palette.
+// Light is the warm-paper "cream world"; dark is the near-black "ink world".
+// Names are kept from the legacy palette so every existing screen follows.
 Color get navy => _usesLegacyLightPalette
-    ? const Color(0xFF10243A)
-    : const Color(0xFF08182B);
+    ? const Color(0xFF4A4641) // stone: bands and headers on cream
+    : const Color(0xFF1C1B19); // ink band
 Color get teal => _usesLegacyLightPalette
-    ? const Color(0xFF13A89E)
-    : const Color(0xFF20D6C2);
-Color get electricBlue => _usesLegacyLightPalette
-    ? const Color(0xFF13A89E)
-    : const Color(0xFF3D83F6);
+    ? const Color(0xFF234128) // forest
+    : const Color(0xFF8BC194); // lifted sage
+Color get electricBlue => const Color(0xFF558CB3); // action blue — primary actions only
 Color get cyanAccent => _usesLegacyLightPalette
-    ? const Color(0xFF13A89E)
-    : const Color(0xFF35D7F2);
+    ? const Color(0xFFAC731E) // gold
+    : const Color(0xFFDDAB61); // gold soft
 Color get panelNavy => _usesLegacyLightPalette
     ? const Color(0xFFFFFFFF)
-    : const Color(0xFF102842);
+    : const Color(0xFF272521);
 Color get background => _usesLegacyLightPalette
-    ? const Color(0xFFF4F7FA)
-    : const Color(0xFF061426);
+    ? const Color(0xFFF7F1E8) // canvas
+    : const Color(0xFF1C1B19);
 Color get ink => _usesLegacyLightPalette
-    ? const Color(0xFF000000)
-    : const Color(0xFFE8F1FA);
+    ? const Color(0xFF1D1B19)
+    : const Color(0xFFF7F1E8);
 Color get mutedInk => _usesLegacyLightPalette
-    ? const Color(0xFF000000)
-    : const Color(0xFFA6B9CA);
+    ? const Color(0xFF4A4641)
+    : const Color(0xFFAAA59E);
 Color get borderColor => _usesLegacyLightPalette
-    ? const Color(0xFFDCE5EC)
-    : const Color(0xFF25415E);
+    ? const Color(0xFFE1DBD3)
+    : const Color(0xFF35322E);
 
 String _displayRoleName(String role) => switch (role) {
   'requester' => 'Citizen',
@@ -309,175 +309,8 @@ class SamanvayApp extends StatelessWidget {
     return ValueListenableBuilder<ThemeMode>(
       valueListenable: samanvayThemeMode,
       builder: (context, mode, _) {
-          final theme = ThemeData(
-            useMaterial3: true,
-            brightness: Brightness.dark,
-            scaffoldBackgroundColor: background,
-            colorScheme: ColorScheme.fromSeed(
-              seedColor: electricBlue,
-              brightness: Brightness.dark,
-              primary: electricBlue,
-              secondary: cyanAccent,
-              surface: panelNavy,
-            ),
-            fontFamily: 'Inter',
-            appBarTheme: AppBarTheme(
-              backgroundColor: navy,
-              foregroundColor: Colors.white,
-              elevation: 0,
-              titleTextStyle: GoogleFonts.spaceGrotesk(
-                color: Colors.white, fontSize: 19, fontWeight: FontWeight.w700),
-            ),
-            navigationBarTheme: NavigationBarThemeData(
-              backgroundColor: navy,
-              indicatorColor: cyanAccent.withValues(alpha: 0.18),
-              labelTextStyle: WidgetStateProperty.resolveWith<TextStyle>((states) =>
-                GoogleFonts.inter(
-                  color: states.contains(WidgetState.selected) ? cyanAccent : mutedInk,
-                  fontSize: 10,
-                  fontWeight: states.contains(WidgetState.selected) ? FontWeight.w800 : FontWeight.w600,
-                )),
-            ),
-            inputDecorationTheme: InputDecorationTheme(
-              filled: true,
-              fillColor: panelNavy,
-              contentPadding: const EdgeInsets.symmetric(horizontal: 15, vertical: 14),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(14),
-                borderSide: BorderSide(color: borderColor),
-              ),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(14),
-                borderSide: BorderSide(color: borderColor),
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(14),
-                borderSide:  BorderSide(color: cyanAccent, width: 1.7),
-              ),
-              labelStyle:  TextStyle(color: mutedInk),
-              hintStyle:  TextStyle(color: mutedInk),
-            ),
-            filledButtonTheme: FilledButtonThemeData(
-              style: FilledButton.styleFrom(
-                backgroundColor: electricBlue,
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(13)),
-                padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 13),
-              ),
-            ),
-            cardTheme: CardThemeData(
-              color: panelNavy, elevation: 0, margin: EdgeInsets.zero,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(18),
-                side: BorderSide(color: borderColor)),
-            ),
-          );
-          final lightTheme = ThemeData(
-            useMaterial3: true,
-            brightness: Brightness.light,
-            scaffoldBackgroundColor: background,
-            colorScheme: ColorScheme.fromSeed(
-              seedColor: teal,
-              brightness: Brightness.light,
-              primary: teal,
-              secondary: teal,
-              surface: Colors.white,
-              onSurface: navy,
-            ),
-            fontFamily: 'Inter',
-            textTheme: const TextTheme(
-              bodyLarge: TextStyle(color: Colors.black, fontWeight: FontWeight.w700),
-              bodyMedium: TextStyle(color: Colors.black, fontWeight: FontWeight.w700),
-              bodySmall: TextStyle(color: Colors.black, fontWeight: FontWeight.w700),
-              labelLarge: TextStyle(color: Colors.black, fontWeight: FontWeight.w800),
-              labelMedium: TextStyle(color: Colors.black, fontWeight: FontWeight.w800),
-              labelSmall: TextStyle(color: Colors.black, fontWeight: FontWeight.w700),
-              titleLarge: TextStyle(color: Colors.black, fontWeight: FontWeight.w900),
-              titleMedium: TextStyle(color: Colors.black, fontWeight: FontWeight.w800),
-              titleSmall: TextStyle(color: Colors.black, fontWeight: FontWeight.w800),
-            ),
-            appBarTheme: AppBarTheme(
-              backgroundColor: navy,
-              foregroundColor: Colors.white,
-              elevation: 0,
-              titleTextStyle: GoogleFonts.spaceGrotesk(
-                color: Colors.white, fontSize: 19, fontWeight: FontWeight.w700),
-            ),
-            cardTheme: CardThemeData(
-              color: Colors.white,
-              elevation: 1,
-              margin: EdgeInsets.zero,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
-                side: BorderSide(color: borderColor),
-              ),
-            ),
-            navigationBarTheme: NavigationBarThemeData(
-              backgroundColor: Colors.white,
-              indicatorColor: const Color(0xFFDCEFEB),
-              labelTextStyle: WidgetStateProperty.resolveWith<TextStyle>((states) =>
-                GoogleFonts.inter(
-                  color: states.contains(WidgetState.selected) ? teal : mutedInk,
-                  fontSize: 10,
-                  fontWeight: states.contains(WidgetState.selected) ? FontWeight.w800 : FontWeight.w600,
-                )),
-            ),
-            navigationRailTheme: NavigationRailThemeData(
-              backgroundColor: Colors.white,
-              indicatorColor: const Color(0xFFDCEFEB),
-              selectedIconTheme: IconThemeData(color: teal),
-              unselectedIconTheme: IconThemeData(color: mutedInk),
-              selectedLabelTextStyle: TextStyle(color: teal, fontWeight: FontWeight.w800, fontSize: 10),
-              unselectedLabelTextStyle: TextStyle(color: mutedInk, fontSize: 10),
-            ),
-            inputDecorationTheme: InputDecorationTheme(
-              filled: true,
-              fillColor: Colors.white,
-              contentPadding: const EdgeInsets.symmetric(horizontal: 15, vertical: 14),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(14),
-                borderSide: BorderSide(color: borderColor),
-              ),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(14),
-                borderSide: BorderSide(color: borderColor),
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(14),
-                borderSide: BorderSide(color: teal, width: 1.7),
-              ),
-              labelStyle: TextStyle(color: mutedInk),
-              hintStyle: TextStyle(color: mutedInk),
-            ),
-            filledButtonTheme: FilledButtonThemeData(
-              style: FilledButton.styleFrom(
-                backgroundColor: teal,
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(13)),
-                padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 13),
-              ),
-            ),
-            outlinedButtonTheme: OutlinedButtonThemeData(
-              style: OutlinedButton.styleFrom(
-                foregroundColor: teal,
-                side: BorderSide(color: teal.withValues(alpha: .65)),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(13)),
-              ),
-            ),
-            dialogTheme: const DialogThemeData(
-              backgroundColor: Colors.white,
-              surfaceTintColor: Colors.transparent,
-            ),
-            bottomSheetTheme: const BottomSheetThemeData(
-              backgroundColor: Colors.white,
-              surfaceTintColor: Colors.transparent,
-            ),
-            dividerTheme: DividerThemeData(color: borderColor, thickness: 1),
-            snackBarTheme: SnackBarThemeData(
-              backgroundColor: navy,
-              contentTextStyle: const TextStyle(color: Colors.white),
-            ),
-          );
+          final theme = samanvayAppTheme(dark: true);
+          final lightTheme = samanvayAppTheme(dark: false);
       return MaterialApp(
         title: 'SAMANVAY | Towards Our Development',
         debugShowCheckedModeBanner: false,
@@ -540,8 +373,8 @@ class _AnimatedDevelopmentTaglineState extends State<_AnimatedDevelopmentTagline
         begin: Alignment(-1 + 2 * controller.value, 0),
         end: Alignment(1 + 2 * controller.value, 0),
         colors: _usesLegacyLightPalette
-          ? const [Color(0xFF13A89E), Color(0xFF10243A), Color(0xFF3D83F6)]
-          : const [Color(0xFF20D6C2), Color(0xFFB9E8FF), Color(0xFF3D83F6)],
+          ? const [Color(0xFF417A4B), Color(0xFF282622), Color(0xFF73A0C0)]
+          : const [Color(0xFF56A062), Color(0xFFECDFCC), Color(0xFF73A0C0)],
       ).createShader(bounds),
       child: Text('TOWARDS OUR DEVELOPMENT 📈', textAlign: TextAlign.center,
         style: GoogleFonts.inter(fontSize: widget.fontSize, fontWeight: FontWeight.w900, letterSpacing: .45)),
@@ -568,7 +401,7 @@ class _SamanvaySplashReveal extends StatelessWidget {
         math.min(MediaQuery.sizeOf(context).width, MediaQuery.sizeOf(context).height) * .82,
       );
       return Scaffold(
-        backgroundColor: const Color(0xFF030D1C),
+        backgroundColor: const Color(0xFF11100E),
         body: Stack(
           fit: StackFit.expand,
           children: [
@@ -577,7 +410,7 @@ class _SamanvaySplashReveal extends StatelessWidget {
                 gradient: RadialGradient(
                   center: Alignment(0, -.12),
                   radius: .9,
-                  colors: [Color(0xFF173B67), Color(0xFF07182D), Color(0xFF020916)],
+                  colors: [Color(0xFF43403B), Color(0xFF1C1A18), Color(0xFF0D0C0B)],
                   stops: [0, .58, 1],
                 ),
               ),
@@ -626,15 +459,15 @@ class _AnimatedLogoColourLinePainter extends CustomPainter {
     canvas.drawPath(
       path,
       Paint()
-        ..color = const Color(0xFF4B9EDB).withValues(alpha: .20)
+        ..color = const Color(0xFF6A9ABC).withValues(alpha: .20)
         ..style = PaintingStyle.stroke
         ..strokeWidth = 1.5,
     );
 
     const colors = [
-      Color(0xFFFF9933),
+      Color(0xFFE0A752),
       Color(0xFFFFFFFF),
-      Color(0xFF138808),
+      Color(0xFF325E3A),
     ];
 
     for (var i = 0; i < colors.length; i++) {
@@ -853,8 +686,8 @@ class _SamanvayOpeningScreen extends StatelessWidget {
                           background.withValues(alpha: _usesLegacyLightPalette ? .02 : .02),
                           background.withValues(alpha: _usesLegacyLightPalette ? .25 : .32),
                           (_usesLegacyLightPalette
-                                  ? const Color(0xFFEAF4F8)
-                                  : const Color(0xFF020916))
+                                  ? const Color(0xFFF7F2EB)
+                                  : const Color(0xFF0D0C0B))
                               .withValues(alpha: _usesLegacyLightPalette ? .80 : .78),
                         ],
                         stops: const [0, 0.43, 0.76, 1],
@@ -919,17 +752,11 @@ class _SamanvayOpeningScreen extends StatelessWidget {
                                         child: DecoratedBox(
                                           decoration: BoxDecoration(
                                             borderRadius: BorderRadius.circular(30),
-                                            gradient: const LinearGradient(
-                                              colors: [
-                                                Color(0xFF13B9F4),
-                                                Color(0xFF5365F5),
-                                                Color(0xFF843CF4),
-                                              ],
-                                            ),
+                                            color: SvColors.primary,
                                             boxShadow: [
                                               BoxShadow(
-                                                color: const Color(0xFF4478F8)
-                                                    .withValues(alpha: 0.30 + 0.16 * math.sin(ambient * math.pi * 2).abs()),
+                                                color: SvColors.primary
+                                                    .withValues(alpha: 0.18 + 0.10 * math.sin(ambient * math.pi * 2).abs()),
                                                 blurRadius: 22,
                                                 spreadRadius: 1,
                                               ),
@@ -985,8 +812,8 @@ class _SamanvayOpeningScreen extends StatelessWidget {
                                       startupError!,
                                       textAlign: TextAlign.center,
                                       style: const TextStyle(
-                                        color: Color(0xFFFFB9A9),
-                                        fontSize: 10,
+                                        color: Color(0xFFECC3BC),
+                                        fontSize: 12,
                                         height: 1.35,
                                       ),
                                     ),
@@ -998,8 +825,8 @@ class _SamanvayOpeningScreen extends StatelessWidget {
                                       'SMART LIVING  •  URBAN INTELLIGENCE',
                                       textAlign: TextAlign.center,
                                       style: GoogleFonts.inter(
-                                        color: const Color(0xFF7893AA),
-                                        fontSize: 8,
+                                        color: const Color(0xFF999389),
+                                        fontSize: 11,
                                         fontWeight: FontWeight.w600,
                                         letterSpacing: 1.65,
                                       ),
@@ -1072,14 +899,14 @@ class _SamanvayOpeningCityPainter extends CustomPainter {
     final alpha = Curves.easeOutCubic.transform(raw);
     final palette = lightMode
         ? <Color>[
-            const Color(0xFFF8FDFF),
-            const Color(0xFFD7EAF3),
-            const Color(0xFFB4CFDD),
+            const Color(0xFFFDFCFA),
+            const Color(0xFFF1E7D9),
+            const Color(0xFFD2CABF),
           ]
         : <Color>[
-            const Color(0xFFB9E3F0),
-            const Color(0xFF315A78),
-            const Color(0xFF102A43),
+            const Color(0xFFDCD6CD),
+            const Color(0xFF345A75),
+            const Color(0xFF2C2A27),
           ];
     final faceTop = palette[0].withValues(alpha: alpha);
     final faceMid = palette[1].withValues(alpha: alpha);
@@ -1093,7 +920,7 @@ class _SamanvayOpeningCityPainter extends CustomPainter {
         height: math.max(4.0, width * .22).toDouble(),
       ),
       Paint()
-        ..color = const Color(0xFF05243B).withValues(alpha: .11 * alpha)
+        ..color = const Color(0xFF22201E).withValues(alpha: .11 * alpha)
         ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 10),
     );
 
@@ -1111,8 +938,8 @@ class _SamanvayOpeningCityPainter extends CustomPainter {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: lightMode
-              ? const [Color(0xFF8EAEBE), Color(0xFF64899F)]
-              : const [Color(0xFF214A67), Color(0xFF0A2138)],
+              ? const [Color(0xFFACA7A0), Color(0xFF8A8379)]
+              : const [Color(0xFF49453F), Color(0xFF23211F)],
         ).createShader(Rect.fromLTWH(x + width, top, depth, height)),
     );
     final roof = Path()
@@ -1126,8 +953,8 @@ class _SamanvayOpeningCityPainter extends CustomPainter {
       Paint()
         ..shader = LinearGradient(
           colors: lightMode
-              ? const [Color(0xFFFFFFFF), Color(0xFFB7D5E3)]
-              : const [Color(0xFFD8F5FB), Color(0xFF4F83A3)],
+              ? const [Color(0xFFFFFFFF), Color(0xFFD6CFC5)]
+              : const [Color(0xFFF3EBE0), Color(0xFF4B81A7)],
         ).createShader(Rect.fromLTWH(x, top - depth * .5, width + depth, depth)),
     );
 
@@ -1145,13 +972,13 @@ class _SamanvayOpeningCityPainter extends CustomPainter {
     canvas.drawRect(
       Rect.fromLTWH(x + width * .08, top, width * .055, height),
       Paint()
-        ..color = (lightMode ? Colors.white : const Color(0xFFBDF5FF))
+        ..color = (lightMode ? Colors.white : const Color(0xFFD4E8D7))
             .withValues(alpha: .30 * alpha),
     );
     canvas.drawRect(
       Rect.fromLTWH(x + width * .88, top, width * .025, height),
       Paint()
-        ..color = (lightMode ? const Color(0xFF6B9DB2) : const Color(0xFF0B1D31))
+        ..color = (lightMode ? const Color(0xFF6496B9) : const Color(0xFF201E1C))
             .withValues(alpha: .30 * alpha),
     );
 
@@ -1170,7 +997,7 @@ class _SamanvayOpeningCityPainter extends CustomPainter {
           Offset(x + width * .07, y - height / floors * .5),
           Offset(x + width * .93, y - height / floors * .5),
           Paint()
-            ..color = (lightMode ? const Color(0xFF6F9EAF) : Colors.white)
+            ..color = (lightMode ? const Color(0xFF979187) : Colors.white)
                 .withValues(alpha: .10 * rowProgress),
         );
       }
@@ -1188,8 +1015,8 @@ class _SamanvayOpeningCityPainter extends CustomPainter {
             RRect.fromRectAndRadius(windowRect.inflate(1.2), const Radius.circular(1)),
             Paint()
               ..color = (lightMode
-                      ? const Color(0xFF31A8C0)
-                      : const Color(0xFF5CE8F0))
+                      ? const Color(0xFF4B80A6)
+                      : const Color(0xFF8BC194))
                   .withValues(alpha: (.08 + pulse * .12) * rowProgress)
               ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 3),
           );
@@ -1198,8 +1025,8 @@ class _SamanvayOpeningCityPainter extends CustomPainter {
           RRect.fromRectAndRadius(windowRect, const Radius.circular(1)),
           Paint()
             ..color = (isLit
-                    ? (lightMode ? const Color(0xFF3E8EA9) : const Color(0xFF8AF0F4))
-                    : (lightMode ? const Color(0xFF8FAFBD) : const Color(0xFF385B72)))
+                    ? (lightMode ? const Color(0xFF487B9F) : const Color(0xFFACD2B2))
+                    : (lightMode ? const Color(0xFFACA7A0) : const Color(0xFF355A75)))
                 .withValues(alpha: (isLit ? .72 : .24) * rowProgress),
         );
       }
@@ -1207,7 +1034,7 @@ class _SamanvayOpeningCityPainter extends CustomPainter {
 
     // Individual roof profiles: parapet, stepped crown, mechanical penthouse or mast.
     final roofPaint = Paint()
-      ..color = (lightMode ? const Color(0xFF6D94A8) : const Color(0xFF79CBE2))
+      ..color = (lightMode ? const Color(0xFF938C82) : const Color(0xFF8FB3CC))
           .withValues(alpha: .78 * alpha)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1.15;
@@ -1255,7 +1082,7 @@ class _SamanvayOpeningCityPainter extends CustomPainter {
         Offset(x + width * .5, top - width * .25 * reveal),
         2.3,
         Paint()
-          ..color = (lightMode ? const Color(0xFFE7A642) : const Color(0xFF50E9F0))
+          ..color = (lightMode ? const Color(0xFFDFA34A) : const Color(0xFF84BC8D))
               .withValues(alpha: .85 * alpha)
           ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4),
       );
@@ -1266,7 +1093,7 @@ class _SamanvayOpeningCityPainter extends CustomPainter {
       Offset(x, top + height * .05),
       Offset(x, horizon),
       Paint()
-        ..color = (lightMode ? Colors.white : const Color(0xFF8BEAF1))
+        ..color = (lightMode ? Colors.white : const Color(0xFFAAD2B1))
             .withValues(alpha: .36 * alpha)
         ..strokeWidth = 1.2,
     );
@@ -1297,7 +1124,7 @@ class _SamanvayOpeningCityPainter extends CustomPainter {
     canvas.drawPath(
       visible,
       Paint()
-        ..color = const Color(0xFF00111F).withValues(alpha: lightMode ? .13 : .84)
+        ..color = const Color(0xFF11100E).withValues(alpha: lightMode ? .13 : .84)
         ..style = PaintingStyle.stroke
         ..strokeWidth = thickness + 8
         ..strokeCap = StrokeCap.round,
@@ -1344,16 +1171,16 @@ class _SamanvayOpeningCityPainter extends CustomPainter {
     final groundTop = size.height * .83;
     final skyColors = lightMode
         ? const [
-            Color(0xFFF4FAFD),
-            Color(0xFFDCECF4),
-            Color(0xFFC5DCE8),
-            Color(0xFFECF4F7),
+            Color(0xFFFBF9F6),
+            Color(0xFFF2EADE),
+            Color(0xFFDED8CF),
+            Color(0xFFF8F3EB),
           ]
         : const [
-            Color(0xFF041326),
-            Color(0xFF0A2948),
-            Color(0xFF102F4A),
-            Color(0xFF061526),
+            Color(0xFF161514),
+            Color(0xFF2C2A26),
+            Color(0xFF302E2A),
+            Color(0xFF181614),
           ];
     canvas.drawRect(
       Offset.zero & size,
@@ -1376,7 +1203,7 @@ class _SamanvayOpeningCityPainter extends CustomPainter {
           radius: .82,
           colors: lightMode
               ? const [Color(0xB4FFFFFF), Color(0x16FFFFFF), Color(0x00FFFFFF)]
-              : const [Color(0x4439D2F0), Color(0x1438B6DB), Color(0x0004182A)],
+              : const [Color(0x4475B47F), Color(0x145D91B6), Color(0x00191715)],
         ).createShader(Offset.zero & size),
     );
     canvas.drawCircle(
@@ -1386,7 +1213,7 @@ class _SamanvayOpeningCityPainter extends CustomPainter {
         ..shader = RadialGradient(
           colors: lightMode
               ? const [Color(0x55FFFFFF), Color(0x00FFFFFF)]
-              : const [Color(0x3336C6E8), Color(0x0036C6E8)],
+              : const [Color(0x336496BA), Color(0x006496BA)],
         ).createShader(Rect.fromCircle(center: bloomCenter, radius: size.width * .52)),
     );
 
@@ -1397,7 +1224,7 @@ class _SamanvayOpeningCityPainter extends CustomPainter {
         Offset(x, horizon - size.height * .48),
         Offset(x + (x - size.width * .5) * .10, groundTop),
         Paint()
-          ..color = (lightMode ? const Color(0xFF7A9DAE) : const Color(0xFF4B7F9C))
+          ..color = (lightMode ? const Color(0xFF9B958D) : const Color(0xFF487B9F))
               .withValues(alpha: lightMode ? .045 : .10),
       );
     }
@@ -1428,7 +1255,7 @@ class _SamanvayOpeningCityPainter extends CustomPainter {
       canvas.drawRect(
         rect,
         Paint()
-          ..color = (lightMode ? const Color(0xFFB5C9D3) : const Color(0xFF1C405B))
+          ..color = (lightMode ? const Color(0xFFCFC6B9) : const Color(0xFF403C37))
               .withValues(alpha: .24 * fade),
       );
     }
@@ -1469,14 +1296,14 @@ class _SamanvayOpeningCityPainter extends CustomPainter {
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
           colors: lightMode
-              ? const [Color(0xFF647D8D), Color(0xFF314C60), Color(0xFF213A4E)]
-              : const [Color(0xFF22394D), Color(0xFF0B1F32), Color(0xFF061626)],
+              ? const [Color(0xFF817A70), Color(0xFF4E4A43), Color(0xFF3B3834)]
+              : const [Color(0xFF3B3834), Color(0xFF211F1C), Color(0xFF181614)],
         ).createShader(Rect.fromLTWH(0, roadTop, size.width, roadBottom - roadTop)),
     );
     canvas.drawPath(
       road,
       Paint()
-        ..color = (lightMode ? const Color(0xFF8BAEBD) : const Color(0xFF63CFE1))
+        ..color = (lightMode ? const Color(0xFFAAA59E) : const Color(0xFF86BE8F))
             .withValues(alpha: .72)
         ..style = PaintingStyle.stroke
         ..strokeWidth = 1.4,
@@ -1489,7 +1316,7 @@ class _SamanvayOpeningCityPainter extends CustomPainter {
         Offset(size.width * .5 - half, y),
         Offset(size.width * .5 + half, y),
         Paint()
-          ..color = const Color(0xFFFFCB69).withValues(alpha: .72)
+          ..color = const Color(0xFFE8BE7F).withValues(alpha: .72)
           ..strokeWidth = 1.4 + t * .8,
       );
     }
@@ -1519,8 +1346,8 @@ class _SamanvayOpeningCityPainter extends CustomPainter {
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
           colors: lightMode
-              ? const [Color(0xFFE4E8E4), Color(0xFFC7D7D4), Color(0xFFB4C9C9)]
-              : const [Color(0xFF203D4E), Color(0xFF102A3D), Color(0xFF071B2D)],
+              ? const [Color(0xFFF1E8DB), Color(0xFFC1DDC5), Color(0xFFABD2B2)]
+              : const [Color(0xFF3B3833), Color(0xFF292724), Color(0xFF1C1A18)],
         ).createShader(Rect.fromLTWH(0, groundTop, size.width, size.height - groundTop)),
     );
     for (int layer = 0; layer < 4; layer++) {
@@ -1529,15 +1356,15 @@ class _SamanvayOpeningCityPainter extends CustomPainter {
         Offset(0, y),
         Offset(size.width, y),
         Paint()
-          ..color = (lightMode ? const Color(0xFF6B8991) : const Color(0xFF9AB7C5))
+          ..color = (lightMode ? const Color(0xFF878075) : const Color(0xFFB5B1AA))
               .withValues(alpha: .17)
           ..strokeWidth = 1,
       );
     }
-    _drawConduit(canvas, size, const Color(0xFF1AAEE5), groundTop + size.height * .035, .00, 5.0);
-    _drawConduit(canvas, size, const Color(0xFFF49A36), groundTop + size.height * .105, .26, 4.7);
-    _drawConduit(canvas, size, const Color(0xFF18B987), groundTop + size.height * .175, .51, 4.2);
-    _drawConduit(canvas, size, const Color(0xFFA2B5C6), groundTop + size.height * .235, .74, 3.3);
+    _drawConduit(canvas, size, const Color(0xFF4F88B0), groundTop + size.height * .035, .00, 5.0);
+    _drawConduit(canvas, size, const Color(0xFFDFA44B), groundTop + size.height * .105, .26, 4.7);
+    _drawConduit(canvas, size, const Color(0xFF498854), groundTop + size.height * .175, .51, 4.2);
+    _drawConduit(canvas, size, const Color(0xFFC1B7A6), groundTop + size.height * .235, .74, 3.3);
 
     // Park islands and trees add organic scale to the otherwise geometric city.
     final parkY = horizon + size.height * .004;
@@ -1550,7 +1377,7 @@ class _SamanvayOpeningCityPainter extends CustomPainter {
         Offset(px, parkY),
         Offset(px, parkY - height * reveal),
         Paint()
-          ..color = const Color(0xFF795B3D).withValues(alpha: .8 * reveal)
+          ..color = const Color(0xFF79613D).withValues(alpha: .8 * reveal)
           ..strokeWidth = 2.2,
       );
       for (int leaf = 0; leaf < 4; leaf++) {
@@ -1564,8 +1391,8 @@ class _SamanvayOpeningCityPainter extends CustomPainter {
           height * (.19 + .015 * (leaf % 2)) * reveal,
           Paint()
             ..color = (lightMode
-                    ? const Color(0xFF3F9E78)
-                    : const Color(0xFF259D79))
+                    ? const Color(0xFF4D9058)
+                    : const Color(0xFF447E4E))
                 .withValues(alpha: .82 * reveal),
         );
       }
@@ -1573,7 +1400,7 @@ class _SamanvayOpeningCityPainter extends CustomPainter {
         Offset(px - height * .06, parkY - height * .88 * reveal),
         height * .22 * reveal,
         Paint()
-          ..color = const Color(0xFF53C78B).withValues(alpha: .82 * reveal),
+          ..color = const Color(0xFF6BAF76).withValues(alpha: .82 * reveal),
       );
     }
 
@@ -1586,7 +1413,7 @@ class _SamanvayOpeningCityPainter extends CustomPainter {
         Offset(x, y),
         1.0 + pulse,
         Paint()
-          ..color = (lightMode ? const Color(0xFF398BA6) : const Color(0xFF8AE9F3))
+          ..color = (lightMode ? const Color(0xFF45779A) : const Color(0xFFABD2B2))
               .withValues(alpha: pulse * .28),
       );
     }
@@ -1976,11 +1803,11 @@ class _OperationalPortalState extends State<_OperationalPortal> {
         icon: Icon(icon, size: 15),
         label: Text(label),
         style: OutlinedButton.styleFrom(
-          foregroundColor: _usesLegacyLightPalette ? teal : const Color(0xFFB5F2E7),
-          side: BorderSide(color: _usesLegacyLightPalette ? teal.withValues(alpha: .55) : const Color(0x6647BDB3)),
+          foregroundColor: _usesLegacyLightPalette ? teal : const Color(0xFFC6E1CB),
+          side: BorderSide(color: _usesLegacyLightPalette ? teal.withValues(alpha: .55) : const Color(0x665CA768)),
           backgroundColor: panelNavy,
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
-          textStyle: const TextStyle(fontSize: 10, fontWeight: FontWeight.w800),
+          textStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(11)),
         ),
       ),
@@ -2211,7 +2038,7 @@ class _OperationalPortalState extends State<_OperationalPortal> {
             const SizedBox(height: 5),
              Text(
               'Rule-based advisory: different infrastructure domains within 100 m with overlapping planned dates. This is not a verified underground-utility intersection map; review every match before coordinating.',
-              style: TextStyle(fontSize: 11, color: mutedInk),
+              style: TextStyle(fontSize: 12, color: mutedInk),
             ),
             const SizedBox(height: 10),
             if (candidates.isEmpty)
@@ -2241,9 +2068,9 @@ class _OperationalPortalState extends State<_OperationalPortal> {
                       style:  TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: ink)),
                     const SizedBox(height: 4),
                     Text('$metres m apart · overlapping dates: ${start.day.toString().padLeft(2, '0')}/${start.month.toString().padLeft(2, '0')}/${start.year}–${end.day.toString().padLeft(2, '0')}/${end.month.toString().padLeft(2, '0')}/${end.year}',
-                      style:  TextStyle(fontSize: 10, color: mutedInk)),
+                      style:  TextStyle(fontSize: 12, color: mutedInk)),
                     Text('Suggested action: coordinator review for possible joint execution.',
-                      style: TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: teal)),
+                      style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: teal)),
                   ]),
                 );
               }),
@@ -2295,7 +2122,7 @@ class _OperationalPortalState extends State<_OperationalPortal> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(children: [
-              const Icon(Icons.hub_outlined, color: Color(0xFF20B7A4)),
+              const Icon(Icons.hub_outlined, color: Color(0xFF4B8C56)),
               const SizedBox(width: 9),
                Expanded(child: Text('Department coordination & activity',
                 style: TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: ink))),
@@ -2304,7 +2131,7 @@ class _OperationalPortalState extends State<_OperationalPortal> {
             const SizedBox(height: 5),
             Text(
               '$jointCases case(s) have review assignments from at least two departments.',
-              style:  TextStyle(fontSize: 11, color: mutedInk),
+              style:  TextStyle(fontSize: 12, color: mutedInk),
             ),
             const SizedBox(height: 13),
             if (workload.isEmpty)
@@ -2324,9 +2151,9 @@ class _OperationalPortalState extends State<_OperationalPortal> {
                       Row(children: [
                         Expanded(child: Text(item['name'].toString(),
                           maxLines: 1, overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700))),
+                          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700))),
                         Text('$count reviews',
-                          style:  TextStyle(fontSize: 10, color: mutedInk)),
+                          style:  TextStyle(fontSize: 12, color: mutedInk)),
                       ]),
                       const SizedBox(height: 6),
                       ClipRRect(
@@ -2334,8 +2161,8 @@ class _OperationalPortalState extends State<_OperationalPortal> {
                         child: LinearProgressIndicator(
                           value: ratio,
                           minHeight: 7,
-                          backgroundColor: const Color(0xFF1C354A),
-                          valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF20B7A4)),
+                          backgroundColor: const Color(0xFF37342F),
+                          valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF4B8C56)),
                         ),
                       ),
                     ],
@@ -2344,7 +2171,7 @@ class _OperationalPortalState extends State<_OperationalPortal> {
               }),
              Text(
               'Bars compare review counts within the currently loaded records; they are not performance ratings.',
-              style: TextStyle(fontSize: 10, color: mutedInk, height: 1.35),
+              style: TextStyle(fontSize: 12, color: mutedInk, height: 1.35),
             ),
           ],
         ),
@@ -2384,17 +2211,17 @@ class _OperationalPortalState extends State<_OperationalPortal> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(children: [
-              const Icon(Icons.route_outlined, color: Color(0xFF20B7A4)),
+              const Icon(Icons.route_outlined, color: Color(0xFF4B8C56)),
               const SizedBox(width: 9),
                Expanded(child: Text('Clearance request workflow',
                 style: TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: ink))),
               const Text('5 STEPS',
-                style: TextStyle(fontSize: 9, fontWeight: FontWeight.w900, color: Color(0xFF20B7A4))),
+                style: TextStyle(fontSize: 11, fontWeight: FontWeight.w900, color: Color(0xFF4B8C56))),
             ]),
             const SizedBox(height: 5),
              Text(
               'Reference lifecycle. A step is complete only when the corresponding case, approval or verified GIS record exists.',
-              style: TextStyle(fontSize: 11, color: mutedInk, height: 1.35),
+              style: TextStyle(fontSize: 12, color: mutedInk, height: 1.35),
             ),
             const SizedBox(height: 14),
             SingleChildScrollView(
@@ -2417,18 +2244,18 @@ class _OperationalPortalState extends State<_OperationalPortal> {
                             width: 28, height: 28,
                             alignment: Alignment.center,
                             decoration: const BoxDecoration(
-                              color: Color(0x2231C7B0), shape: BoxShape.circle),
+                              color: Color(0x2257A163), shape: BoxShape.circle),
                             child: Text(steps[index].$1,
-                              style: const TextStyle(fontSize: 10,
-                                fontWeight: FontWeight.w900, color: Color(0xFF73E2D2))),
+                              style: const TextStyle(fontSize: 12,
+                                fontWeight: FontWeight.w900, color: Color(0xFF91C49A))),
                           ),
                           const SizedBox(height: 9),
                           Text(steps[index].$2,
-                            style: const TextStyle(fontSize: 11,
+                            style: const TextStyle(fontSize: 12,
                               fontWeight: FontWeight.w800, color: Colors.white)),
                           const SizedBox(height: 5),
                           Text(steps[index].$3,
-                            style: TextStyle(fontSize: 10,
+                            style: TextStyle(fontSize: 12,
                               color: mutedInk, height: 1.35)),
                         ],
                       ),
@@ -2437,7 +2264,7 @@ class _OperationalPortalState extends State<_OperationalPortal> {
                       const Padding(
                         padding: EdgeInsets.symmetric(horizontal: 5),
                         child: Icon(Icons.arrow_forward_ios_rounded,
-                          size: 13, color: Color(0xFF66869B)),
+                          size: 13, color: Color(0xFF898278)),
                       ),
                   ],
                 ],
@@ -2490,9 +2317,9 @@ class _OperationalPortalState extends State<_OperationalPortal> {
                     Row(
                       children: [
                         Expanded(child: Text(label,
-                          style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w700))),
+                          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700))),
                         Text(entry.value.toString(),
-                          style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w800)),
+                          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800)),
                       ],
                     ),
                     const SizedBox(height: 5),
@@ -2501,8 +2328,8 @@ class _OperationalPortalState extends State<_OperationalPortal> {
                       child: LinearProgressIndicator(
                         value: value,
                         minHeight: 7,
-                        backgroundColor: const Color(0xFFE7EDF2),
-                        valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF20AFA5)),
+                        backgroundColor: const Color(0xFFF5EEE4),
+                        valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF488753)),
                       ),
                     ),
                   ],
@@ -2532,7 +2359,7 @@ class _OperationalPortalState extends State<_OperationalPortal> {
           borderRadius: BorderRadius.circular(15),
           border: Border.all(color: borderColor),
           boxShadow: const [
-            BoxShadow(color: Color(0x0D0B1728), blurRadius: 12, offset: Offset(0, 5)),
+            BoxShadow(color: Color(0x0D1B1A18), blurRadius: 12, offset: Offset(0, 5)),
           ],
         ),
         child: Row(
@@ -2553,12 +2380,12 @@ class _OperationalPortalState extends State<_OperationalPortal> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(title.toUpperCase(), style:  TextStyle(
-                    color: mutedInk, fontSize: 9, fontWeight: FontWeight.w800, letterSpacing: 0.65)),
+                    color: mutedInk, fontSize: 11, fontWeight: FontWeight.w800, letterSpacing: 0.65)),
                   const SizedBox(height: 7),
                   Text(value, style: GoogleFonts.robotoMono(
                     color: ink, fontSize: value.length > 11 ? 14 : 22, fontWeight: FontWeight.w800)),
                   const SizedBox(height: 5),
-                  Text(note, style:  TextStyle(color: mutedInk, fontSize: 10, height: 1.35)),
+                  Text(note, style:  TextStyle(color: mutedInk, fontSize: 12, height: 1.35)),
                 ],
               ),
             ),
@@ -2609,7 +2436,7 @@ class _OperationalPortalState extends State<_OperationalPortal> {
           style: TextStyle(fontSize: 19, fontWeight: FontWeight.w800, color: Colors.white)),
         const SizedBox(height: 4),
         Text('Counts are calculated from records visible to the signed-in role.',
-          style: TextStyle(color: mutedInk, fontSize: 11)),
+          style: TextStyle(color: mutedInk, fontSize: 12)),
         const SizedBox(height: 12),
         LayoutBuilder(
           builder: (context, constraints) {
@@ -2627,19 +2454,19 @@ class _OperationalPortalState extends State<_OperationalPortal> {
                 _executiveMetricCard(
                   title: 'Active projects / cases', value: activeCases.toString(),
                   note: 'Approved or currently in progress',
-                  icon: Icons.engineering_outlined, accent: const Color(0xFF20B7A4), width: cardWidth),
+                  icon: Icons.engineering_outlined, accent: const Color(0xFF4B8C56), width: cardWidth),
                 _executiveMetricCard(
                   title: 'Pending clearances', value: pendingResponses.toString(),
                   note: 'Pending or under department review',
-                  icon: Icons.hourglass_top_rounded, accent: const Color(0xFFD9A441), width: cardWidth),
+                  icon: Icons.hourglass_top_rounded, accent: const Color(0xFFD99C41), width: cardWidth),
                 _executiveMetricCard(
                   title: 'Joint-work cases', value: multiDepartmentCases.toString(),
                   note: 'Two or more departments assigned',
-                  icon: Icons.account_tree_outlined, accent: const Color(0xFF56A6E8), width: cardWidth),
+                  icon: Icons.account_tree_outlined, accent: const Color(0xFF7BA5C3), width: cardWidth),
                 _executiveMetricCard(
                   title: 'Clashes flagged', value: conflictRequestIds.length.toString(),
                   note: 'Recorded case or review status flags',
-                  icon: Icons.warning_amber_rounded, accent: const Color(0xFFE47E63), width: cardWidth),
+                  icon: Icons.warning_amber_rounded, accent: const Color(0xFFD68071), width: cardWidth),
               ],
             );
           },
@@ -2653,16 +2480,16 @@ class _OperationalPortalState extends State<_OperationalPortal> {
     switch (status.toLowerCase()) {
       case 'approved':
       case 'completed':
-        return Colors.green;
+        return Color(0xFF3B6E44);
       case 'rejected':
-        return Colors.red;
+        return Color(0xFFB14633);
       case 'conflict_detected':
       case 'clarification_required':
       case 'under_review':
       case 'in_progress':
-        return Colors.orange;
+        return Color(0xFFAC731E);
       default:
-        return Colors.blueGrey;
+        return Color(0xFF8A8379);
     }
   }
 
@@ -2700,7 +2527,7 @@ class _OperationalPortalState extends State<_OperationalPortal> {
                       label,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
-                      style:  TextStyle(fontSize: 10, color: mutedInk),
+                      style:  TextStyle(fontSize: 12, color: mutedInk),
                     ),
                   ],
                 ),
@@ -2728,7 +2555,7 @@ class _OperationalPortalState extends State<_OperationalPortal> {
         status.replaceAll('_', ' ').toUpperCase(),
         style: TextStyle(
           color: color,
-          fontSize: 10,
+          fontSize: 12,
           fontWeight: FontWeight.bold,
         ),
       ),
@@ -2978,17 +2805,17 @@ class _OperationalPortalState extends State<_OperationalPortal> {
                     const SizedBox(height: 14),
                     const Text(
                       'SUGGESTED ROUTING',
-                      style: TextStyle(fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 1.0),
+                      style: TextStyle(fontSize: 12, fontWeight: FontWeight.w900, letterSpacing: 1.0),
                     ),
                     const SizedBox(height: 5),
                     Text(
                       'Suggestions are based on the case domain and must be confirmed by the coordinator.',
-                      style: TextStyle(fontSize: 10, color: mutedInk),
+                      style: TextStyle(fontSize: 12, color: mutedInk),
                     ),
                     const SizedBox(height: 8),
                     if (suggestedRoutes.isEmpty)
                        Text('No routing suggestions are configured. Use manual assignment.',
-                        style: TextStyle(fontSize: 11, color: mutedInk))
+                        style: TextStyle(fontSize: 12, color: mutedInk))
                     else
                       ...suggestedRoutes.map((route) {
                         final departmentId = route['department_id'].toString();
@@ -3007,7 +2834,7 @@ class _OperationalPortalState extends State<_OperationalPortal> {
                           title: Text(department['name'].toString(),
                             style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
                           subtitle: Text(isPrimary ? 'Primary suggested department' : 'Supporting department',
-                            style: const TextStyle(fontSize: 10)),
+                            style: const TextStyle(fontSize: 12)),
                           trailing: selectedDepartment == departmentId
                               ? Icon(Icons.check_circle, color: teal)
                               : TextButton(
@@ -3138,7 +2965,7 @@ class _OperationalPortalState extends State<_OperationalPortal> {
                     const SizedBox(height: 8),
                     const Text(
                       'Approval is subject to the database rule requiring every assigned department review to be approved.',
-                      style: TextStyle(fontSize: 11),
+                      style: TextStyle(fontSize: 12),
                     ),
                   ],
                 ),
@@ -3426,8 +3253,6 @@ class _OperationalPortalState extends State<_OperationalPortal> {
       backgroundColor: background,
       appBar: AppBar(
         toolbarHeight: 72,
-        backgroundColor: navy,
-        foregroundColor: Colors.white,
         elevation: 0,
         title: const Column(
           mainAxisSize: MainAxisSize.min,
@@ -3437,8 +3262,8 @@ class _OperationalPortalState extends State<_OperationalPortal> {
               style: TextStyle(fontSize: 17, fontWeight: FontWeight.w900, letterSpacing: 1.1)),
             Text('INTEGRATED INFRASTRUCTURE CLEARANCE PORTAL',
               maxLines: 1, overflow: TextOverflow.ellipsis,
-              style: TextStyle(fontSize: 8, fontWeight: FontWeight.w700,
-                letterSpacing: 0.65, color: Color(0xFF9DB6C8))),
+              style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700,
+                letterSpacing: 0.65, color: Color(0xFFB8B4AD))),
           ],
         ),
         actions: [
@@ -3448,15 +3273,15 @@ class _OperationalPortalState extends State<_OperationalPortal> {
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                 decoration: BoxDecoration(
-                  color: const Color(0x2230C6A7),
+                  color: const Color(0x2256A062),
                   borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: const Color(0x6649CDB8)),
+                  border: Border.all(color: const Color(0x6668AE74)),
                 ),
                 child: const Row(mainAxisSize: MainAxisSize.min, children: [
-                  Icon(Icons.circle, size: 7, color: Color(0xFF50D5A5)),
+                  Icon(Icons.circle, size: 7, color: Color(0xFF72B37D)),
                   SizedBox(width: 6),
-                  Text('LIVE', style: TextStyle(fontSize: 9,
-                    fontWeight: FontWeight.w900, color: Color(0xFFB9F3DC))),
+                  Text('LIVE', style: TextStyle(fontSize: 11,
+                    fontWeight: FontWeight.w900, color: Color(0xFFCAE2CE))),
                 ]),
               ),
             ),
@@ -3503,12 +3328,12 @@ class _OperationalPortalState extends State<_OperationalPortal> {
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   colors: _usesLegacyLightPalette
-                      ? [const Color(0xFFE5F4F1), const Color(0xFFF4F7FA), Colors.white]
-                      : [navy, const Color(0xFF11485A), const Color(0xFF0B5E62)],
+                      ? [const Color(0xFFE7F2E9), const Color(0xFFFBF8F3), Colors.white]
+                      : [navy, const Color(0xFF393632), const Color(0xFF26472C)],
                   begin: Alignment.topLeft, end: Alignment.bottomRight,
                 ),
                 borderRadius: BorderRadius.circular(18),
-                border: Border.all(color: const Color(0x4438B6AA)),
+                border: Border.all(color: const Color(0x44539B5F)),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -3517,11 +3342,11 @@ class _OperationalPortalState extends State<_OperationalPortal> {
                     Container(
                       width: 46, height: 46,
                       decoration: BoxDecoration(
-                        color: const Color(0x2238C7B0),
+                        color: const Color(0x2259A666),
                         borderRadius: BorderRadius.circular(13),
-                        border: Border.all(color: const Color(0x664ED1BF)),
+                        border: Border.all(color: const Color(0x666EB179)),
                       ),
-                      child: Icon(widget.icon, color: _usesLegacyLightPalette ? teal : const Color(0xFFB9F3E8), size: 25),
+                      child: Icon(widget.icon, color: _usesLegacyLightPalette ? teal : const Color(0xFFCAE2CE), size: 25),
                     ),
                     const SizedBox(width: 12),
                     Expanded(child: Column(
@@ -3532,22 +3357,22 @@ class _OperationalPortalState extends State<_OperationalPortal> {
                             fontWeight: FontWeight.w900, letterSpacing: 1.15)),
                         SizedBox(height: 3),
                         Text('INTEGRATED INFRASTRUCTURE CLEARANCE PORTAL',
-                          style: TextStyle(color: _usesLegacyLightPalette ? mutedInk : const Color(0xFFB4D1DB), fontSize: 8,
+                          style: TextStyle(color: _usesLegacyLightPalette ? mutedInk : const Color(0xFFD1C9BE), fontSize: 11,
                             fontWeight: FontWeight.w800, letterSpacing: 0.7)),
                       ],
                     )),
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                       decoration: BoxDecoration(
-                        color: const Color(0x2230C6A7),
+                        color: const Color(0x2256A062),
                         borderRadius: BorderRadius.circular(20),
-                        border: Border.all(color: const Color(0x6649CDB8)),
+                        border: Border.all(color: const Color(0x6668AE74)),
                       ),
                       child: const Row(mainAxisSize: MainAxisSize.min, children: [
-                        Icon(Icons.circle, size: 7, color: Color(0xFF50D5A5)),
+                        Icon(Icons.circle, size: 7, color: Color(0xFF72B37D)),
                         SizedBox(width: 6),
-                        Text('LIVE', style: TextStyle(fontSize: 9,
-                          fontWeight: FontWeight.w900, color: Color(0xFFB9F3DC))),
+                        Text('LIVE', style: TextStyle(fontSize: 11,
+                          fontWeight: FontWeight.w900, color: Color(0xFFCAE2CE))),
                       ]),
                     ),
                   ]),
@@ -3559,10 +3384,10 @@ class _OperationalPortalState extends State<_OperationalPortal> {
                   ),
                   const SizedBox(height: 6),
                   Text('Welcome, $displayName',
-                    style: TextStyle(color: _usesLegacyLightPalette ? mutedInk : const Color(0xFFD0E3E8), fontSize: 12)),
+                    style: TextStyle(color: _usesLegacyLightPalette ? mutedInk : const Color(0xFFECDFCC), fontSize: 12)),
                   const SizedBox(height: 8),
                   Text(widget.subtitle,
-                    style: TextStyle(color: mutedInk, fontSize: 11, height: 1.4)),
+                    style: TextStyle(color: mutedInk, fontSize: 12, height: 1.4)),
                 ],
               ),
             ),
@@ -3571,7 +3396,7 @@ class _OperationalPortalState extends State<_OperationalPortal> {
               'WORKSPACE QUICK NAVIGATION',
               style: TextStyle(
                 color: cyanAccent,
-                fontSize: 9,
+                fontSize: 11,
                 fontWeight: FontWeight.w900,
                 letterSpacing: 1.0,
               ),
@@ -3616,7 +3441,7 @@ class _OperationalPortalState extends State<_OperationalPortal> {
             const SizedBox(height: 7),
             Text(
               'Live metrics reflect records visible to this role and the current query window. They are not national totals.',
-              style: TextStyle(color: mutedInk, fontSize: 10, height: 1.35),
+              style: TextStyle(color: mutedInk, fontSize: 12, height: 1.35),
             ),
             const SizedBox(height: 16),
             SizedBox(key: _roadworksAnchor, height: 1),
@@ -3674,7 +3499,7 @@ class _OperationalPortalState extends State<_OperationalPortal> {
                 icon: const Icon(Icons.auto_awesome),
                 label: const Text('OPEN SAMANVAY AI ASSISTANT'),
                 style: FilledButton.styleFrom(
-                  backgroundColor: const Color(0xFF347FF2),
+                  backgroundColor: const Color(0xFF6A9ABC),
                   foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(vertical: 15),
                 ),
@@ -3690,7 +3515,7 @@ class _OperationalPortalState extends State<_OperationalPortal> {
                 icon: const Icon(Icons.map_outlined),
                 label: const Text('OPEN GIS OPERATIONS WORKSPACE'),
                 style: FilledButton.styleFrom(
-                  backgroundColor: const Color(0xFF0B5B67),
+                  backgroundColor: const Color(0xFF284A2E),
                   foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(vertical: 15),
                 ),
@@ -3707,7 +3532,7 @@ class _OperationalPortalState extends State<_OperationalPortal> {
                   icon: const Icon(Icons.fact_check_outlined),
                   label: const Text('SUBMIT SURVEY EVIDENCE'),
                   style: FilledButton.styleFrom(
-                    backgroundColor: const Color(0xFF0B5B67),
+                    backgroundColor: const Color(0xFF284A2E),
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(vertical: 15),
                   ),
@@ -3725,7 +3550,7 @@ class _OperationalPortalState extends State<_OperationalPortal> {
                   icon: const Icon(Icons.admin_panel_settings_outlined),
                   label: const Text('OPEN ADMINISTRATION CONSOLE'),
                   style: FilledButton.styleFrom(
-                    backgroundColor: const Color(0xFF0B5B67),
+                    backgroundColor: const Color(0xFF284A2E),
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(vertical: 15),
                   ),
@@ -3772,7 +3597,7 @@ class _OperationalPortalState extends State<_OperationalPortal> {
                       const Icon(
                         Icons.cloud_off_outlined,
                         size: 36,
-                        color: Colors.orange,
+                        color: Color(0xFFAC731E),
                       ),
                       const SizedBox(height: 10),
                       Text(
@@ -3820,7 +3645,7 @@ class _OperationalPortalState extends State<_OperationalPortal> {
                   children: [
                     Icon(
                       Icons.verified_user_outlined,
-                      color: Colors.teal,
+                      color: Color(0xFF6D675E),
                     ),
                     SizedBox(width: 10),
                     Expanded(
@@ -4325,16 +4150,16 @@ class _AuthPageState extends State<AuthPage> {
               fit: BoxFit.cover,
               alignment: Alignment.center,
             ),
-            const Positioned.fill(
+            Positioned.fill(
               child: DecoratedBox(
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
                     begin: Alignment.topCenter,
                     end: Alignment.bottomCenter,
                     colors: [
-                      Color(0xD9071425),
-                      Color(0xC6071425),
-                      Color(0xF0071425),
+                      background.withValues(alpha: .80),
+                      background.withValues(alpha: .70),
+                      background.withValues(alpha: .94),
                     ],
                   ),
                 ),
@@ -4350,12 +4175,12 @@ class _AuthPageState extends State<AuthPage> {
                 decoration: BoxDecoration(
                   color: panelNavy,
                   borderRadius: BorderRadius.circular(24),
-                  border: Border.all(color: const Color(0xFF24445F)),
-                  boxShadow: const [
+                  border: Border.all(color: borderColor),
+                  boxShadow: [
                     BoxShadow(
-                      color: Color(0x33000000),
+                      color: const Color(0xFF39221E).withValues(alpha: _usesLegacyLightPalette ? .08 : .35),
                       blurRadius: 28,
-                      offset: Offset(0, 14),
+                      offset: const Offset(0, 12),
                     ),
                   ],
                 ),
@@ -4376,7 +4201,7 @@ class _AuthPageState extends State<AuthPage> {
                           height: logoSize,
                           alignment: Alignment.center,
                           decoration: BoxDecoration(
-                            color: const Color(0xFF0A1B36),
+                            color: const Color(0xFF22201E),
                             borderRadius: BorderRadius.circular(30),
                             border: Border.all(
                               color: cyanAccent.withValues(alpha: .55),
@@ -4404,7 +4229,7 @@ class _AuthPageState extends State<AuthPage> {
                   Text(
                     'SAMANVAY',
                     textAlign: TextAlign.center,
-                    style: GoogleFonts.spaceGrotesk(
+                    style: svDisplayFont(
                       fontSize: 30,
                       fontWeight: FontWeight.w800,
                       color: ink,
@@ -4414,7 +4239,7 @@ class _AuthPageState extends State<AuthPage> {
 
                   const SizedBox(height: 5),
 
-                  const _AnimatedDevelopmentTagline(fontSize: 10),
+                  const _AnimatedDevelopmentTagline(fontSize: 12),
 
                   const SizedBox(height: 8),
 
@@ -4469,7 +4294,7 @@ class _AuthPageState extends State<AuthPage> {
                   ],
                   Text(
                     'PORTAL ACCESS',
-                    style: TextStyle(color: cyanAccent, fontSize: 10, letterSpacing: 1.1, fontWeight: FontWeight.w900),
+                    style: TextStyle(color: cyanAccent, fontSize: 12, letterSpacing: 1.1, fontWeight: FontWeight.w900),
                   ),
                   const SizedBox(height: 8),
                   LayoutBuilder(builder: (context, constraints) {
@@ -4496,7 +4321,7 @@ class _AuthPageState extends State<AuthPage> {
                               padding: const EdgeInsets.all(13),
                               decoration: BoxDecoration(
                                 color: _usesLegacyLightPalette
-                                    ? (standard ? const Color(0xFFE5F4F1) : Colors.white)
+                                    ? (standard ? const Color(0xFFE7F2E9) : Colors.white)
                                     : null,
                                 gradient: _usesLegacyLightPalette
                                     ? null
@@ -4504,10 +4329,10 @@ class _AuthPageState extends State<AuthPage> {
                                         begin: Alignment.topLeft,
                                         end: Alignment.bottomRight,
                                         colors: standard
-                                            ? const [Color(0xFF1353A5), Color(0xFF4236A6)]
+                                            ? const [Color(0xFF39627F), Color(0xFF447598)]
                                             : canOpenDemo
-                                                ? const [Color(0xFF174A60), Color(0xFF233A61)]
-                                                : const [Color(0xFF152944), Color(0xFF1B2946)],
+                                                ? const [Color(0xFF403C37), Color(0xFF47433D)]
+                                                : const [Color(0xFF302D29), Color(0xFF34312D)],
                                       ),
                                 borderRadius: BorderRadius.circular(15),
                                 border: Border.all(
@@ -4521,7 +4346,7 @@ class _AuthPageState extends State<AuthPage> {
                                     ? const []
                                     : [
                                         BoxShadow(
-                                          color: (standard ? const Color(0xFF2869F5) : cyanAccent)
+                                          color: (standard ? const Color(0xFF6496B9) : cyanAccent)
                                               .withValues(alpha: standard ? .20 : .08),
                                           blurRadius: 16,
                                           offset: const Offset(0, 5),
@@ -4535,7 +4360,7 @@ class _AuthPageState extends State<AuthPage> {
                                   decoration: BoxDecoration(
                                     color: (standard || canOpenDemo
                                             ? cyanAccent
-                                            : const Color(0xFF9FB2C9))
+                                            : const Color(0xFFC1B7A6))
                                         .withValues(alpha: .15),
                                     shape: BoxShape.circle,
                                   ),
@@ -4543,7 +4368,7 @@ class _AuthPageState extends State<AuthPage> {
                                     icon,
                                     color: standard || canOpenDemo
                                         ? cyanAccent
-                                        : const Color(0xFFB5C8D8),
+                                        : const Color(0xFFD1C9BC),
                                     size: 21,
                                   ),
                                 ),
@@ -4557,7 +4382,7 @@ class _AuthPageState extends State<AuthPage> {
                                         title,
                                         style: TextStyle(
                                           color: ink,
-                                          fontSize: 11,
+                                          fontSize: 12,
                                           fontWeight: FontWeight.w800,
                                         ),
                                       ),
@@ -4570,7 +4395,7 @@ class _AuthPageState extends State<AuthPage> {
                                             : detail,
                                         style: TextStyle(
                                           color: mutedInk,
-                                          fontSize: 9,
+                                          fontSize: 12,
                                           height: 1.25,
                                         ),
                                       ),
@@ -4585,7 +4410,7 @@ class _AuthPageState extends State<AuthPage> {
                                           : Icons.chevron_right_rounded),
                                   color: canOpenDemo || standard
                                       ? cyanAccent
-                                      : const Color(0xFF849BB0),
+                                      : const Color(0xFFA19B93),
                                   size: 16,
                                 ),
                               ]),
@@ -4628,7 +4453,7 @@ class _AuthPageState extends State<AuthPage> {
                   const SizedBox(height: 8),
                   Text(
                     'Tap any portal to open its interactive demonstration workspace. Citizen guest requests and official sample updates run locally in this session; live records and protected actions still require an authorised account.',
-                    style: TextStyle(fontSize: 10, color: mutedInk, height: 1.35),
+                    style: TextStyle(fontSize: 12, color: mutedInk, height: 1.35),
                   ),
                   const SizedBox(height: 12),
                   SizedBox(
@@ -4646,7 +4471,7 @@ class _AuthPageState extends State<AuthPage> {
                       'CHOOSE YOUR SIGN-IN METHOD',
                       style: TextStyle(
                         color: cyanAccent,
-                        fontSize: 10,
+                        fontSize: 12,
                         letterSpacing: 1.1,
                         fontWeight: FontWeight.w900,
                       ),
@@ -4847,8 +4672,8 @@ class _AuthPageState extends State<AuthPage> {
                       icon: const Icon(Icons.visibility_outlined),
                       label: const Text('OPEN OFFICIAL DEMO PORTAL'),
                       style: OutlinedButton.styleFrom(
-                        foregroundColor: cyanAccent,
-                        side: const BorderSide(color: Color(0xFF2D6A87)),
+                        foregroundColor: ink,
+                        side: BorderSide(color: mutedInk.withValues(alpha: .6)),
                         padding: const EdgeInsets.symmetric(vertical: 13),
                       ),
                     ),
@@ -4862,14 +4687,14 @@ class _AuthPageState extends State<AuthPage> {
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
                         color: messageIsSuccess
-                            ? Colors.green.shade50
-                            : Colors.red.shade50,
+                            ? Color(0xFFE3F0E5)
+                            : Color(0xFFF8EBE9),
                         borderRadius:
                             BorderRadius.circular(10),
                         border: Border.all(
                           color: messageIsSuccess
-                              ? Colors.green.shade200
-                              : Colors.red.shade200,
+                              ? Color(0xFFABD2B2)
+                              : Color(0xFFE7B5AC),
                         ),
                       ),
                       child: Text(
@@ -4877,8 +4702,8 @@ class _AuthPageState extends State<AuthPage> {
                         style: TextStyle(
                           fontSize: 13,
                           color: messageIsSuccess
-                              ? Colors.green.shade900
-                              : Colors.red.shade900,
+                              ? Color(0xFF234128)
+                              : Color(0xFF833426),
                         ),
                       ),
                     ),
@@ -4955,8 +4780,8 @@ class _AuthPageState extends State<AuthPage> {
                     icon: const Icon(Icons.campaign_outlined),
                     label: const Text('VIEW PUBLIC WORK NOTICES'),
                     style: OutlinedButton.styleFrom(
-                      foregroundColor: cyanAccent,
-                      side: const BorderSide(color: Color(0xFF2D6A87)),
+                      foregroundColor: ink,
+                      side: BorderSide(color: mutedInk.withValues(alpha: .6)),
                       padding: const EdgeInsets.symmetric(vertical: 14),
                     ),
                   ),
@@ -5202,7 +5027,7 @@ class _StaffDemoPreviewState extends State<_StaffDemoPreview> {
           children: [
             Text(value, style: TextStyle(color: ink, fontSize: 23, fontWeight: FontWeight.w900)),
             const SizedBox(height: 3),
-            Text(label, style: TextStyle(color: mutedInk, fontSize: 10)),
+            Text(label, style: TextStyle(color: mutedInk, fontSize: 12)),
           ],
         ),
       ),
@@ -5224,10 +5049,10 @@ class _StaffDemoPreviewState extends State<_StaffDemoPreview> {
               children: [
                 Text(title, style: TextStyle(color: ink, fontWeight: FontWeight.w800, fontSize: 12)),
                 const SizedBox(height: 4),
-                Text(description, style: TextStyle(color: mutedInk, fontSize: 10, height: 1.4)),
+                Text(description, style: TextStyle(color: mutedInk, fontSize: 12, height: 1.4)),
                 if (status != null) ...[
                   const SizedBox(height: 7),
-                  Text(status, style: TextStyle(color: teal, fontSize: 9, fontWeight: FontWeight.w800)),
+                  Text(status, style: TextStyle(color: teal, fontSize: 11, fontWeight: FontWeight.w800)),
                 ],
               ],
             ),
@@ -5251,7 +5076,7 @@ class _StaffDemoPreviewState extends State<_StaffDemoPreview> {
               Expanded(
                 child: Text(
                   'GUIDED END-TO-END DEMONSTRATION',
-                  style: TextStyle(color: ink, fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: .4),
+                  style: TextStyle(color: ink, fontSize: 12, fontWeight: FontWeight.w900, letterSpacing: .4),
                 ),
               ),
             ],
@@ -5259,7 +5084,7 @@ class _StaffDemoPreviewState extends State<_StaffDemoPreview> {
           const SizedBox(height: 6),
           Text(
             'The same in-memory cases and audit trail are shared as you move between profiles. Next: ' + _nextDemoRoleTitle + '.',
-            style: TextStyle(color: mutedInk, fontSize: 10, height: 1.4),
+            style: TextStyle(color: mutedInk, fontSize: 12, height: 1.4),
           ),
           const SizedBox(height: 9),
           SizedBox(
@@ -5272,7 +5097,7 @@ class _StaffDemoPreviewState extends State<_StaffDemoPreview> {
           ),
           Text(
             'SIMULATED SESSION · no live account, permit, work order or government record is changed',
-            style: TextStyle(color: mutedInk, fontSize: 9, height: 1.35),
+            style: TextStyle(color: mutedInk, fontSize: 11, height: 1.35),
           ),
         ],
       ),
@@ -5321,12 +5146,12 @@ class _StaffDemoPreviewState extends State<_StaffDemoPreview> {
             Expanded(
               child: Text(
                 stage['label'].toString(),
-                style: TextStyle(color: ink, fontSize: 9, fontWeight: FontWeight.w800),
+                style: TextStyle(color: ink, fontSize: 11, fontWeight: FontWeight.w800),
               ),
             ),
             Text(
               '${(progress * 100).round()}%',
-              style: TextStyle(color: teal, fontSize: 9, fontWeight: FontWeight.w900),
+              style: TextStyle(color: teal, fontSize: 11, fontWeight: FontWeight.w900),
             ),
           ],
         ),
@@ -5347,7 +5172,7 @@ class _StaffDemoPreviewState extends State<_StaffDemoPreview> {
   Widget _sectionChip(String name) => Padding(
     padding: const EdgeInsets.only(right: 7),
     child: ChoiceChip(
-      label: Text(name, style: TextStyle(fontSize: 10, color: _section == name ? teal : ink)),
+      label: Text(name, style: TextStyle(fontSize: 12, color: _section == name ? teal : ink)),
       selected: _section == name,
       selectedColor: teal.withValues(alpha: .14),
       backgroundColor: panelNavy,
@@ -5385,7 +5210,7 @@ class _StaffDemoPreviewState extends State<_StaffDemoPreview> {
               if (inspection != null) ...[
                 const SizedBox(height: 12),
                 const Divider(),
-                Text('SIMULATED FIELD INSPECTION', style: TextStyle(color: teal, fontSize: 10, fontWeight: FontWeight.w900)),
+                Text('SIMULATED FIELD INSPECTION', style: TextStyle(color: teal, fontSize: 12, fontWeight: FontWeight.w900)),
                 const SizedBox(height: 5),
                 Text('Outcome: ' + (inspection['outcome'] ?? 'Not recorded').toString()),
                 Text('Observations: ' + (inspection['observations'] ?? 'Not recorded').toString()),
@@ -5393,17 +5218,17 @@ class _StaffDemoPreviewState extends State<_StaffDemoPreview> {
                 Text('Location reference: ' + (inspection['location'] ?? item['location']).toString()),
                 Text('Recorded: ' + (inspection['recorded_at'] ?? 'Session timestamp unavailable').toString()),
                 const SizedBox(height: 5),
-                Text('Manual demo note only · no GPS fix or photo evidence was captured.', style: TextStyle(color: mutedInk, fontSize: 9)),
+                Text('Manual demo note only · no GPS fix or photo evidence was captured.', style: TextStyle(color: mutedInk, fontSize: 11)),
               ],
               const SizedBox(height: 10),
               Text(
                 'Session history: ' + (timeline.isEmpty ? 'No additional actions recorded.' : timeline.join(' → ')),
-                style: TextStyle(color: mutedInk, fontSize: 10, height: 1.4),
+                style: TextStyle(color: mutedInk, fontSize: 12, height: 1.4),
               ),
               const SizedBox(height: 10),
               Text(
                 'Synthetic demonstration record. No live citizen or department record is opened.',
-                style: TextStyle(color: mutedInk, fontSize: 10),
+                style: TextStyle(color: mutedInk, fontSize: 12),
               ),
             ],
           ),
@@ -5449,7 +5274,7 @@ class _StaffDemoPreviewState extends State<_StaffDemoPreview> {
                 },
               ),
               const SizedBox(height: 8),
-              Text('This updates the sample record in this device session only.', style: TextStyle(color: mutedInk, fontSize: 10)),
+              Text('This updates the sample record in this device session only.', style: TextStyle(color: mutedInk, fontSize: 12)),
             ],
           ),
           actions: [
@@ -5529,7 +5354,7 @@ class _StaffDemoPreviewState extends State<_StaffDemoPreview> {
               const SizedBox(height: 10),
               Text(
                 'The proposal is tentative. This demo does not book a real work window or authorise excavation.',
-                style: TextStyle(color: mutedInk, fontSize: 10, height: 1.35),
+                style: TextStyle(color: mutedInk, fontSize: 12, height: 1.35),
               ),
             ],
           ),
@@ -5583,7 +5408,7 @@ class _StaffDemoPreviewState extends State<_StaffDemoPreview> {
               const SizedBox(height: 8),
               Text(
                 'A recorded demo outcome is not a statutory approval or a confirmed public-works schedule.',
-                style: TextStyle(color: mutedInk, fontSize: 10, height: 1.35),
+                style: TextStyle(color: mutedInk, fontSize: 12, height: 1.35),
               ),
             ],
           ),
@@ -5665,7 +5490,7 @@ class _StaffDemoPreviewState extends State<_StaffDemoPreview> {
                 const SizedBox(height: 8),
                 Text(
                   'SIMULATED RECORD ONLY. This form stores typed notes in this screen session. It does not capture GPS, upload photographs, verify an asset or certify a site.',
-                  style: TextStyle(color: mutedInk, fontSize: 10, height: 1.35),
+                  style: TextStyle(color: mutedInk, fontSize: 12, height: 1.35),
                 ),
               ],
             ),
@@ -5739,14 +5564,14 @@ class _StaffDemoPreviewState extends State<_StaffDemoPreview> {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
                   decoration: BoxDecoration(color: teal.withValues(alpha: .12), borderRadius: BorderRadius.circular(20)),
-                  child: Text(item['status'].toString().toUpperCase(), style: TextStyle(color: teal, fontSize: 8, fontWeight: FontWeight.w900)),
+                  child: Text(item['status'].toString().toUpperCase(), style: TextStyle(color: teal, fontSize: 11, fontWeight: FontWeight.w900)),
                 ),
               ],
             ),
             const SizedBox(height: 6),
-            Text(item['id'].toString() + ' · ' + item['domain'].toString(), style: TextStyle(color: mutedInk, fontSize: 10)),
+            Text(item['id'].toString() + ' · ' + item['domain'].toString(), style: TextStyle(color: mutedInk, fontSize: 12)),
             const SizedBox(height: 4),
-            Text(item['location'].toString() + ' · ' + item['department'].toString(), style: TextStyle(color: mutedInk, fontSize: 10)),
+            Text(item['location'].toString() + ' · ' + item['department'].toString(), style: TextStyle(color: mutedInk, fontSize: 12)),
             const SizedBox(height: 10),
             _caseWorkflowProgress(item),
             const SizedBox(height: 10),
@@ -5868,7 +5693,7 @@ class _StaffDemoPreviewState extends State<_StaffDemoPreview> {
                 const SizedBox(height: 8),
                 Text(
                   'DEMO ONLY: this sample request stays in this screen session. It is not sent to a government department.',
-                  style: TextStyle(color: mutedInk, fontSize: 10, height: 1.35),
+                  style: TextStyle(color: mutedInk, fontSize: 12, height: 1.35),
                 ),
               ],
             ),
@@ -6059,7 +5884,7 @@ class _StaffDemoPreviewState extends State<_StaffDemoPreview> {
               : isOfficer
                   ? 'Select a department workspace. Only cases routed to that department appear in this queue.'
                   : 'Shared simulated case register. Administrator access is read-only; coordination actions are available in the Coordinator profile.',
-          style: TextStyle(color: mutedInk, fontSize: 10, height: 1.4),
+          style: TextStyle(color: mutedInk, fontSize: 12, height: 1.4),
         ),
         if (isOfficer) ...[
           const SizedBox(height: 12),
@@ -6147,7 +5972,7 @@ class _StaffDemoPreviewState extends State<_StaffDemoPreview> {
         spacing: 7,
         runSpacing: 7,
         children: const ['North', 'Northeast', 'East', 'Central', 'West', 'South', 'Islands']
-            .map((region) => Chip(label: Text(region, style: const TextStyle(fontSize: 10)), backgroundColor: Color(0xFFE5F4F1), side: BorderSide(color: Color(0xFFB8DCD5))))
+            .map((region) => Chip(label: Text(region, style: const TextStyle(fontSize: 12)), backgroundColor: Color(0xFFE7F2E9), side: BorderSide(color: Color(0xFFBADABF))))
             .toList(),
       ),
     ],
@@ -6239,7 +6064,7 @@ class _StaffDemoPreviewState extends State<_StaffDemoPreview> {
         ),
         const SizedBox(height: 7),
         Text('${filtered.length} of ${_cases.length} session cases · local demo data',
-          style: TextStyle(color: mutedInk, fontSize: 10, fontWeight: FontWeight.w700)),
+          style: TextStyle(color: mutedInk, fontSize: 12, fontWeight: FontWeight.w700)),
         const SizedBox(height: 8),
         if (filtered.isEmpty)
           _panel('No matching cases', 'Try a different search term or status filter.', Icons.search_off_rounded)
@@ -6263,9 +6088,9 @@ class _StaffDemoPreviewState extends State<_StaffDemoPreview> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('WORKFLOW DISTRIBUTION', style: TextStyle(color: ink, fontSize: 11, fontWeight: FontWeight.w900)),
+            Text('WORKFLOW DISTRIBUTION', style: TextStyle(color: ink, fontSize: 12, fontWeight: FontWeight.w900)),
             const SizedBox(height: 4),
-            Text('Counts are calculated from the current demonstration session.', style: TextStyle(color: mutedInk, fontSize: 9)),
+            Text('Counts are calculated from the current demonstration session.', style: TextStyle(color: mutedInk, fontSize: 11)),
             const SizedBox(height: 10),
             ...statuses.map((status) {
               final count = _cases.where((item) => item['status'] == status).length;
@@ -6277,8 +6102,8 @@ class _StaffDemoPreviewState extends State<_StaffDemoPreview> {
                   children: [
                     Row(
                       children: [
-                        Expanded(child: Text(status, style: TextStyle(color: ink, fontSize: 9, fontWeight: FontWeight.w700))),
-                        Text('$count', style: TextStyle(color: teal, fontSize: 9, fontWeight: FontWeight.w900)),
+                        Expanded(child: Text(status, style: TextStyle(color: ink, fontSize: 11, fontWeight: FontWeight.w700))),
+                        Text('$count', style: TextStyle(color: teal, fontSize: 11, fontWeight: FontWeight.w900)),
                       ],
                     ),
                     const SizedBox(height: 4),
@@ -6373,16 +6198,21 @@ class _StaffDemoPreviewState extends State<_StaffDemoPreview> {
     return Scaffold(
       backgroundColor: background,
       appBar: AppBar(
-        backgroundColor: navy,
-        foregroundColor: Colors.white,
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(_activeRole == 'requester' ? 'SAMANVAY CITIZEN WORKSPACE' : 'SAMANVAY OFFICIAL WORKSPACE'),
             Text(
-              'DEMO ID ' + _activeStaffId + ' · ' + _roleTitle.toUpperCase() +
-                  (_activeRole == 'department' ? ' · ' + _selectedDepartment : ''),
-              style: TextStyle(color: cyanAccent, fontSize: 9),
+              _activeRole == 'requester' ? 'Citizen workspace' : 'Official workspace',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+            Text(
+              'DEMO · ' + _roleTitle.toUpperCase() +
+                  (_activeRole == 'department' ? ' · ' + _selectedDepartment.toUpperCase() : '') +
+                  ' · ' + _activeStaffId,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: SvType.eyebrow(cyanAccent).copyWith(fontSize: 12),
             ),
           ],
         ),
@@ -6404,21 +6234,21 @@ class _StaffDemoPreviewState extends State<_StaffDemoPreview> {
             Container(
               padding: const EdgeInsets.all(13),
               decoration: BoxDecoration(
-                color: isLight ? const Color(0xFFE5F4F1) : const Color(0xFF3B2D14),
+                color: isLight ? const Color(0xFFE7F2E9) : const Color(0xFF3B2B14),
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: isLight ? const Color(0xFFB8DCD5) : const Color(0xFF9C7428)),
+                border: Border.all(color: isLight ? const Color(0xFFBADABF) : const Color(0xFF9C6E28)),
               ),
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Icon(Icons.visibility_outlined, color: isLight ? teal : const Color(0xFFFFD27A)),
+                  Icon(Icons.visibility_outlined, color: isLight ? teal : const Color(0xFFEBC68E)),
                   const SizedBox(width: 10),
                   Expanded(
                     child: Text(
                       _activeRole == 'requester'
                           ? 'CITIZEN GUEST DEMO ACTIVE. You can submit and track sample requests in this session. Nothing is sent to a government department or saved to a live account.'
                           : 'DEMO PROFILE ACTIVE. This workspace uses synthetic sample records. Status updates and assignments work in this session only; no Supabase user is impersonated and no live citizen or department data is changed.',
-                      style: TextStyle(color: isLight ? navy : const Color(0xFFFFE5AE), fontSize: 10, height: 1.4),
+                      style: TextStyle(color: isLight ? navy : const Color(0xFFF3DCBA), fontSize: 12, height: 1.4),
                     ),
                   ),
                 ],
@@ -6427,7 +6257,7 @@ class _StaffDemoPreviewState extends State<_StaffDemoPreview> {
             const SizedBox(height: 12),
             Text(_roleTitle, style: TextStyle(color: ink, fontSize: 22, fontWeight: FontWeight.w900)),
             const SizedBox(height: 4),
-            Text(_roleDescription, style: TextStyle(color: mutedInk, fontSize: 11, height: 1.4)),
+            Text(_roleDescription, style: TextStyle(color: mutedInk, fontSize: 12, height: 1.4)),
             const SizedBox(height: 12),
             SingleChildScrollView(
               scrollDirection: Axis.horizontal,
@@ -6451,7 +6281,7 @@ class _StaffDemoPreviewState extends State<_StaffDemoPreview> {
               _activeRole == 'requester'
                   ? 'Guest demonstration only. Sign in to send a real service request, upload private evidence and receive account-linked updates. Demo entries disappear when this screen session ends.'
                   : 'Live officer functions and protected records require an authorised Supabase staff account. This interactive demonstration is designed for the five-minute presentation.',
-              style: TextStyle(color: mutedInk, fontSize: 10, height: 1.4),
+              style: TextStyle(color: mutedInk, fontSize: 12, height: 1.4),
             ),
           ],
         ),
@@ -6526,8 +6356,8 @@ class _MainScreenState extends State<MainScreen> {
                   indicatorColor: cyanAccent.withValues(alpha: .18),
                   selectedIconTheme:  IconThemeData(color: cyanAccent),
                   unselectedIconTheme:  IconThemeData(color: mutedInk),
-                  selectedLabelTextStyle:  TextStyle(color: cyanAccent, fontWeight: FontWeight.w800, fontSize: 10),
-                  unselectedLabelTextStyle:  TextStyle(color: mutedInk, fontSize: 10),
+                  selectedLabelTextStyle:  TextStyle(color: cyanAccent, fontWeight: FontWeight.w800, fontSize: 12),
+                  unselectedLabelTextStyle:  TextStyle(color: mutedInk, fontSize: 12),
                   leading: Padding(
                     padding: const EdgeInsets.fromLTRB(8, 14, 8, 20),
                     child: extended
@@ -6535,7 +6365,7 @@ class _MainScreenState extends State<MainScreen> {
                           const _SamanvayBrandLogo(size: 42, radius: 11),
                           const SizedBox(width: 9),
                           Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                            Text('SAMANVAY', style: GoogleFonts.spaceGrotesk(color: _usesLegacyLightPalette ? ink : Colors.white, fontSize: 17, fontWeight: FontWeight.w800)),
+                            Text('SAMANVAY', style: svDisplayFont(color: _usesLegacyLightPalette ? ink : Colors.white, fontSize: 17, fontWeight: FontWeight.w800)),
                             const SizedBox(height: 2),
                             Text('TOWARDS OUR DEVELOPMENT 📈', style: TextStyle(color: cyanAccent, fontSize: 7.5, letterSpacing: .45, fontWeight: FontWeight.w800)),
                           ])),
@@ -6632,7 +6462,7 @@ class _DashboardPageState extends State<DashboardPage>
     if (entries.isEmpty) {
       return  Text(
         'Your infrastructure-domain breakdown will appear after your first case is submitted.',
-        style: TextStyle(fontSize: 11, color: mutedInk),
+        style: TextStyle(fontSize: 12, color: mutedInk),
       );
     }
     final maxCount = entries.first.value;
@@ -6649,10 +6479,10 @@ class _DashboardPageState extends State<DashboardPage>
                 children: [
                   Expanded(
                     child: Text(label,
-                      style: GoogleFonts.inter(fontSize: 10, fontWeight: FontWeight.w700, color: ink)),
+                      style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w700, color: ink)),
                   ),
                   Text(entry.value.toString(),
-                    style: GoogleFonts.robotoMono(fontSize: 11, fontWeight: FontWeight.w700, color: ink)),
+                    style: GoogleFonts.robotoMono(fontSize: 12, fontWeight: FontWeight.w700, color: ink)),
                 ],
               ),
               const SizedBox(height: 5),
@@ -6661,8 +6491,8 @@ class _DashboardPageState extends State<DashboardPage>
                 child: LinearProgressIndicator(
                   value: ratio,
                   minHeight: 7,
-                  backgroundColor: const Color(0xFFE7EDF2),
-                  valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF20AFA5)),
+                  backgroundColor: const Color(0xFFF5EEE4),
+                  valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF488753)),
                 ),
               ),
             ],
@@ -6684,7 +6514,7 @@ class _DashboardPageState extends State<DashboardPage>
         Text(value, style: GoogleFonts.robotoMono(
           color: _usesLegacyLightPalette ? ink : Colors.white, fontSize: 21, fontWeight: FontWeight.w800)),
         Text(title, style: GoogleFonts.inter(
-          color: mutedInk, fontSize: 10, fontWeight: FontWeight.w600)),
+          color: mutedInk, fontSize: 12, fontWeight: FontWeight.w600)),
       ]),
     ));
 
@@ -6735,13 +6565,13 @@ class _DashboardPageState extends State<DashboardPage>
               gradient: LinearGradient(
                 colors: [
                   navy.withValues(alpha: .72),
-                  const Color(0xFF173B55).withValues(alpha: .58),
-                  const Color(0xFF075E67).withValues(alpha: .66),
+                  const Color(0xFF3A3732).withValues(alpha: .58),
+                  const Color(0xFF27482C).withValues(alpha: .66),
                 ],
                 begin: Alignment.topLeft, end: Alignment.bottomRight),
               borderRadius: BorderRadius.circular(22),
-              border: Border.all(color: const Color(0x5534E5D1)),
-              boxShadow: const [BoxShadow(color: Color(0x180B1728),
+              border: Border.all(color: const Color(0x556AAF76)),
+              boxShadow: const [BoxShadow(color: Color(0x181B1A18),
                 blurRadius: 20, offset: Offset(0, 9))]),
             clipBehavior: Clip.antiAlias,
             child: Stack(
@@ -6760,9 +6590,9 @@ class _DashboardPageState extends State<DashboardPage>
                         begin: Alignment.topCenter,
                         end: Alignment.bottomCenter,
                         colors: [
-                          Color(0xC908182B),
-                          Color(0xA908182B),
-                          Color(0xB3075E67),
+                          Color(0xC91B1A18),
+                          Color(0xA91B1A18),
+                          Color(0xB327482C),
                         ],
                       ),
                     ),
@@ -6780,7 +6610,7 @@ class _DashboardPageState extends State<DashboardPage>
               const Text(
                 'SMART COORDINATION  •  TRANSPARENT GOVERNANCE  •  A DEVELOPED INDIA',
                 textAlign: TextAlign.center,
-                style: TextStyle(color: Color(0xFFE3EDF7), fontSize: 8,
+                style: TextStyle(color: Color(0xFFF5EFE5), fontSize: 11,
                   fontWeight: FontWeight.w900, letterSpacing: .55),
               ),
               const SizedBox(height: 18),
@@ -6788,15 +6618,15 @@ class _DashboardPageState extends State<DashboardPage>
                 children: [
                   Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                     Text('Hello, $name! 👋',
-                      style: GoogleFonts.spaceGrotesk(color: Colors.white,
+                      style: svDisplayFont(color: Colors.white,
                         fontSize: 23, fontWeight: FontWeight.w800)),
                     const SizedBox(height: 4),
                     Text('Towards a smarter, better-coordinated India',
-                      style: GoogleFonts.inter(color: const Color(0xFFD1E0EA), fontSize: 10)),
+                      style: GoogleFonts.inter(color: const Color(0xFFEDE1CE), fontSize: 12)),
                   ])),
                   CircleAvatar(
                     radius: 22,
-                    backgroundColor: const Color(0xFF35D7F2),
+                    backgroundColor: const Color(0xFF73B47E),
                     child: ClipOval(
                       child: SvgPicture.asset(
                         'assets/brand/samanvay_profile_avatar.svg',
@@ -6825,8 +6655,8 @@ class _DashboardPageState extends State<DashboardPage>
                 label: const Text('ASK SAMANVAY AI'),
                 style: OutlinedButton.styleFrom(
                   foregroundColor: Colors.white,
-                  backgroundColor: const Color(0x332C6EBE),
-                  side: const BorderSide(color: Color(0xFF5CA9FF)),
+                  backgroundColor: const Color(0x33497CA1),
+                  side: const BorderSide(color: Color(0xFF8FB3CC)),
                   padding: const EdgeInsets.symmetric(vertical: 14),
                 ),
               )),
@@ -6835,24 +6665,24 @@ class _DashboardPageState extends State<DashboardPage>
             ),
           ),
           const SizedBox(height: 18),
-          Text('My activity', style: GoogleFonts.spaceGrotesk(
+          Text('My activity', style: svDisplayFont(
             color: ink, fontSize: 18, fontWeight: FontWeight.w800)),
           const SizedBox(height: 4),
           Text('Live status of your infrastructure requests',
-            style: GoogleFonts.inter(color: mutedInk, fontSize: 11)),
+            style: GoogleFonts.inter(color: mutedInk, fontSize: 12)),
           const SizedBox(height: 11),
           Row(children: [
             metric('MY REQUESTS', loading ? '—' : '${requests.length}',
               Icons.assignment_outlined, teal),
             const SizedBox(width: 8),
             metric('IN PROGRESS', loading ? '—' : '$active',
-              Icons.pending_actions, const Color(0xFFD28A28)),
+              Icons.pending_actions, const Color(0xFFD28E28)),
             const SizedBox(width: 8),
             metric('RESOLVED', loading ? '—' : '$resolved',
-              Icons.task_alt, const Color(0xFF25845C)),
+              Icons.task_alt, const Color(0xFF3B6E44)),
           ]),
           const SizedBox(height: 20),
-          Text('Quick actions', style: GoogleFonts.spaceGrotesk(
+          Text('Quick actions', style: svDisplayFont(
             color: ink, fontSize: 18, fontWeight: FontWeight.w800)),
           const SizedBox(height: 10),
           LayoutBuilder(builder: (context, constraints) {
@@ -6875,17 +6705,17 @@ class _DashboardPageState extends State<DashboardPage>
                       Icon(icon, color: accent, size: 22),
                       const SizedBox(height: 7),
                       Text(title, textAlign: TextAlign.center,
-                        style: TextStyle(color: ink, fontSize: 10, fontWeight: FontWeight.w800)),
+                        style: TextStyle(color: ink, fontSize: 12, fontWeight: FontWeight.w800)),
                     ]),
                   ),
                 ),
               ));
             return Wrap(spacing: spacing, runSpacing: spacing, children: [
               action('New request', Icons.add_circle_outline, cyanAccent, const NewRequestPage()),
-              action('Track requests', Icons.track_changes_outlined, const Color(0xFF7FC8FF), const RequestsPage()),
-              action('3D GIS map', Icons.layers_outlined, const Color(0xFF8B9DFF), const MapPage()),
-              action('Notifications', Icons.notifications_none_rounded, const Color(0xFFBFA7FF), const NotificationsPage()),
-              action('LPU underground map', Icons.school_outlined, const Color(0xFF36D7C2), const LpuCampusModelPage()),
+              action('Track requests', Icons.track_changes_outlined, const Color(0xFFCBC1B3), const RequestsPage()),
+              action('3D GIS map', Icons.layers_outlined, const Color(0xFFCFC7BB), const MapPage()),
+              action('Notifications', Icons.notifications_none_rounded, const Color(0xFFDDCCC9), const NotificationsPage()),
+              action('LPU underground map', Icons.school_outlined, const Color(0xFF62AB6E), const LpuCampusModelPage()),
             ]);
           }),
           const SizedBox(height: 19),
@@ -6898,10 +6728,10 @@ class _DashboardPageState extends State<DashboardPage>
                 const SizedBox(width: 12),
                 Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                   Text('PUBLIC TRANSPARENCY DASHBOARD',
-                    style: TextStyle(color: ink, fontWeight: FontWeight.w900, fontSize: 11)),
+                    style: TextStyle(color: ink, fontWeight: FontWeight.w900, fontSize: 12)),
                   const SizedBox(height: 4),
                   Text('Published projects, department activity and verified public impact across India.',
-                    style: TextStyle(color: mutedInk, fontSize: 10, fontWeight: FontWeight.w600)),
+                    style: TextStyle(color: mutedInk, fontSize: 12, fontWeight: FontWeight.w600)),
                 ])),
                 IconButton(
                   tooltip: 'Open public transparency dashboard',
@@ -6918,9 +6748,9 @@ class _DashboardPageState extends State<DashboardPage>
             ),
           ),
           if (error != null) Padding(padding: const EdgeInsets.only(bottom: 10),
-            child: Text(error!, style: const TextStyle(color: Colors.deepOrange))),
+            child: Text(error!, style: const TextStyle(color: Color(0xFFA54130)))),
           const SizedBox(height: 22),
-          Text('Cases by infrastructure domain', style: GoogleFonts.spaceGrotesk(
+          Text('Cases by infrastructure domain', style: svDisplayFont(
             color: ink, fontSize: 18, fontWeight: FontWeight.w800)),
           const SizedBox(height: 4),
           Text('Distribution of your submitted cases', style: GoogleFonts.inter(
@@ -6938,7 +6768,7 @@ class _DashboardPageState extends State<DashboardPage>
                 : _categoryOverview(),
           ),
           const SizedBox(height: 24),
-          Text('Department network', style: GoogleFonts.spaceGrotesk(
+          Text('Department network', style: svDisplayFont(
             color: ink, fontSize: 18, fontWeight: FontWeight.w800)),
           const SizedBox(height: 4),
           Text('Live directory from the SAMANVAY database',
@@ -6958,7 +6788,7 @@ class _DashboardPageState extends State<DashboardPage>
                 border: Border.all(color: borderColor)),
               child: ListTile(dense: true,
                 leading:  CircleAvatar(
-                  backgroundColor: Color(0xFFE7F8F6),
+                  backgroundColor: Color(0xFFEBF4EC),
                   child: Icon(Icons.account_tree_outlined, color: teal)),
                 title: Text((d['name'] ?? 'Department').toString(),
                   style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600)),
@@ -6972,7 +6802,7 @@ class _DashboardPageState extends State<DashboardPage>
             child: Text(
               'Underground visibility depends on verified survey records and access permissions. An empty layer does not prove that no utility exists.',
               style: GoogleFonts.inter(color: mutedInk,
-                fontSize: 11, fontWeight: FontWeight.w700, height: 1.45))),
+                fontSize: 12, fontWeight: FontWeight.w700, height: 1.45))),
         ]),
       ),
     );
@@ -7053,9 +6883,9 @@ class _CommandCentreActivityBoardState extends State<CommandCentreActivityBoard>
         child: Icon(icon, color: accent, size: 16)),
       const SizedBox(width: 10),
       Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Text(title, style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w800)),
+        Text(title, style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w800)),
         const SizedBox(height: 2),
-        Text(subtitle, style:  TextStyle(color: mutedInk, fontSize: 9, height: 1.35)),
+        Text(subtitle, style:  TextStyle(color: mutedInk, fontSize: 11, height: 1.35)),
       ])),
     ]),
   );
@@ -7075,14 +6905,14 @@ class _CommandCentreActivityBoardState extends State<CommandCentreActivityBoard>
           tooltip: 'Refresh activity', icon:  Icon(Icons.refresh_rounded, color: cyanAccent)),
       ]),
        Text('Recent case status transitions visible to this account. Audit events are restricted to administrators.',
-        style: TextStyle(color: mutedInk, fontSize: 10, height: 1.35)),
+        style: TextStyle(color: mutedInk, fontSize: 12, height: 1.35)),
       const SizedBox(height: 11),
       Row(children: [
         Expanded(child: Text('CASE TIMELINE · ' + statusEvents.length.toString(),
-          style:  TextStyle(color: cyanAccent, fontSize: 9, letterSpacing: .7, fontWeight: FontWeight.w900))),
+          style:  TextStyle(color: cyanAccent, fontSize: 11, letterSpacing: .7, fontWeight: FontWeight.w900))),
         if (widget.isAdmin)
           Text('ADMIN AUDIT · ' + auditEvents.length.toString(),
-            style: const TextStyle(color: Color(0xFF9FBCFF), fontSize: 9, letterSpacing: .5, fontWeight: FontWeight.w900)),
+            style: const TextStyle(color: Color(0xFFD8D1C6), fontSize: 11, letterSpacing: .5, fontWeight: FontWeight.w900)),
       ]),
        Divider(color: borderColor, height: 18),
       if (loading && statusEvents.isEmpty && auditEvents.isEmpty)
@@ -7090,10 +6920,10 @@ class _CommandCentreActivityBoardState extends State<CommandCentreActivityBoard>
           child: CircularProgressIndicator(color: cyanAccent)))
       else if (statusUnavailable)
         const Text('Case timeline is unavailable for this account. Check the case-access policy.',
-          style: TextStyle(color: Color(0xFFFFB4AB), fontSize: 10))
+          style: TextStyle(color: Color(0xFFECC5BE), fontSize: 12))
       else if (statusEvents.isEmpty)
          Text('No case status transitions are recorded yet.',
-          style: TextStyle(color: mutedInk, fontSize: 10))
+          style: TextStyle(color: mutedInk, fontSize: 12))
       else
         ...statusEvents.map((event) {
           final requestId = (event['request_id'] ?? '').toString();
@@ -7102,7 +6932,7 @@ class _CommandCentreActivityBoardState extends State<CommandCentreActivityBoard>
           final newStatus = _label(event['new_status']);
           return _event(
             icon: Icons.sync_alt_rounded,
-            accent: const Color(0xFF66D6CB),
+            accent: const Color(0xFF81BB8B),
             title: caseLabel + ' · ' + oldStatus + ' → ' + newStatus,
             subtitle: _date(event['created_at']),
           );
@@ -7110,18 +6940,18 @@ class _CommandCentreActivityBoardState extends State<CommandCentreActivityBoard>
       if (widget.isAdmin) ...[
          Divider(color: borderColor, height: 20),
         const Text('ADMIN AUDIT LOG',
-          style: TextStyle(color: Color(0xFF9FBCFF), fontSize: 9, letterSpacing: .7, fontWeight: FontWeight.w900)),
+          style: TextStyle(color: Color(0xFFD8D1C6), fontSize: 11, letterSpacing: .7, fontWeight: FontWeight.w900)),
         const SizedBox(height: 8),
         if (auditUnavailable)
           const Text('Audit records could not be loaded. They are not substituted with case events.',
-            style: TextStyle(color: Color(0xFFFFB4AB), fontSize: 10))
+            style: TextStyle(color: Color(0xFFECC5BE), fontSize: 12))
         else if (auditEvents.isEmpty)
            Text('No administrator audit events are recorded yet.',
-            style: TextStyle(color: mutedInk, fontSize: 10))
+            style: TextStyle(color: mutedInk, fontSize: 12))
         else
           ...auditEvents.map((event) => _event(
             icon: Icons.admin_panel_settings_outlined,
-            accent: const Color(0xFF9FBCFF),
+            accent: const Color(0xFFD8D1C6),
             title: _label(event['event_type']),
             subtitle: _date(event['created_at']),
           )),
@@ -7263,7 +7093,7 @@ class _PublicWorksOperationsBoardState extends State<PublicWorksOperationsBoard>
                 ),
               const SizedBox(height: 8),
                Text('This creates a draft only. A source reference is required before a staff user can publish it.',
-                style: TextStyle(fontSize: 10, color: mutedInk)),
+                style: TextStyle(fontSize: 12, color: mutedInk)),
             ])),
           )),
           actions: [
@@ -7455,7 +7285,7 @@ class _PublicWorksOperationsBoardState extends State<PublicWorksOperationsBoard>
               Align(alignment: Alignment.centerLeft, child: Text('Assigned to: ' + departmentName(assigned))),
             const SizedBox(height: 6),
              Text('This list excludes reporter identity. Reports are visible only to the reporter and authorised reviewers.',
-              style: TextStyle(fontSize: 10, color: mutedInk)),
+              style: TextStyle(fontSize: 12, color: mutedInk)),
           ]),
           actions: [
             TextButton(onPressed: () => Navigator.pop(dialog, false), child: const Text('Cancel')),
@@ -7485,7 +7315,7 @@ class _PublicWorksOperationsBoardState extends State<PublicWorksOperationsBoard>
 
   Widget _sectionTitle(String value) => Padding(
     padding: const EdgeInsets.only(top: 10, bottom: 5),
-    child: Text(value, style:  TextStyle(color: cyanAccent, fontSize: 10,
+    child: Text(value, style:  TextStyle(color: cyanAccent, fontSize: 12,
       letterSpacing: .8, fontWeight: FontWeight.w900)),
   );
 
@@ -7503,22 +7333,22 @@ class _PublicWorksOperationsBoardState extends State<PublicWorksOperationsBoard>
         IconButton(onPressed: loading ? null : refresh, icon:  Icon(Icons.refresh, color: cyanAccent)),
       ]),
        Text('Create department-owned drafts, publish source-backed notices, update work timelines and review reports using existing RLS rules.',
-        style: TextStyle(color: mutedInk, fontSize: 10, height: 1.35)),
+        style: TextStyle(color: mutedInk, fontSize: 12, height: 1.35)),
       const SizedBox(height: 5),
       Text('Highway Department first publication sends in-app alerts to Citizen accounts and municipal service department officers. The published notice is also visible in the Citizen-facing Public works tab.',
-        style: TextStyle(color: mutedInk, fontSize: 10, height: 1.35, fontWeight: FontWeight.w700)),
+        style: TextStyle(color: mutedInk, fontSize: 12, height: 1.35, fontWeight: FontWeight.w700)),
       const SizedBox(height: 8),
       SizedBox(width: double.infinity, child: FilledButton.icon(
         onPressed: saving || loading ? null : createNotice,
         icon: const Icon(Icons.add_circle_outline), label: const Text('CREATE NOTICE DRAFT'),
         style: FilledButton.styleFrom(backgroundColor: electricBlue, foregroundColor: Colors.white))),
       if (error != null) Padding(padding: const EdgeInsets.only(top: 8),
-        child: Text(error!, style: const TextStyle(color: Color(0xFFFFB4AB), fontSize: 10))),
+        child: Text(error!, style: const TextStyle(color: Color(0xFFECC5BE), fontSize: 12))),
       if (loading && notices.isEmpty && reports.isEmpty)
          Padding(padding: EdgeInsets.all(14), child: Center(child: CircularProgressIndicator(color: cyanAccent))),
       _sectionTitle('WORK / NO-DIG NOTICES'),
       if (notices.isEmpty)  Text('No notices are visible to this account. This does not imply that no public work is taking place.',
-        style: TextStyle(color: mutedInk, fontSize: 10)),
+        style: TextStyle(color: mutedInk, fontSize: 12)),
       ...notices.map((notice) => Container(
         margin: const EdgeInsets.only(top: 7), padding: const EdgeInsets.all(10),
         decoration: BoxDecoration(color: navy, borderRadius: BorderRadius.circular(11),
@@ -7526,14 +7356,14 @@ class _PublicWorksOperationsBoardState extends State<PublicWorksOperationsBoard>
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Row(children: [
             Expanded(child: Text((notice['notice_code'] ?? 'Notice').toString(),
-              style:  TextStyle(color: cyanAccent, fontSize: 10, fontWeight: FontWeight.w900))),
+              style:  TextStyle(color: cyanAccent, fontSize: 12, fontWeight: FontWeight.w900))),
             Text(pretty((notice['notice_status'] ?? 'draft').toString()),
-              style: const TextStyle(color: Color(0xFFF3C969), fontSize: 9, fontWeight: FontWeight.w900)),
+              style: const TextStyle(color: Color(0xFFE7B975), fontSize: 11, fontWeight: FontWeight.w900)),
           ]),
           Text((notice['title'] ?? 'Public works notice').toString(),
             style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w800)),
           Text((notice['city'] ?? '').toString() + ' · ' + (notice['responsible_department_name'] ?? 'Department not listed').toString(),
-            style:  TextStyle(color: mutedInk, fontSize: 10)),
+            style:  TextStyle(color: mutedInk, fontSize: 12)),
           if (['highway department', 'roads & highways'].contains(
             (notice['responsible_department_name'] ?? '').toString().trim().toLowerCase()))
             Padding(
@@ -7543,18 +7373,18 @@ class _PublicWorksOperationsBoardState extends State<PublicWorksOperationsBoard>
                   visualDensity: VisualDensity.compact,
                   avatar: const Icon(Icons.campaign_outlined, size: 14),
                   label: const Text('CITIZEN ALERTS'),
-                  labelStyle: const TextStyle(fontSize: 9, fontWeight: FontWeight.w800),
+                  labelStyle: const TextStyle(fontSize: 11, fontWeight: FontWeight.w800),
                 ),
                 Chip(
                   visualDensity: VisualDensity.compact,
                   avatar: const Icon(Icons.account_balance_outlined, size: 14),
                   label: const Text('MUNICIPAL ALERTS'),
-                  labelStyle: const TextStyle(fontSize: 9, fontWeight: FontWeight.w800),
+                  labelStyle: const TextStyle(fontSize: 11, fontWeight: FontWeight.w800),
                 ),
               ]),
             ),
           Text('Source: ' + (notice['source_reference'] ?? 'Not yet recorded').toString(),
-            style:  TextStyle(color: mutedInk, fontSize: 9)),
+            style:  TextStyle(color: mutedInk, fontSize: 11)),
           Align(alignment: Alignment.centerRight, child: TextButton.icon(
             onPressed: saving ? null : () => editNotice(notice),
             icon: const Icon(Icons.edit_outlined, size: 15), label: const Text('Update / publish'))),
@@ -7563,7 +7393,7 @@ class _PublicWorksOperationsBoardState extends State<PublicWorksOperationsBoard>
        Divider(color: borderColor, height: 22),
       _sectionTitle('CITIZEN OBSTRUCTION REPORTS'),
       if (reports.isEmpty)  Text('No obstruction reports are visible to this account. Reports remain private to the reporter and authorised reviewers.',
-        style: TextStyle(color: mutedInk, fontSize: 10)),
+        style: TextStyle(color: mutedInk, fontSize: 12)),
       ...reports.map((report) => Container(
         margin: const EdgeInsets.only(top: 7), padding: const EdgeInsets.all(10),
         decoration: BoxDecoration(color: navy, borderRadius: BorderRadius.circular(11),
@@ -7571,16 +7401,16 @@ class _PublicWorksOperationsBoardState extends State<PublicWorksOperationsBoard>
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Row(children: [
             Expanded(child: Text(pretty((report['report_type'] ?? 'other').toString()),
-              style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w900))),
+              style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w900))),
             Text(pretty((report['report_status'] ?? 'submitted').toString()),
-              style: const TextStyle(color: Color(0xFFF3C969), fontSize: 9, fontWeight: FontWeight.w900)),
+              style: const TextStyle(color: Color(0xFFE7B975), fontSize: 11, fontWeight: FontWeight.w900)),
           ]),
           Text((report['area_label'] ?? '').toString() + ' · ' + (report['city'] ?? '').toString(),
-            style:  TextStyle(color: cyanAccent, fontSize: 10)),
+            style:  TextStyle(color: cyanAccent, fontSize: 12)),
           Text((report['details'] ?? '').toString(), maxLines: 3, overflow: TextOverflow.ellipsis,
-            style:  TextStyle(color: mutedInk, fontSize: 10)),
+            style:  TextStyle(color: mutedInk, fontSize: 12)),
           Text('Assigned: ' + departmentName(report['assigned_department_id']?.toString()),
-            style:  TextStyle(color: mutedInk, fontSize: 9)),
+            style:  TextStyle(color: mutedInk, fontSize: 11)),
           Align(alignment: Alignment.centerRight, child: TextButton.icon(
             onPressed: saving ? null : () => reviewReport(report),
             icon: const Icon(Icons.fact_check_outlined, size: 15), label: const Text('Review report'))),
@@ -7588,7 +7418,7 @@ class _PublicWorksOperationsBoardState extends State<PublicWorksOperationsBoard>
       )),
       const SizedBox(height: 8),
        Text('A public notice or no-dig notice is not an excavation permit or underground-utility clearance.',
-        style: TextStyle(color: mutedInk, fontSize: 9, height: 1.4)),
+        style: TextStyle(color: mutedInk, fontSize: 11, height: 1.4)),
     ]),
   );
 }
@@ -7664,14 +7494,14 @@ class _RoadCutPermitBoardState extends State<RoadCutPermitBoard> {
   String _pretty(String value) => value.replaceAll('_', ' ').toUpperCase();
 
   Color _stateColor(String state) {
-    if (state == 'closed' || state == 'not_required') return const Color(0xFF25845C);
+    if (state == 'closed' || state == 'not_required') return const Color(0xFF3B6E44);
     if (['restoration_overdue','permit_expired','revoked','work_outside_permit_window'].contains(state)) {
-      return const Color(0xFFB54747);
+      return const Color(0xFFB55847);
     }
     if (['restoration_due_soon','awaiting_permit','suspended','review_required'].contains(state)) {
-      return const Color(0xFFB7791F);
+      return const Color(0xFFB67A20);
     }
-    return const Color(0xFF3978B8);
+    return const Color(0xFF4B80A6);
   }
 
   DateTime? _date(String value) =>
@@ -7803,7 +7633,7 @@ class _RoadCutPermitBoardState extends State<RoadCutPermitBoard> {
                     decoration: const InputDecoration(labelText: 'Conditions, exemption reason or notes')),
                   const SizedBox(height: 8),
                    Text('The competent road authority determines permit requirements and statutory conditions.',
-                    style: TextStyle(fontSize: 11, color: mutedInk)),
+                    style: TextStyle(fontSize: 12, color: mutedInk)),
                 ],
               ),
             ),
@@ -7915,7 +7745,7 @@ class _RoadCutPermitBoardState extends State<RoadCutPermitBoard> {
               icon: const Icon(Icons.refresh), tooltip: 'Refresh permit records'),
           ]),
            Text('Track permit references, validity windows, utility clearance, road safety and restoration deadlines.',
-            style: TextStyle(fontSize: 11, color: mutedInk)),
+            style: TextStyle(fontSize: 12, color: mutedInk)),
           const SizedBox(height: 10),
           SizedBox(width: double.infinity, child: OutlinedButton.icon(
             onPressed: widget.requests.isEmpty ? null : () => _editRecord(),
@@ -7924,7 +7754,7 @@ class _RoadCutPermitBoardState extends State<RoadCutPermitBoard> {
           if (loading)
             const Center(child: Padding(padding: EdgeInsets.all(12), child: CircularProgressIndicator()))
           else if (errorMessage.isNotEmpty)
-            Text(errorMessage, style: const TextStyle(fontSize: 12, color: Colors.red))
+            Text(errorMessage, style: const TextStyle(fontSize: 12, color: Color(0xFFB14633)))
           else if (records.isEmpty)
              Text('No permit records have been entered yet.',
               style: TextStyle(fontSize: 12, color: mutedInk))
@@ -7939,9 +7769,9 @@ class _RoadCutPermitBoardState extends State<RoadCutPermitBoard> {
                   : days == 0 ? 'Due today' : 'Due in ' + days.toString() + ' day(s)';
               return Container(
                 margin: const EdgeInsets.only(top: 8), padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(color: const Color(0xFFF7FAFC),
+                decoration: BoxDecoration(color: const Color(0xFFFCFAF7),
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: const Color(0xFFE4EAF1))),
+                  border: Border.all(color: const Color(0xFFF4ECE1))),
                 child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                   Row(children: [
                     Expanded(child: Text(_requestLabel(req),
@@ -7950,14 +7780,14 @@ class _RoadCutPermitBoardState extends State<RoadCutPermitBoard> {
                       decoration: BoxDecoration(color: _stateColor(state).withValues(alpha: .12),
                         borderRadius: BorderRadius.circular(20)),
                       child: Text(_pretty(state), style: TextStyle(color: _stateColor(state),
-                        fontSize: 9, fontWeight: FontWeight.w800))),
+                        fontSize: 11, fontWeight: FontWeight.w800))),
                   ]),
                   const SizedBox(height: 5),
                   Text(_departmentLabel(dept) + ' · ' + _pretty((record['permit_status'] ?? '').toString()),
-                    style:  TextStyle(fontSize: 10, color: mutedInk)),
+                    style:  TextStyle(fontSize: 12, color: mutedInk)),
                   Text('Restoration: ' + dueLabel + ' · Permit expiry: ' +
                     (record['permit_valid_until']?.toString() ?? 'Not recorded'),
-                    style:  TextStyle(fontSize: 11, color: ink)),
+                    style:  TextStyle(fontSize: 12, color: ink)),
                   Align(alignment: Alignment.centerRight, child: TextButton.icon(
                     onPressed: () => _editRecord(existing: record),
                     icon: const Icon(Icons.edit_outlined, size: 15), label: const Text('UPDATE'))),
@@ -8013,11 +7843,11 @@ class _RoadWorkScheduleBoardState extends State<RoadWorkScheduleBoard> {
 
   Color _stateColor(String state) {
     if (state == 'road_window_overlap' || state == 'invalid_window' || state == 'past_due') {
-      return const Color(0xFFB54747);
+      return const Color(0xFFB55847);
     }
-    if (state == 'dates_missing') return const Color(0xFFB7791F);
-    if (state == 'closed') return const Color(0xFF25845C);
-    return const Color(0xFF3978B8);
+    if (state == 'dates_missing') return const Color(0xFFB67A20);
+    if (state == 'closed') return const Color(0xFF3B6E44);
+    return const Color(0xFF4B80A6);
   }
 
   @override
@@ -8035,12 +7865,12 @@ class _RoadWorkScheduleBoardState extends State<RoadWorkScheduleBoard> {
               icon: const Icon(Icons.refresh), tooltip: 'Refresh road schedule'),
           ]),
            Text('Compare planned work windows on the same road and city. Update dates in the linked case record.',
-            style: TextStyle(fontSize: 11, color: mutedInk)),
+            style: TextStyle(fontSize: 12, color: mutedInk)),
           const SizedBox(height: 8),
           if (loading)
             const Center(child: Padding(padding: EdgeInsets.all(12), child: CircularProgressIndicator()))
           else if (errorMessage.isNotEmpty)
-            Text(errorMessage, style: const TextStyle(fontSize: 12, color: Colors.red))
+            Text(errorMessage, style: const TextStyle(fontSize: 12, color: Color(0xFFB14633)))
           else if (rows.isEmpty)
              Text('No accessible road-work schedules are available.',
               style: TextStyle(fontSize: 12, color: mutedInk))
@@ -8065,9 +7895,9 @@ class _RoadWorkScheduleBoardState extends State<RoadWorkScheduleBoard> {
               return Container(
                 margin: const EdgeInsets.only(top: 8),
                 padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(color: const Color(0xFFF7FAFC),
+                decoration: BoxDecoration(color: const Color(0xFFFCFAF7),
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: const Color(0xFFE4EAF1))),
+                  border: Border.all(color: const Color(0xFFF4ECE1))),
                 child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                   Row(children: [
                     Expanded(child: Text('Case #' + number + ' · ' + road,
@@ -8077,19 +7907,19 @@ class _RoadWorkScheduleBoardState extends State<RoadWorkScheduleBoard> {
                       decoration: BoxDecoration(color: _stateColor(state).withValues(alpha: .12),
                         borderRadius: BorderRadius.circular(20)),
                       child: Text(_stateLabel(state),
-                        style: TextStyle(color: _stateColor(state), fontSize: 9, fontWeight: FontWeight.w800)),
+                        style: TextStyle(color: _stateColor(state), fontSize: 11, fontWeight: FontWeight.w800)),
                     ),
                   ]),
                   const SizedBox(height: 4),
                   Text(city + ' · ' + department,
-                    style:  TextStyle(fontSize: 10, color: mutedInk)),
+                    style:  TextStyle(fontSize: 12, color: mutedInk)),
                   Text(start + ' → ' + end + ' · ' + startLabel,
-                    style:  TextStyle(fontSize: 11, color: ink)),
+                    style:  TextStyle(fontSize: 12, color: ink)),
                   if (overlapText.isNotEmpty)
                     Padding(
                       padding: const EdgeInsets.only(top: 4),
                       child: Text('Overlapping case numbers: ' + overlapText,
-                        style: const TextStyle(fontSize: 11, color: Color(0xFFB54747),
+                        style: const TextStyle(fontSize: 12, color: Color(0xFFB55847),
                           fontWeight: FontWeight.w700)),
                     ),
                 ]),
@@ -8182,15 +8012,15 @@ class _RoadRestorationBoardState extends State<RoadRestorationBoard> {
   Color _statusColor(String value) {
     switch (value) {
       case 'accepted':
-        return const Color(0xFF25845C);
+        return const Color(0xFF3B6E44);
       case 'rework_required':
-        return const Color(0xFFB54747);
+        return const Color(0xFFB55847);
       case 'awaiting_inspection':
-        return const Color(0xFFB7791F);
+        return const Color(0xFFB67A20);
       case 'in_progress':
-        return const Color(0xFF3978B8);
+        return const Color(0xFF4B80A6);
       default:
-        return const Color(0xFF64748B);
+        return const Color(0xFF80796F);
     }
   }
 
@@ -8356,7 +8186,7 @@ class _RoadRestorationBoardState extends State<RoadRestorationBoard> {
                       ),
                       const SizedBox(height: 8),
                        Text('Acceptance is blocked until inspection, compaction and drainage checks pass.',
-                        style: TextStyle(fontSize: 11, color: mutedInk)),
+                        style: TextStyle(fontSize: 12, color: mutedInk)),
                     ],
                   ),
                 ),
@@ -8482,7 +8312,7 @@ class _RoadRestorationBoardState extends State<RoadRestorationBoard> {
                 icon: const Icon(Icons.refresh), tooltip: 'Refresh restoration records'),
             ]),
              Text('Track reinstatement after road openings, inspect the restored surface and drainage, and record accepted work or required rework.',
-              style: TextStyle(fontSize: 11, color: mutedInk)),
+              style: TextStyle(fontSize: 12, color: mutedInk)),
             const SizedBox(height: 10),
             SizedBox(
               width: double.infinity,
@@ -8496,7 +8326,7 @@ class _RoadRestorationBoardState extends State<RoadRestorationBoard> {
             if (loading)
               const Center(child: Padding(padding: EdgeInsets.all(12), child: CircularProgressIndicator()))
             else if (errorMessage.isNotEmpty)
-              Text(errorMessage, style: const TextStyle(fontSize: 12, color: Colors.red))
+              Text(errorMessage, style: const TextStyle(fontSize: 12, color: Color(0xFFB14633)))
             else if (records.isEmpty)
                Text('No restoration records have been entered yet.',
                 style: TextStyle(fontSize: 12, color: mutedInk))
@@ -8513,9 +8343,9 @@ class _RoadRestorationBoardState extends State<RoadRestorationBoard> {
                 return Container(
                   margin: const EdgeInsets.only(top: 8),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFF7FAFC),
+                    color: const Color(0xFFFCFAF7),
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: const Color(0xFFE4EAF1)),
+                    border: Border.all(color: const Color(0xFFF4ECE1)),
                   ),
                   child: ListTile(
                     dense: true,
@@ -8526,7 +8356,7 @@ class _RoadRestorationBoardState extends State<RoadRestorationBoard> {
                       style:  TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: ink)),
                     subtitle: Text(
                       '${_departmentLabel(departmentId)} · $surfaceName · inspection: $outcome${dimensions.isEmpty ? '' : ' · $dimensions'}',
-                      style:  TextStyle(fontSize: 10, color: mutedInk)),
+                      style:  TextStyle(fontSize: 12, color: mutedInk)),
                     trailing: Icon(Icons.chevron_right, color: _statusColor(state)),
                   ),
                 );
@@ -8676,7 +8506,7 @@ class _BuildingComplianceInspectionBoardState extends State<BuildingComplianceIn
               decoration: const InputDecoration(labelText: 'Inspection notes / verification limitations')),
             const SizedBox(height: 8),
              Text('A recorded difference is an inspection flag only. It does not establish unlawful construction or replace review by the competent planning authority.',
-              style: TextStyle(fontSize: 11, color: mutedInk)),
+              style: TextStyle(fontSize: 12, color: mutedInk)),
           ],
         ))),
         actions: [
@@ -8749,25 +8579,25 @@ class _BuildingComplianceInspectionBoardState extends State<BuildingComplianceIn
           IconButton(onPressed: loading ? null : _load, icon: const Icon(Icons.refresh)),
         ]),
          Text('Compare observed building details with recorded approval information. Discrepancies require competent-authority verification.',
-          style: TextStyle(fontSize: 11, color: mutedInk)),
+          style: TextStyle(fontSize: 12, color: mutedInk)),
         const SizedBox(height: 10),
         Container(
           width: double.infinity,
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            color: const Color(0xFFF0F7F8),
+            color: const Color(0xFFF1F7F2),
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: const Color(0xFFD7E8E9)),
+            border: Border.all(color: const Color(0xFFD7E9DA)),
           ),
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
              Text('OFFICIAL PUBLIC APPROVAL REGISTER',
-              style: TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: teal, letterSpacing: 0.6)),
+              style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: teal, letterSpacing: 0.6)),
             const SizedBox(height: 4),
              Text('2,015 MCD plan-release records imported · Delhi · 2023',
               style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: ink)),
             const SizedBox(height: 3),
              Text('Partial MCD coverage only. The source does not provide approved floor count, building height or verified coordinates.',
-              style: TextStyle(fontSize: 10, color: mutedInk)),
+              style: TextStyle(fontSize: 12, color: mutedInk)),
             if (publicApprovalRecords.isNotEmpty) ...[
               const SizedBox(height: 8),
               ...publicApprovalRecords.map((record) => Padding(
@@ -8777,9 +8607,9 @@ class _BuildingComplianceInspectionBoardState extends State<BuildingComplianceIn
                   const SizedBox(width: 7),
                   Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                     Text('Request #${record['source_record_id'] ?? '—'} · ${record['zone_name'] ?? 'Zone not stated'}',
-                      style:  TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: ink)),
+                      style:  TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: ink)),
                     Text('${record['building_type'] ?? 'Building'} · ${record['plot_area_sqm'] ?? '—'} m² plot · ${record['approval_status'] ?? 'Status not stated'} · ${record['release_date'] ?? 'Date not stated'}',
-                      style:  TextStyle(fontSize: 10, color: mutedInk)),
+                      style:  TextStyle(fontSize: 12, color: mutedInk)),
                   ])),
                 ]),
               )),
@@ -8792,7 +8622,7 @@ class _BuildingComplianceInspectionBoardState extends State<BuildingComplianceIn
           icon: const Icon(Icons.add), label: const Text('RECORD BUILDING INSPECTION'))),
         const SizedBox(height: 8),
         if (loading) const Center(child: Padding(padding: EdgeInsets.all(12), child: CircularProgressIndicator()))
-        else if (errorMessage.isNotEmpty) Text(errorMessage, style: const TextStyle(fontSize: 12, color: Colors.red))
+        else if (errorMessage.isNotEmpty) Text(errorMessage, style: const TextStyle(fontSize: 12, color: Color(0xFFB14633)))
         else if (records.isEmpty)  Text('No building inspections have been recorded yet.',
           style: TextStyle(fontSize: 12, color: mutedInk))
         else ...records.map((record) {
@@ -8811,12 +8641,12 @@ class _BuildingComplianceInspectionBoardState extends State<BuildingComplianceIn
                 style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700)),
               Text(_departmentLabel(dept) + ' · floors ' + observed + ' observed / ' + approved +
                 ' approved' + heights + ' · ' + state,
-                style:  TextStyle(fontSize: 10, color: mutedInk)),
+                style:  TextStyle(fontSize: 12, color: mutedInk)),
               if ((record['approval_reference'] ?? '').toString().isNotEmpty)
                 Text('Approval: ' + record['approval_reference'].toString(),
-                  style:  TextStyle(fontSize: 10, color: ink)),
+                  style:  TextStyle(fontSize: 12, color: ink)),
               if ((record['inspection_notes'] ?? '').toString().isNotEmpty)
-                Text(record['inspection_notes'].toString(), style:  TextStyle(fontSize: 10, color: ink)),
+                Text(record['inspection_notes'].toString(), style:  TextStyle(fontSize: 12, color: ink)),
             ]));
         }),
       ],
@@ -8883,11 +8713,11 @@ class _DrainageInspectionBoardState extends State<DrainageInspectionBoard> {
   String _pretty(String value) => value.replaceAll('_', ' ');
   Color _statusColor(String status) {
     switch (status) {
-      case 'cleared': return const Color(0xFF25845C);
-      case 'critical': return const Color(0xFFB54747);
-      case 'high': return const Color(0xFFB7791F);
-      case 'in_progress': return const Color(0xFF3978B8);
-      default: return const Color(0xFF64748B);
+      case 'cleared': return const Color(0xFF3B6E44);
+      case 'critical': return const Color(0xFFB55847);
+      case 'high': return const Color(0xFFB67A20);
+      case 'in_progress': return const Color(0xFF4B80A6);
+      default: return const Color(0xFF80796F);
     }
   }
 
@@ -8993,7 +8823,7 @@ class _DrainageInspectionBoardState extends State<DrainageInspectionBoard> {
                 decoration: const InputDecoration(labelText: 'Inspection / action notes')),
               const SizedBox(height: 6),
                Text('Clearance requires a clear inlet, clear outfall and no standing water.',
-                style: TextStyle(fontSize: 11, color: mutedInk)),
+                style: TextStyle(fontSize: 12, color: mutedInk)),
             ]),
           )),
           actions: [
@@ -9058,7 +8888,7 @@ class _DrainageInspectionBoardState extends State<DrainageInspectionBoard> {
             icon: const Icon(Icons.refresh), tooltip: 'Refresh drainage records'),
         ]),
          Text('Track blocked inlets, silt, encroachment, standing water and missing frontage drains. This is case-management data, not engineering clearance.',
-          style: TextStyle(fontSize: 11,color: mutedInk)),
+          style: TextStyle(fontSize: 12,color: mutedInk)),
         const SizedBox(height: 10),
         SizedBox(width: double.infinity, child: OutlinedButton.icon(
           onPressed: drainageCases.isEmpty ? null : () => _edit(),
@@ -9066,12 +8896,12 @@ class _DrainageInspectionBoardState extends State<DrainageInspectionBoard> {
         if (drainageCases.isEmpty)
            Padding(padding: EdgeInsets.only(top: 8),
             child: Text('Create or assign a case under Stormwater and drainage to start an inspection.',
-              style: TextStyle(fontSize: 11,color: mutedInk))),
+              style: TextStyle(fontSize: 12,color: mutedInk))),
         const SizedBox(height: 8),
         if (loading)
           const Center(child: Padding(padding: EdgeInsets.all(12),child: CircularProgressIndicator()))
         else if (errorMessage.isNotEmpty)
-          Text(errorMessage,style: const TextStyle(fontSize: 12,color: Colors.red))
+          Text(errorMessage,style: const TextStyle(fontSize: 12,color: Color(0xFFB14633)))
         else if (records.isEmpty)
            Text('No drainage inspections have been entered yet.',
             style: TextStyle(fontSize: 12,color: mutedInk))
@@ -9083,16 +8913,16 @@ class _DrainageInspectionBoardState extends State<DrainageInspectionBoard> {
             final issue = _pretty((r['obstruction_type'] ?? 'other').toString());
             return Container(
               margin: const EdgeInsets.only(top: 8),
-              decoration: BoxDecoration(color: const Color(0xFFF7FAFC),
+              decoration: BoxDecoration(color: const Color(0xFFFCFAF7),
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: const Color(0xFFE4EAF1))),
+                border: Border.all(color: const Color(0xFFF4ECE1))),
               child: ListTile(dense: true, onTap: () => _edit(existing: r),
                 leading: Icon(Icons.water_damage_outlined,color: _statusColor(status)),
                 title: Text(_caseLabel(r['request_id'].toString()),maxLines: 2,overflow: TextOverflow.ellipsis,
                   style:  TextStyle(fontSize: 12,fontWeight: FontWeight.w700,color: ink)),
                 subtitle: Text(_departmentLabel(dept) + ' · ' + issue + ' · ' +
                   severity.toUpperCase() + ' · ' + _pretty(status),
-                  style:  TextStyle(fontSize: 10,color: mutedInk)),
+                  style:  TextStyle(fontSize: 12,color: mutedInk)),
                 trailing: const Icon(Icons.chevron_right)),
             );
           }),
@@ -9181,7 +9011,7 @@ class _GroundwaterTelemetryDashboardState extends State<GroundwaterTelemetryDash
     child: Container(padding: const EdgeInsets.all(11),
       decoration: BoxDecoration(color: panelNavy, borderRadius: BorderRadius.circular(12), border: Border.all(color: borderColor)),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Text(label, style:  TextStyle(fontSize: 10, color: mutedInk)),
+        Text(label, style:  TextStyle(fontSize: 12, color: mutedInk)),
         const SizedBox(height: 4),
         Text(value, style:  TextStyle(fontSize: 17, fontWeight: FontWeight.w800, color: ink)),
       ])));
@@ -9197,8 +9027,8 @@ class _GroundwaterTelemetryDashboardState extends State<GroundwaterTelemetryDash
       contentPadding: EdgeInsets.zero,
       title: Text(name, style:  TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: ink)),
       subtitle: Text('Recharge $recharge ha.m · Extractable $extractable ha.m · Extraction $extraction ha.m',
-        style:  TextStyle(fontSize: 10, color: mutedInk)),
-      trailing: Text(stage, style:  TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: ink)),
+        style:  TextStyle(fontSize: 12, color: mutedInk)),
+      trailing: Text(stage, style:  TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: ink)),
     );
   }
 
@@ -9212,8 +9042,8 @@ class _GroundwaterTelemetryDashboardState extends State<GroundwaterTelemetryDash
     return ListTile(dense: true, contentPadding: EdgeInsets.zero,
       leading:  Icon(Icons.sensors_outlined, color: teal),
       title: Text(name, style:  TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: ink)),
-      subtitle: Text('$place · Observed $observed$rl', style:  TextStyle(fontSize: 10, color: mutedInk)),
-      trailing: Text(_reading(station), style:  TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: ink)));
+      subtitle: Text('$place · Observed $observed$rl', style:  TextStyle(fontSize: 12, color: mutedInk)),
+      trailing: Text(_reading(station), style:  TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: ink)));
   }
 
   @override
@@ -9228,7 +9058,7 @@ class _GroundwaterTelemetryDashboardState extends State<GroundwaterTelemetryDash
            Expanded(child: Text('India groundwater intelligence', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: ink))),
           IconButton(onPressed: loading ? null : () => _loadSnapshot(), icon: const Icon(Icons.refresh), tooltip: 'Refresh nationwide groundwater records'),
         ]),
-         Text('CGWB State/UT resource assessments + published NWDP monitoring observations', style: TextStyle(fontSize: 11, color: mutedInk)),
+         Text('CGWB State/UT resource assessments + published NWDP monitoring observations', style: TextStyle(fontSize: 12, color: mutedInk)),
         const SizedBox(height: 10),
         DropdownButtonFormField<String>(
           initialValue: selectedStateId, isExpanded: true,
@@ -9238,7 +9068,7 @@ class _GroundwaterTelemetryDashboardState extends State<GroundwaterTelemetryDash
         ),
         const SizedBox(height: 10),
         if (loading) const Center(child: Padding(padding: EdgeInsets.all(12), child: CircularProgressIndicator()))
-        else if (errorMessage.isNotEmpty) Text(errorMessage, style: const TextStyle(fontSize: 12, color: Colors.red))
+        else if (errorMessage.isNotEmpty) Text(errorMessage, style: const TextStyle(fontSize: 12, color: Color(0xFFB14633)))
         else ...[
           Text(selectedStateName, style:  TextStyle(fontSize: 13, fontWeight: FontWeight.w800, color: ink)),
           const SizedBox(height: 8),
@@ -9252,31 +9082,31 @@ class _GroundwaterTelemetryDashboardState extends State<GroundwaterTelemetryDash
           const SizedBox(height: 12),
           Row(children: [
              Expanded(child: Text('CGWB 2025 district resource assessments', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: ink))),
-            Text('${districtAssessments.length} districts', style:  TextStyle(fontSize: 10, color: mutedInk)),
+            Text('${districtAssessments.length} districts', style:  TextStyle(fontSize: 12, color: mutedInk)),
           ]),
            Text('Official CGWB Annexure II values · hectare-metres (ha.m). These are annual resource assessments, not live readings or individual borewell permissions.',
-            style: TextStyle(fontSize: 10, color: mutedInk)),
+            style: TextStyle(fontSize: 12, color: mutedInk)),
           if (districtAssessments.isEmpty)
-             Padding(padding: EdgeInsets.symmetric(vertical: 8), child: Text('No Annexure II district rows are currently registered for this jurisdiction. This is a coverage gap, not evidence that district assessments do not exist.', style: TextStyle(fontSize: 10, color: mutedInk)))
+             Padding(padding: EdgeInsets.symmetric(vertical: 8), child: Text('No Annexure II district rows are currently registered for this jurisdiction. This is a coverage gap, not evidence that district assessments do not exist.', style: TextStyle(fontSize: 12, color: mutedInk)))
           else ...[
             const SizedBox(height: 5),
             ...districtAssessments.take(6).map(_districtAssessmentTile),
             if (districtAssessments.length > 6)
               ExpansionTile(
                 tilePadding: EdgeInsets.zero,
-                title: Text('Show remaining ${districtAssessments.length - 6} districts', style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700)),
+                title: Text('Show remaining ${districtAssessments.length - 6} districts', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700)),
                 children: districtAssessments.skip(6).map(_districtAssessmentTile).toList(),
               ),
           ],
           const SizedBox(height: 12),
           Row(children: [
              Expanded(child: Text('Published monitoring stations', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: ink))),
-            Text('${stations.length} shown', style:  TextStyle(fontSize: 10, color: mutedInk)),
+            Text('${stations.length} shown', style:  TextStyle(fontSize: 12, color: mutedInk)),
           ]),
           if (stations.isEmpty)
-             Padding(padding: EdgeInsets.symmetric(vertical: 10), child: Text('No station observations are currently imported for this jurisdiction. This does not mean that monitoring stations are absent.', style: TextStyle(fontSize: 11, color: mutedInk)))
+             Padding(padding: EdgeInsets.symmetric(vertical: 10), child: Text('No station observations are currently imported for this jurisdiction. This does not mean that monitoring stations are absent.', style: TextStyle(fontSize: 12, color: mutedInk)))
           else ...[
-            Text('Latest observation in this result: $latest', style:  TextStyle(fontSize: 10, color: mutedInk)),
+            Text('Latest observation in this result: $latest', style:  TextStyle(fontSize: 12, color: mutedInk)),
             const SizedBox(height: 6),
             ...stations.take(10).map(_stationTile),
             if (stations.length > 10) ExpansionTile(tilePadding: EdgeInsets.zero,
@@ -9284,7 +9114,7 @@ class _GroundwaterTelemetryDashboardState extends State<GroundwaterTelemetryDash
               children: stations.skip(10).map(_stationTile).toList()),
           ],
           const SizedBox(height: 6),
-           Text('Resource assessments are annual CGWB estimates, not live sensor values. Station readings are displayed as published. Missing observations are not evidence of absent groundwater or safe borewell conditions. National telemetry imports run through the controlled server-side import workflow.', style: TextStyle(fontSize: 10, color: mutedInk)),
+           Text('Resource assessments are annual CGWB estimates, not live sensor values. Station readings are displayed as published. Missing observations are not evidence of absent groundwater or safe borewell conditions. National telemetry imports run through the controlled server-side import workflow.', style: TextStyle(fontSize: 12, color: mutedInk)),
         ],
       ])));
   }
@@ -9339,14 +9169,14 @@ class _NationalDataCoverageBoardState extends State<NationalDataCoverageBoard> {
         Text(label, style:  TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: ink)),
         const SizedBox(height: 5),
         Text(jurisdictions.toString() + ' of 36 jurisdictions have a coverage row · ' +
-          operational.toString() + ' operationally authorised', style:  TextStyle(fontSize: 10, color: mutedInk)),
+          operational.toString() + ' operationally authorised', style:  TextStyle(fontSize: 12, color: mutedInk)),
         if (domain == 'groundwater') Text('State-level telemetry records attributed in coverage matrix: ' + imported.toString(),
-          style:  TextStyle(fontSize: 10, color: mutedInk)),
+          style:  TextStyle(fontSize: 12, color: mutedInk)),
         const SizedBox(height: 5),
         ...statuses.entries.map((e) => Padding(padding: const EdgeInsets.symmetric(vertical: 2),
           child: Row(children: [
-            Expanded(child: Text(e.key.replaceAll('_', ' '), style:  TextStyle(fontSize: 10, color: mutedInk))),
-            Text(e.value.toString(), style:  TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: ink)),
+            Expanded(child: Text(e.key.replaceAll('_', ' '), style:  TextStyle(fontSize: 12, color: mutedInk))),
+            Text(e.value.toString(), style:  TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: ink)),
           ]))),
       ]));
   }
@@ -9359,9 +9189,9 @@ class _NationalDataCoverageBoardState extends State<NationalDataCoverageBoard> {
          Expanded(child: Text('India-wide data readiness', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: ink))),
         IconButton(onPressed: loading ? null : _load, icon: const Icon(Icons.refresh), tooltip: 'Refresh national coverage matrix'),
       ]),
-       Text('36 States / UTs · 10 infrastructure domains · authority verification tracked', style: TextStyle(fontSize: 11, color: mutedInk)),
+       Text('36 States / UTs · 10 infrastructure domains · authority verification tracked', style: TextStyle(fontSize: 12, color: mutedInk)),
       if (loading) const Padding(padding: EdgeInsets.all(12), child: Center(child: CircularProgressIndicator()))
-      else if (errorMessage.isNotEmpty) Text(errorMessage, style: const TextStyle(fontSize: 11, color: Colors.red))
+      else if (errorMessage.isNotEmpty) Text(errorMessage, style: const TextStyle(fontSize: 12, color: Color(0xFFB14633)))
       else ...[
         _domainSummary('groundwater', 'Groundwater'),
         _domainSummary('utility_gis', 'Underground utility GIS'),
@@ -9375,7 +9205,7 @@ class _NationalDataCoverageBoardState extends State<NationalDataCoverageBoard> {
         _domainSummary('city_gas', 'City gas distribution'),
         _domainSummary('administrative_directory', 'Districts, ULBs and local bodies'),
         const SizedBox(height: 8),
-         Text('A portal reference or imported public record does not establish a complete or current asset inventory. Operational use remains disabled until the responsible authority validates the relevant records.', style: TextStyle(fontSize: 10, color: mutedInk)),
+         Text('A portal reference or imported public record does not establish a complete or current asset inventory. Operational use remains disabled until the responsible authority validates the relevant records.', style: TextStyle(fontSize: 12, color: mutedInk)),
         const SizedBox(height: 10),
         SizedBox(width: double.infinity, child: OutlinedButton.icon(
           onPressed: () => Navigator.of(context).push(MaterialPageRoute(
@@ -9538,29 +9368,29 @@ class _IndiaCoverageExplorerPageState extends State<IndiaCoverageExplorerPage> {
   }
 
   Color _statusBackground(Map<String, dynamic> row) {
-    if (row['operational_use_allowed'] == true) return const Color(0xFFE4F4E9);
+    if (row['operational_use_allowed'] == true) return const Color(0xFFE6F2E8);
     final status = (row['coverage_status'] ?? '').toString().toLowerCase();
-    if (status.contains('partial')) return const Color(0xFFFFF0D7);
-    if (status.contains('imported')) return const Color(0xFFE6F0FB);
+    if (status.contains('partial')) return const Color(0xFFF9EEDD);
+    if (status.contains('imported')) return const Color(0xFFF7F2EA);
     if (status.contains('national_authority_identified_state_level_register_pending') ||
         status.contains('captcha_required_for_bulk_export')) {
-      return const Color(0xFFFFF0D7);
+      return const Color(0xFFF9EEDD);
     }
-    if (status.contains('portal_identified')) return const Color(0xFFEAF4F4);
-    return const Color(0xFFF0F2F5);
+    if (status.contains('portal_identified')) return const Color(0xFFEAF4EC);
+    return const Color(0xFFF8F4ED);
   }
 
   Color _statusForeground(Map<String, dynamic> row) {
-    if (row['operational_use_allowed'] == true) return const Color(0xFF216B3B);
+    if (row['operational_use_allowed'] == true) return const Color(0xFF315B38);
     final status = (row['coverage_status'] ?? '').toString().toLowerCase();
-    if (status.contains('partial')) return const Color(0xFF8A5A00);
-    if (status.contains('imported')) return const Color(0xFF285B8F);
+    if (status.contains('partial')) return const Color(0xFF754F15);
+    if (status.contains('imported')) return const Color(0xFF39617E);
     if (status.contains('national_authority_identified_state_level_register_pending') ||
         status.contains('captcha_required_for_bulk_export')) {
-      return const Color(0xFF8A5A00);
+      return const Color(0xFF754F15);
     }
-    if (status.contains('portal_identified')) return const Color(0xFF176B6D);
-    return const Color(0xFF526071);
+    if (status.contains('portal_identified')) return const Color(0xFF2E5635);
+    return const Color(0xFF68635B);
   }
 
   Future<void> _openSource(String? value) async {
@@ -9592,7 +9422,7 @@ class _IndiaCoverageExplorerPageState extends State<IndiaCoverageExplorerPage> {
         const SizedBox(width: 7),
         Text(value, style:  TextStyle(fontWeight: FontWeight.w800, color: ink)),
         const SizedBox(width: 5),
-        Text(label, style:  TextStyle(fontSize: 10, color: mutedInk)),
+        Text(label, style:  TextStyle(fontSize: 12, color: mutedInk)),
       ]),
     );
   }
@@ -9611,9 +9441,9 @@ class _IndiaCoverageExplorerPageState extends State<IndiaCoverageExplorerPage> {
       margin: const EdgeInsets.only(bottom: 9),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: const Color(0xFFF8FAFC),
+        color: const Color(0xFFFCFAF8),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFE7EDF2)),
+        border: Border.all(color: const Color(0xFFF5EEE4)),
       ),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -9623,24 +9453,24 @@ class _IndiaCoverageExplorerPageState extends State<IndiaCoverageExplorerPage> {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
             decoration: BoxDecoration(color: _statusBackground(row), borderRadius: BorderRadius.circular(8)),
-            child: Text(status, style: TextStyle(fontSize: 8, fontWeight: FontWeight.w900, color: _statusForeground(row))),
+            child: Text(status, style: TextStyle(fontSize: 11, fontWeight: FontWeight.w900, color: _statusForeground(row))),
           ),
         ]),
         const SizedBox(height: 8),
          Text('RESPONSIBLE AUTHORITY / CUSTODIAN',
-          style: TextStyle(fontSize: 8, letterSpacing: .6, fontWeight: FontWeight.w900, color: mutedInk)),
+          style: TextStyle(fontSize: 11, letterSpacing: .6, fontWeight: FontWeight.w900, color: mutedInk)),
         const SizedBox(height: 3),
-        Text(authority, style:  TextStyle(fontSize: 11, color: ink, height: 1.35)),
+        Text(authority, style:  TextStyle(fontSize: 12, color: ink, height: 1.35)),
         if (granularity.isNotEmpty) ...[
           const SizedBox(height: 8),
            Text('DATA EXPECTED',
-            style: TextStyle(fontSize: 8, letterSpacing: .6, fontWeight: FontWeight.w900, color: mutedInk)),
+            style: TextStyle(fontSize: 11, letterSpacing: .6, fontWeight: FontWeight.w900, color: mutedInk)),
           const SizedBox(height: 3),
-          Text(granularity, style:  TextStyle(fontSize: 10, color: mutedInk, height: 1.35)),
+          Text(granularity, style:  TextStyle(fontSize: 12, color: mutedInk, height: 1.35)),
         ],
         if (notes.isNotEmpty) ...[
           const SizedBox(height: 8),
-          Text(notes, style:  TextStyle(fontSize: 10, color: mutedInk, height: 1.35)),
+          Text(notes, style:  TextStyle(fontSize: 12, color: mutedInk, height: 1.35)),
         ],
         if ((nationalUrl != null && nationalUrl.isNotEmpty) || (portalUrl != null && portalUrl.isNotEmpty)) ...[
           const SizedBox(height: 5),
@@ -9649,13 +9479,13 @@ class _IndiaCoverageExplorerPageState extends State<IndiaCoverageExplorerPage> {
               TextButton.icon(
                 onPressed: () => _openSource(nationalUrl),
                 icon: const Icon(Icons.public, size: 14),
-                label: const Text('National source', style: TextStyle(fontSize: 10)),
+                label: const Text('National source', style: TextStyle(fontSize: 12)),
               ),
             if (portalUrl != null && portalUrl.isNotEmpty)
               TextButton.icon(
                 onPressed: () => _openSource(portalUrl),
                 icon: const Icon(Icons.open_in_new, size: 14),
-                label: const Text('State / local portal', style: TextStyle(fontSize: 10)),
+                label: const Text('State / local portal', style: TextStyle(fontSize: 12)),
               ),
           ]),
         ],
@@ -9696,18 +9526,18 @@ class _IndiaCoverageExplorerPageState extends State<IndiaCoverageExplorerPage> {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
               decoration: BoxDecoration(
-                color: const Color(0xFFFFF0D7),
+                color: const Color(0xFFF9EEDD),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: const Text('AUTHORITY CHECK PENDING',
-                style: TextStyle(fontSize: 8, fontWeight: FontWeight.w900, color: Color(0xFF8A5A00))),
+                style: TextStyle(fontSize: 11, fontWeight: FontWeight.w900, color: Color(0xFF754F15))),
             ),
           ]),
           const SizedBox(height: 7),
           Text(totalDirectoryRecords.toString() + ' reference codes across India · ' +
             verified.toString() + ' authority-verified · ' +
             administrativeUnits.length.toString() + ' rows sampled for diagnostics',
-            style:  TextStyle(fontSize: 10, color: mutedInk)),
+            style:  TextStyle(fontSize: 12, color: mutedInk)),
           if (canManageDirectory) ...[
             const SizedBox(height: 8),
             Wrap(spacing: 7, runSpacing: 7, children: [
@@ -9722,7 +9552,7 @@ class _IndiaCoverageExplorerPageState extends State<IndiaCoverageExplorerPage> {
               canManageDirectory
                 ? 'No district or local-government rows are currently visible. ' + pendingDistrictExports.toString() + ' district and ' + pendingUlbExports.toString() + ' urban-local-body state export tasks are queued. Each official report must be generated through the LGD portal with its normal CAPTCHA check.'
                 : 'No district or local-government rows are currently visible. The national directory source is registered; authority validation remains pending.',
-              style:  TextStyle(fontSize: 11, color: mutedInk, height: 1.4),
+              style:  TextStyle(fontSize: 12, color: mutedInk, height: 1.4),
             )
           else
             Wrap(spacing: 7, runSpacing: 7, children: labels.entries
@@ -9742,12 +9572,12 @@ class _IndiaCoverageExplorerPageState extends State<IndiaCoverageExplorerPage> {
           ),
            Text(
             'Current reference counts combine the 21 Oct 2026 LGD community mirror (districts, sub-districts and blocks) and the 23 Sep 2026 ULB API mirror. These are code-bearing directory references, not authority-certified records or boundary polygons. The 733 older district geometries are maintained separately as dated, code-less reference shapes.',
-            style: TextStyle(fontSize: 10, color: mutedInk, height: 1.4),
+            style: TextStyle(fontSize: 12, color: mutedInk, height: 1.4),
           ),
           const SizedBox(height: 5),
           Text(
             'Required authoritative source: Ministry of Panchayati Raj Local Government Directory (LGD). Obtain the official report through its normal authorised workflow, including its CAPTCHA check, and import the source file with its generation date. Do not treat community mirrors, approximate name matches or manually typed names as verified records.',
-            style: TextStyle(fontSize: 10, color: mutedInk, height: 1.4),
+            style: TextStyle(fontSize: 12, color: mutedInk, height: 1.4),
           ),
           const SizedBox(height: 7),
           Wrap(spacing: 8, runSpacing: 6, children: [
@@ -9800,7 +9630,7 @@ class _IndiaCoverageExplorerPageState extends State<IndiaCoverageExplorerPage> {
       child: ExpansionTile(
         initiallyExpanded: selectedStateId == stateId,
         leading: CircleAvatar(
-          backgroundColor: const Color(0xFFE7F8F6),
+          backgroundColor: const Color(0xFFEBF4EC),
           child: Icon(kind == 'STATE' ? Icons.map_outlined : Icons.location_city_outlined,
             color: teal, size: 19),
         ),
@@ -9808,7 +9638,7 @@ class _IndiaCoverageExplorerPageState extends State<IndiaCoverageExplorerPage> {
           style:  TextStyle(fontSize: 13, fontWeight: FontWeight.w800, color: ink)),
         subtitle: Text(kind + ' · ' + rows.length.toString() + ' domain record(s) · ' +
           authorised.toString() + ' operationally authorised',
-          style:  TextStyle(fontSize: 10, color: mutedInk)),
+          style:  TextStyle(fontSize: 12, color: mutedInk)),
         children: [
           Padding(
             padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
@@ -9865,7 +9695,7 @@ class _IndiaCoverageExplorerPageState extends State<IndiaCoverageExplorerPage> {
                         padding: const EdgeInsets.all(18),
                         decoration: BoxDecoration(
                           gradient: LinearGradient(
-                            colors: [navy, Color(0xFF14515E)],
+                            colors: [navy, Color(0xFF3D3A35)],
                             begin: Alignment.topLeft, end: Alignment.bottomRight),
                           borderRadius: BorderRadius.circular(17),
                         ),
@@ -9876,7 +9706,7 @@ class _IndiaCoverageExplorerPageState extends State<IndiaCoverageExplorerPage> {
                             style: TextStyle(color: Colors.white, fontWeight: FontWeight.w900, letterSpacing: 1.0)),
                           SizedBox(height: 6),
                           Text('Explore official source coverage and data-readiness across every Indian State and Union Territory.',
-                            style: TextStyle(color: Colors.white70, fontSize: 11, height: 1.4)),
+                            style: TextStyle(color: Colors.white70, fontSize: 12, height: 1.4)),
                         ]),
                       ),
                       const SizedBox(height: 12),
@@ -9894,12 +9724,12 @@ class _IndiaCoverageExplorerPageState extends State<IndiaCoverageExplorerPage> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                                Text('BROWSE BY INDIA REGION',
-                                style: TextStyle(fontSize: 10, letterSpacing: .8,
+                                style: TextStyle(fontSize: 12, letterSpacing: .8,
                                   fontWeight: FontWeight.w900, color: cyanAccent)),
                               const SizedBox(height: 4),
                                Text(
                                 'Regional filters expose northern and other State/UT records directly. These are browse groupings, not separate data-authority boundaries.',
-                                style: TextStyle(fontSize: 10, color: mutedInk, height: 1.35),
+                                style: TextStyle(fontSize: 12, color: mutedInk, height: 1.35),
                               ),
                               const SizedBox(height: 10),
                               SingleChildScrollView(
@@ -9918,7 +9748,7 @@ class _IndiaCoverageExplorerPageState extends State<IndiaCoverageExplorerPage> {
                                               : regionJurisdictions[region]!.length).toString(),
                                           ),
                                           labelStyle: TextStyle(
-                                            fontSize: 10,
+                                            fontSize: 12,
                                             fontWeight: FontWeight.w800,
                                             color: selectedRegion == region
                                               ? Colors.white
@@ -9928,7 +9758,7 @@ class _IndiaCoverageExplorerPageState extends State<IndiaCoverageExplorerPage> {
                                           backgroundColor: panelNavy,
                                           side: BorderSide(
                                             color: selectedRegion == region
-                                              ? const Color(0xFF35D7C2)
+                                              ? const Color(0xFF62AA6E)
                                               : borderColor,
                                           ),
                                           onSelected: (_) => setState(() {
@@ -10002,7 +9832,7 @@ class _IndiaCoverageExplorerPageState extends State<IndiaCoverageExplorerPage> {
                       ),
                       const SizedBox(height: 8),
                       Text('Showing ' + filteredStates.length.toString() + ' of ' + states.length.toString() + ' jurisdictions',
-                        style:  TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: mutedInk)),
+                        style:  TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: mutedInk)),
                       const SizedBox(height: 8),
                       if (filteredStates.isEmpty)
                         const Card(child: Padding(
@@ -10017,7 +9847,7 @@ class _IndiaCoverageExplorerPageState extends State<IndiaCoverageExplorerPage> {
                           padding: EdgeInsets.all(13),
                           child: Text(
                             'DATA GOVERNANCE: This explorer records source discovery, coverage and verification status. It does not publish exact underground utility routes, depths or asset-point locations. Public-source presence is not an excavation permit or safety clearance; the responsible authority must confirm current records before field work.',
-                            style: TextStyle(fontSize: 10, height: 1.45, color: mutedInk),
+                            style: TextStyle(fontSize: 12, height: 1.45, color: mutedInk),
                           ),
                         ),
                       ),
@@ -10220,7 +10050,7 @@ class _IndiaAdministrativeHierarchyPageState
       title: Text(name, style: TextStyle(color: ink, fontWeight: FontWeight.w700, fontSize: 12)),
       subtitle: Text(
         'LGD code: $code · $status · ${sourceDate == null ? 'source date not recorded' : 'source snapshot $sourceDate'}\n$source',
-        style: TextStyle(color: mutedInk, fontSize: 9, height: 1.35),
+        style: TextStyle(color: mutedInk, fontSize: 11, height: 1.35),
       ),
       isThreeLine: true,
     );
@@ -10233,7 +10063,7 @@ class _IndiaAdministrativeHierarchyPageState
         initiallyExpanded: true,
         title: Text(title, style: TextStyle(color: ink, fontWeight: FontWeight.w800, fontSize: 13)),
         subtitle: Text('${rows.length} imported row(s) · source verification pending',
-            style: TextStyle(color: mutedInk, fontSize: 10)),
+            style: TextStyle(color: mutedInk, fontSize: 12)),
         children: rows.isEmpty
             ? [
                 Padding(
@@ -10241,7 +10071,7 @@ class _IndiaAdministrativeHierarchyPageState
                   child: Align(
                     alignment: Alignment.centerLeft,
                     child: Text('No records are currently linked to this district.',
-                        style: TextStyle(color: mutedInk, fontSize: 11)),
+                        style: TextStyle(color: mutedInk, fontSize: 12)),
                   ),
                 ),
               ]
@@ -10300,17 +10130,17 @@ class _IndiaAdministrativeHierarchyPageState
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           const Text('REFERENCE DIRECTORY — NOT AUTHORITY VERIFIED',
-                              style: TextStyle(color: Color(0xFF8A5A00),
-                                  fontSize: 10, fontWeight: FontWeight.w900)),
+                              style: TextStyle(color: Color(0xFF754F15),
+                                  fontSize: 12, fontWeight: FontWeight.w900)),
                           const SizedBox(height: 7),
                           Text(
                             'This browser uses active, LGD-code-bearing records from a 21 October 2026 community mirror of LGD data. Every imported row remains unverified. Confirm the latest directory and jurisdiction with the competent authority before relying on it.',
-                            style: TextStyle(color: mutedInk, fontSize: 10, height: 1.45),
+                            style: TextStyle(color: mutedInk, fontSize: 12, height: 1.45),
                           ),
                           const SizedBox(height: 7),
                           Text(
                             'Select a State / UT, then a district. Sub-districts and blocks are shown as separate district-linked lists because the imported records do not establish a validated block-under-sub-district relationship.',
-                            style: TextStyle(color: mutedInk, fontSize: 10, height: 1.45),
+                            style: TextStyle(color: mutedInk, fontSize: 12, height: 1.45),
                           ),
                         ],
                       ),
@@ -10320,7 +10150,7 @@ class _IndiaAdministrativeHierarchyPageState
                     Card(
                       child: Padding(
                         padding: const EdgeInsets.all(12),
-                        child: Text(errorMessage, style: const TextStyle(color: Colors.red, fontSize: 11)),
+                        child: Text(errorMessage, style: const TextStyle(color: Color(0xFFB14633), fontSize: 12)),
                       ),
                     ),
                   DropdownButtonFormField<String>(
@@ -10360,7 +10190,7 @@ class _IndiaAdministrativeHierarchyPageState
                         child: Padding(
                           padding: const EdgeInsets.all(14),
                           child: Text('No imported district record matches this State / UT and search.',
-                              style: TextStyle(color: mutedInk, fontSize: 11)),
+                              style: TextStyle(color: mutedInk, fontSize: 12)),
                         ),
                       )
                     else
@@ -10376,7 +10206,7 @@ class _IndiaAdministrativeHierarchyPageState
                                   style: TextStyle(color: ink, fontWeight: FontWeight.w700, fontSize: 12)),
                               subtitle: Text(
                                 'LGD code ${row['lgd_code']} · ${row['verification_status']} · source date ${row['source_updated_at'] ?? 'not recorded'}\n${row['source_system'] ?? 'source not stated'}',
-                                style: TextStyle(color: mutedInk, fontSize: 9, height: 1.3),
+                                style: TextStyle(color: mutedInk, fontSize: 11, height: 1.3),
                               ),
                               isThreeLine: true,
                               trailing: Icon(selected ? Icons.expand_less : Icons.chevron_right, color: teal),
@@ -10411,7 +10241,7 @@ class _IndiaAdministrativeHierarchyPageState
                           loadingLocalBodies
                               ? 'Loading State/UT-linked records…'
                               : '${localBodies.length} imported ULB reference record(s) · district association unavailable',
-                          style: TextStyle(color: mutedInk, fontSize: 10),
+                          style: TextStyle(color: mutedInk, fontSize: 12),
                         ),
                         children: [
                           Padding(
@@ -10421,7 +10251,7 @@ class _IndiaAdministrativeHierarchyPageState
                               children: [
                                 Text(
                                   'Source: 23 September 2026 community mirror. These records are linked to this State/UT only; the imported source does not establish district parents or ward boundaries. All entries remain unverified.',
-                                  style: TextStyle(color: mutedInk, fontSize: 9, height: 1.35),
+                                  style: TextStyle(color: mutedInk, fontSize: 11, height: 1.35),
                                 ),
                                 const SizedBox(height: 8),
                                 TextField(
@@ -10444,7 +10274,7 @@ class _IndiaAdministrativeHierarchyPageState
                                     padding: const EdgeInsets.all(12),
                                     child: Text(
                                       'No ULB reference rows match this State/UT and search.',
-                                      style: TextStyle(color: mutedInk, fontSize: 10),
+                                      style: TextStyle(color: mutedInk, fontSize: 12),
                                     ),
                                   )
                                 else
@@ -10460,7 +10290,7 @@ class _IndiaAdministrativeHierarchyPageState
                                   alignment: Alignment.centerLeft,
                                   child: Text(
                                     'Showing ${filteredLocalBodies.length} matching row(s)',
-                                    style: TextStyle(color: mutedInk, fontSize: 9),
+                                    style: TextStyle(color: mutedInk, fontSize: 11),
                                   ),
                                 ),
                               ],
@@ -10482,7 +10312,7 @@ class _IndiaAdministrativeHierarchyPageState
                           const SizedBox(height: 5),
                           Text(
                             'The database contains 5,050 active State/UT-linked ULB code records from a 23 Sep 2026 community mirror. The source does not include validated district parent links or ward polygons. Gram-panchayat and ward records are not present in the current import. All mirrored rows remain unverified; no local-body boundary geometry or statutory status is inferred.',
-                            style: TextStyle(color: mutedInk, fontSize: 10, height: 1.4),
+                            style: TextStyle(color: mutedInk, fontSize: 12, height: 1.4),
                           ),
                         ],
                       ),
@@ -10491,7 +10321,7 @@ class _IndiaAdministrativeHierarchyPageState
                   const SizedBox(height: 8),
                   Text(
                     'Directory names and codes are navigation references only. They do not certify statutory boundaries, asset ownership, utility routes, excavation permits or site safety.',
-                    style: TextStyle(color: mutedInk, fontSize: 9, height: 1.4),
+                    style: TextStyle(color: mutedInk, fontSize: 11, height: 1.4),
                   ),
                 ],
               ),
@@ -10583,32 +10413,32 @@ class _IndiaNationalAuthorityDirectoryPageState extends State<IndiaNationalAutho
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Text(name, style:  TextStyle(fontSize: 13, fontWeight: FontWeight.w800, color: ink)),
           const SizedBox(height: 4),
-          Text(level, style:  TextStyle(fontSize: 8, letterSpacing: .7, fontWeight: FontWeight.w900, color: teal)),
+          Text(level, style:  TextStyle(fontSize: 11, letterSpacing: .7, fontWeight: FontWeight.w900, color: teal)),
           const SizedBox(height: 8),
-          Text(responsibility, style:  TextStyle(fontSize: 11, height: 1.4, color: ink)),
+          Text(responsibility, style:  TextStyle(fontSize: 12, height: 1.4, color: ink)),
           if (tags.isNotEmpty) ...[
             const SizedBox(height: 9),
             Wrap(spacing: 6, runSpacing: 6, children: tags.map((tag) => Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
-              decoration: BoxDecoration(color: const Color(0xFFEAF4F4), borderRadius: BorderRadius.circular(7)),
+              decoration: BoxDecoration(color: const Color(0xFFEAF4EC), borderRadius: BorderRadius.circular(7)),
               child: Text(domainLabels[tag] ?? tag.replaceAll('_', ' '),
-                style: const TextStyle(fontSize: 9, fontWeight: FontWeight.w700, color: Color(0xFF176B6D))),
+                style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Color(0xFF2E5635))),
             )).toList()),
           ],
           if (localRequired) ...[
             const SizedBox(height: 9),
             Container(
               padding: const EdgeInsets.all(9),
-              decoration: BoxDecoration(color: const Color(0xFFFFF0D7), borderRadius: BorderRadius.circular(8)),
+              decoration: BoxDecoration(color: const Color(0xFFF9EEDD), borderRadius: BorderRadius.circular(8)),
               child: const Text(
                 'LOCAL CUSTODIAN REQUIRED: Confirm the relevant State/UT department, municipal body, utility operator or asset owner before treating this authority as responsible for a specific site.',
-                style: TextStyle(fontSize: 9, height: 1.4, color: Color(0xFF805600), fontWeight: FontWeight.w600),
+                style: TextStyle(fontSize: 11, height: 1.4, color: Color(0xFF6D4913), fontWeight: FontWeight.w600),
               ),
             ),
           ],
           if (notes.isNotEmpty) ...[
             const SizedBox(height: 8),
-            Text(notes, style:  TextStyle(fontSize: 10, height: 1.4, color: mutedInk)),
+            Text(notes, style:  TextStyle(fontSize: 12, height: 1.4, color: mutedInk)),
           ],
           const SizedBox(height: 6),
           TextButton.icon(
@@ -10667,11 +10497,11 @@ class _IndiaNationalAuthorityDirectoryPageState extends State<IndiaNationalAutho
                           style: TextStyle(fontSize: 12, fontWeight: FontWeight.w900, color: ink)),
                         const SizedBox(height: 6),
                         Text(authorities.length.toString() + ' national authority and directory references registered.',
-                          style:  TextStyle(fontSize: 10, color: mutedInk)),
+                          style:  TextStyle(fontSize: 12, color: mutedInk)),
                         const SizedBox(height: 8),
                          Text(
                           'These records identify national policy, programme, regulatory and technical bodies. They do not establish which State/UT or local operator owns an asset. Confirm the local custodian for each site.',
-                          style: TextStyle(fontSize: 10, height: 1.45, color: mutedInk),
+                          style: TextStyle(fontSize: 12, height: 1.45, color: mutedInk),
                         ),
                       ]),
                     ),
@@ -10698,7 +10528,7 @@ class _IndiaNationalAuthorityDirectoryPageState extends State<IndiaNationalAutho
                   ),
                   const SizedBox(height: 10),
                   Text('Showing ' + filtered.length.toString() + ' of ' + authorities.length.toString() + ' authorities',
-                    style:  TextStyle(fontSize: 10, color: mutedInk, fontWeight: FontWeight.w700)),
+                    style:  TextStyle(fontSize: 12, color: mutedInk, fontWeight: FontWeight.w700)),
                   const SizedBox(height: 8),
                   if (filtered.isEmpty)
                     const Card(child: Padding(padding: EdgeInsets.all(16), child: Text('No authority references match this filter.')))
@@ -10828,10 +10658,10 @@ class _UtilityAssetVerificationPageState extends State<UtilityAssetVerificationP
   }
 
   Color _statusColor(String status) {
-    if (status == 'verified' || status == 'owner_confirmed') return const Color(0xFFE4F4E9);
-    if (status == 'field_surveyed') return const Color(0xFFE6F0FB);
-    if (status == 'disputed') return const Color(0xFFFFE8E8);
-    return const Color(0xFFFFF0D7);
+    if (status == 'verified' || status == 'owner_confirmed') return const Color(0xFFE6F2E8);
+    if (status == 'field_surveyed') return const Color(0xFFF7F2EA);
+    if (status == 'disputed') return const Color(0xFFFAEFED);
+    return const Color(0xFFF9EEDD);
   }
 
   Widget _metric(String label, String value, IconData icon) {
@@ -10847,7 +10677,7 @@ class _UtilityAssetVerificationPageState extends State<UtilityAssetVerificationP
         const SizedBox(width: 7),
         Text(value, style:  TextStyle(fontWeight: FontWeight.w800, color: ink)),
         const SizedBox(width: 5),
-        Text(label, style:  TextStyle(fontSize: 10, color: mutedInk)),
+        Text(label, style:  TextStyle(fontSize: 12, color: mutedInk)),
       ]),
     );
   }
@@ -10879,7 +10709,7 @@ class _UtilityAssetVerificationPageState extends State<UtilityAssetVerificationP
                           padding: EdgeInsets.all(14),
                           child: Text(
                             'AUTHORITY REVIEW QUEUE — metadata only. This screen deliberately excludes underground asset coordinates, routes, depths, dimensions and precise geometry. A verification label is not excavation clearance.',
-                            style: TextStyle(fontSize: 10, height: 1.45, color: mutedInk),
+                            style: TextStyle(fontSize: 12, height: 1.45, color: mutedInk),
                           ),
                         )),
                         const SizedBox(height: 10),
@@ -10929,40 +10759,40 @@ class _UtilityAssetVerificationPageState extends State<UtilityAssetVerificationP
                                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
                                       decoration: BoxDecoration(color: _statusColor(status), borderRadius: BorderRadius.circular(8)),
                                       child: Text(status.replaceAll('_', ' ').toUpperCase(),
-                                        style:  TextStyle(fontSize: 8, fontWeight: FontWeight.w900, color: ink)),
+                                        style:  TextStyle(fontSize: 11, fontWeight: FontWeight.w900, color: ink)),
                                     ),
                                   ]),
                                   const SizedBox(height: 7),
                                   Text('Owner department: ' + (row['owner_department'] ?? 'Not assigned').toString(),
-                                    style:  TextStyle(fontSize: 10, color: mutedInk)),
+                                    style:  TextStyle(fontSize: 12, color: mutedInk)),
                                   Text('Source: ' + (row['source_type'] ?? 'Not recorded').toString() +
                                     ' · Operational status: ' + (row['operational_status'] ?? 'unknown').toString(),
-                                    style:  TextStyle(fontSize: 10, color: mutedInk)),
+                                    style:  TextStyle(fontSize: 12, color: mutedInk)),
                                   Text('Survey date: ' + _date(row['surveyed_at']) +
                                     ' · Evidence items: ' + (row['evidence_count'] ?? 0).toString(),
-                                    style:  TextStyle(fontSize: 10, color: mutedInk)),
+                                    style:  TextStyle(fontSize: 12, color: mutedInk)),
                                   if ((row['surveyed_by_org'] ?? '').toString().isNotEmpty)
                                     Text('Survey organisation: ' + row['surveyed_by_org'].toString(),
-                                      style:  TextStyle(fontSize: 10, color: mutedInk)),
+                                      style:  TextStyle(fontSize: 12, color: mutedInk)),
                                   if ((row['source_title'] ?? '').toString().isNotEmpty)
                                     Text('Submitted source: ' + row['source_title'].toString(),
-                                      style:  TextStyle(fontSize: 10, color: mutedInk)),
+                                      style:  TextStyle(fontSize: 12, color: mutedInk)),
                                   if ((row['source_organisation'] ?? '').toString().isNotEmpty)
                                     Text('Source organisation: ' + row['source_organisation'].toString(),
-                                      style:  TextStyle(fontSize: 10, color: mutedInk)),
+                                      style:  TextStyle(fontSize: 12, color: mutedInk)),
                                   if ((row['authorization_reference'] ?? '').toString().isNotEmpty)
                                     Text('Authority reference: ' + row['authorization_reference'].toString(),
-                                      style:  TextStyle(fontSize: 10, color: mutedInk)),
+                                      style:  TextStyle(fontSize: 12, color: mutedInk)),
                                   if ((row['import_status'] ?? '').toString().isNotEmpty)
                                     Text('Import audit: ' + row['import_status'].toString().replaceAll('_', ' ').toUpperCase(),
-                                      style: const TextStyle(fontSize: 10, color: Color(0xFF9A6700), fontWeight: FontWeight.w700)),
+                                      style: const TextStyle(fontSize: 12, color: Color(0xFF835817), fontWeight: FontWeight.w700)),
                                   if ((row['import_run_id'] ?? '').toString().isNotEmpty)
                                     Text('Audit run: ' + row['import_run_id'].toString(),
-                                      style:  TextStyle(fontSize: 9, color: mutedInk)),
+                                      style:  TextStyle(fontSize: 11, color: mutedInk)),
                                   if (evidenceItems.isNotEmpty) ...[
                                     const Divider(height: 16),
                                      Text('REFERENCE-ONLY SURVEY EVIDENCE',
-                                      style: TextStyle(fontSize: 9, fontWeight: FontWeight.w900, color: ink)),
+                                      style: TextStyle(fontSize: 11, fontWeight: FontWeight.w900, color: ink)),
                                     ...evidenceItems.map((item) => Padding(
                                       padding: const EdgeInsets.only(top: 7),
                                       child: Column(
@@ -10970,29 +10800,29 @@ class _UtilityAssetVerificationPageState extends State<UtilityAssetVerificationP
                                         children: [
                                           Text(
                                             (item['evidence_reference_code'] ?? 'Reference').toString(),
-                                            style:  TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: ink),
+                                            style:  TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: ink),
                                           ),
                                           Text(
                                             '${item['survey_method']} · ${_date(item['survey_date'])} · ${item['surveyor_organisation']}',
-                                            style:  TextStyle(fontSize: 9, color: mutedInk),
+                                            style:  TextStyle(fontSize: 11, color: mutedInk),
                                           ),
                                           Text(
                                             'SHA-256: ${item['evidence_sha256']}',
-                                            style:  TextStyle(fontSize: 8, color: mutedInk),
+                                            style:  TextStyle(fontSize: 11, color: mutedInk),
                                           ),
                                         ],
                                       ),
                                     )),
                                     const Text(
                                       'Original source material is not stored or viewable in this queue. Confirm the reference with the owner department through authorised channels.',
-                                      style: TextStyle(fontSize: 9, color: Color(0xFF9A6700), height: 1.35),
+                                      style: TextStyle(fontSize: 11, color: Color(0xFF835817), height: 1.35),
                                     ),
                                   ],
                                   if ((row['verification_notes'] ?? '').toString().isNotEmpty)
                                     Padding(
                                       padding: const EdgeInsets.only(top: 6),
                                       child: Text(row['verification_notes'].toString(),
-                                        style:  TextStyle(fontSize: 10, color: mutedInk)),
+                                        style:  TextStyle(fontSize: 12, color: mutedInk)),
                                     ),
                                   if (status != 'verified' && status != 'retired') ...[
                                     const Divider(height: 18),
@@ -11013,7 +10843,7 @@ class _UtilityAssetVerificationPageState extends State<UtilityAssetVerificationP
                                       const Padding(
                                         padding: EdgeInsets.only(top: 6),
                                         child: Text('Approval requires recorded evidence. Verify the source and authority independently before approval.',
-                                          style: TextStyle(fontSize: 10, color: Color(0xFF9A6700))),
+                                          style: TextStyle(fontSize: 12, color: Color(0xFF835817))),
                                       ),
                                   ],
                                 ]),
@@ -11424,7 +11254,7 @@ class _IndiaLgdCsvImportPageState extends State<IndiaLgdCsvImportPage> {
         padding: EdgeInsets.all(14),
         child: Text(
           'ADMINISTRATOR / COORDINATOR ONLY. Generate the report on the official LGD portal yourself, complete its CAPTCHA normally, and convert the XLS/HTML report to CSV using the standard column headings. This importer does not automate or bypass the CAPTCHA.',
-          style: TextStyle(fontSize: 11, height: 1.45, color: mutedInk),
+          style: TextStyle(fontSize: 12, height: 1.45, color: mutedInk),
         ),
       )),
       const SizedBox(height: 12),
@@ -11451,7 +11281,7 @@ class _IndiaLgdCsvImportPageState extends State<IndiaLgdCsvImportPage> {
         unitType == 'district'
             ? 'Required: District LGD Code, District Name and State Name. Maximum CSV size: 25 MB.'
             : 'Required: entity LGD code, entity name, State Name and direct-parent LGD code. Ward files should include Local Body Code; village files should include their direct revenue / local-government parent code. Maximum CSV size: 25 MB.',
-        style:  TextStyle(fontSize: 11, color: mutedInk, height: 1.4),
+        style:  TextStyle(fontSize: 12, color: mutedInk, height: 1.4),
       ),
       const SizedBox(height: 14),
       FilledButton.icon(
@@ -11464,7 +11294,7 @@ class _IndiaLgdCsvImportPageState extends State<IndiaLgdCsvImportPage> {
         const SizedBox(height: 12),
         Card(child: Padding(
           padding: const EdgeInsets.all(12),
-          child: Text(statusMessage, style: const TextStyle(fontSize: 11, height: 1.4)),
+          child: Text(statusMessage, style: const TextStyle(fontSize: 12, height: 1.4)),
         )),
       ],
       const SizedBox(height: 12),
@@ -11543,11 +11373,11 @@ class _BuildingApprovalRegisterBoardState extends State<BuildingApprovalRegister
              Expanded(child: Text('Public building-approval register', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: ink))),
             IconButton(onPressed: loading ? null : _load, icon: const Icon(Icons.refresh), tooltip: 'Refresh public approval register'),
           ]),
-           Text('Official published plan-release records imported into SAMANVAY. This is not a nationwide permit registry.', style: TextStyle(fontSize: 10, color: mutedInk)),
+           Text('Official published plan-release records imported into SAMANVAY. This is not a nationwide permit registry.', style: TextStyle(fontSize: 12, color: mutedInk)),
           if (loading)
             const Padding(padding: EdgeInsets.all(12), child: Center(child: CircularProgressIndicator()))
           else if (errorMessage.isNotEmpty)
-            Text(errorMessage, style: const TextStyle(fontSize: 11, color: Colors.red))
+            Text(errorMessage, style: const TextStyle(fontSize: 12, color: Color(0xFFB14633)))
           else ...[
             const SizedBox(height: 9),
             Row(children: [
@@ -11562,17 +11392,17 @@ class _BuildingApprovalRegisterBoardState extends State<BuildingApprovalRegister
               Expanded(child: _approvalMetric('Official height values', heightValues.toString())),
             ]),
             const SizedBox(height: 8),
-            Text('$authority · $jurisdiction', style:  TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: ink)),
+            Text('$authority · $jurisdiction', style:  TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: ink)),
             const SizedBox(height: 4),
             ...statusCounts.entries.map((entry) => Padding(
               padding: const EdgeInsets.symmetric(vertical: 2),
               child: Row(children: [
-                Expanded(child: Text(entry.key, style:  TextStyle(fontSize: 10, color: mutedInk))),
-                Text(entry.value.toString(), style:  TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: ink)),
+                Expanded(child: Text(entry.key, style:  TextStyle(fontSize: 12, color: mutedInk))),
+                Text(entry.value.toString(), style:  TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: ink)),
               ]),
             )),
             const SizedBox(height: 6),
-             Text('Source status is preserved as published. No sanctioned floors, building heights, parcel locations or legal compliance conclusions are inferred from missing fields.', style: TextStyle(fontSize: 10, color: mutedInk)),
+             Text('Source status is preserved as published. No sanctioned floors, building heights, parcel locations or legal compliance conclusions are inferred from missing fields.', style: TextStyle(fontSize: 12, color: mutedInk)),
             if (sourceUrl.isNotEmpty)
               Align(
                 alignment: Alignment.centerLeft,
@@ -11598,7 +11428,7 @@ class _BuildingApprovalRegisterBoardState extends State<BuildingApprovalRegister
     padding: const EdgeInsets.all(10),
     decoration: BoxDecoration(color: panelNavy, borderRadius: BorderRadius.circular(12), border: Border.all(color: borderColor)),
     child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      Text(label, style:  TextStyle(fontSize: 9, color: mutedInk)),
+      Text(label, style:  TextStyle(fontSize: 11, color: mutedInk)),
       const SizedBox(height: 3),
       Text(value, maxLines: 2, overflow: TextOverflow.ellipsis,
         style:  TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: ink)),
@@ -11738,7 +11568,7 @@ class _GroundwaterObservationBoardState extends State<GroundwaterObservationBoar
             TextField(controller: notes, maxLines: 3, decoration: const InputDecoration(labelText: 'Measurement notes')),
             const SizedBox(height: 8),
              Text('A water-level reading is not a legal or sustainability classification. Record the measurement time, method and pumping state accurately. This form does not connect to live sensors.',
-              style: TextStyle(fontSize: 11, color: mutedInk)),
+              style: TextStyle(fontSize: 12, color: mutedInk)),
           ],
         ))),
         actions: [
@@ -11800,14 +11630,14 @@ class _GroundwaterObservationBoardState extends State<GroundwaterObservationBoar
           IconButton(onPressed: loading ? null : _load, icon: const Icon(Icons.refresh)),
         ]),
          Text('Append dated site measurements to a borewell/groundwater case. The public station snapshot above remains separate.',
-          style: TextStyle(fontSize: 11, color: mutedInk)),
+          style: TextStyle(fontSize: 12, color: mutedInk)),
         const SizedBox(height: 10),
         SizedBox(width: double.infinity, child: OutlinedButton.icon(
           onPressed: groundwaterCases.isEmpty ? null : _add,
           icon: const Icon(Icons.add), label: const Text('RECORD GROUNDWATER OBSERVATION'))),
         const SizedBox(height: 8),
         if (loading) const Center(child: Padding(padding: EdgeInsets.all(12), child: CircularProgressIndicator()))
-        else if (errorMessage.isNotEmpty) Text(errorMessage, style: const TextStyle(fontSize: 12, color: Colors.red))
+        else if (errorMessage.isNotEmpty) Text(errorMessage, style: const TextStyle(fontSize: 12, color: Color(0xFFB14633)))
         else if (records.isEmpty)  Text('No field observations have been recorded yet.',
           style: TextStyle(fontSize: 12, color: mutedInk))
         else ...records.map((r) {
@@ -11821,13 +11651,13 @@ class _GroundwaterObservationBoardState extends State<GroundwaterObservationBoar
               Text((r['site_reference'] ?? 'Site not specified').toString() + ' · ' +
                 (r['well_type'] ?? '').toString().replaceAll('_', ' ') + ' · ' +
                 (r['water_level_below_ground_m']?.toString() ?? '—') + ' m below ground',
-                style:  TextStyle(fontSize: 11, color: ink)),
+                style:  TextStyle(fontSize: 12, color: ink)),
               Text(_departmentName(dept) + ' · ' +
                 (r['pumping_state'] ?? 'unknown').toString().replaceAll('_', ' ') + ' · ' +
                 (r['source_type'] ?? '').toString().replaceAll('_', ' '),
-                style:  TextStyle(fontSize: 10, color: mutedInk)),
+                style:  TextStyle(fontSize: 12, color: mutedInk)),
               Text('Observed: ' + (r['observed_at'] ?? '').toString(),
-                style:  TextStyle(fontSize: 10, color: mutedInk)),
+                style:  TextStyle(fontSize: 12, color: mutedInk)),
             ]));
         }),
       ],
@@ -12052,15 +11882,15 @@ class _RequestsPageState extends State<RequestsPage> {
     switch (status.toLowerCase()) {
       case 'approved':
       case 'completed':
-        return Colors.green;
+        return Color(0xFF3B6E44);
       case 'rejected':
-        return Colors.red;
+        return Color(0xFFB14633);
       case 'in_progress':
-        return Colors.blue;
+        return Color(0xFF3F6C8C);
       case 'under_review':
-        return Colors.orange;
+        return Color(0xFFAC731E);
       default:
-        return Colors.blueGrey;
+        return Color(0xFF8A8379);
     }
   }
 
@@ -12261,7 +12091,7 @@ class _RequestsPageState extends State<RequestsPage> {
                     statusLabel(status),
                     style: TextStyle(
                       color: color,
-                      fontSize: 11,
+                      fontSize: 12,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
@@ -12390,7 +12220,7 @@ class _RequestsPageState extends State<RequestsPage> {
           const Icon(
             Icons.cloud_off_outlined,
             size: 55,
-            color: Colors.redAccent,
+            color: Color(0xFFB94936),
           ),
           const SizedBox(height: 12),
           const Text(
@@ -12585,7 +12415,7 @@ class _NewRequestPageState extends State<NewRequestPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Infrastructure case submitted successfully.'),
-          backgroundColor: Colors.green,
+          backgroundColor: Color(0xFF3B6E44),
         ),
       );
 
@@ -12823,12 +12653,12 @@ class _NewRequestPageState extends State<NewRequestPage> {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: Colors.red.shade50,
+                  color: Color(0xFFF8EBE9),
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: Text(
                   formError!,
-                  style: const TextStyle(color: Colors.red),
+                  style: const TextStyle(color: Color(0xFFB14633)),
                 ),
               ),
             ],
@@ -13084,8 +12914,6 @@ class _MapLocationPickerPageState
       backgroundColor: panelNavy,
       appBar: AppBar(
         title: const Text('Select Work Location'),
-        backgroundColor: navy,
-        foregroundColor: Colors.white,
         actions: [
           IconButton(
             tooltip: 'Use current GPS location',
@@ -13125,7 +12953,7 @@ class _MapLocationPickerPageState
               child: Icon(
                 Icons.location_on,
                 size: 46,
-                color: Color(0xFFE53935),
+                color: Color(0xFFCC614E),
               ),
             ),
           ),
@@ -13133,10 +12961,10 @@ class _MapLocationPickerPageState
           if (!_ready)
             const Positioned.fill(
               child: ColoredBox(
-                color: Color(0x66101B29),
+                color: Color(0x661E1D1B),
                 child: Center(
                   child: CircularProgressIndicator(
-                    color: Color(0xFF23C5B5),
+                    color: Color(0xFF51975D),
                   ),
                 ),
               ),
@@ -13151,7 +12979,7 @@ class _MapLocationPickerPageState
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: const Color(0xF2182638),
+                    color: const Color(0xF22B2925),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: const Text(
@@ -13174,7 +13002,7 @@ class _MapLocationPickerPageState
                     label: const Text('CONFIRM THIS LOCATION'),
                     style: FilledButton.styleFrom(
                       backgroundColor:
-                          const Color(0xFF13A89E),
+                          const Color(0xFF417A4B),
                       foregroundColor: Colors.white,
                       padding: const EdgeInsets.symmetric(
                         vertical: 16,
@@ -13288,41 +13116,41 @@ class _ClashVisualizerPageState extends State<ClashVisualizerPage>
           duration: const Duration(milliseconds: 260),
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            color: selected ? const Color(0xFF3A222B) : const Color(0xFF14253A),
+            color: selected ? const Color(0xFF3A2622) : const Color(0xFF2A2824),
             borderRadius: BorderRadius.circular(13),
             border: Border.all(
-              color: selected ? const Color(0xFFFF646E) : const Color(0xFF30465B),
+              color: selected ? const Color(0xFFDC9487) : const Color(0xFF4A4641),
               width: selected ? 1.5 : 1,
             ),
             boxShadow: selected
-                ? const [BoxShadow(color: Color(0x33FF454F), blurRadius: 18)]
+                ? const [BoxShadow(color: Color(0x33D57E6F), blurRadius: 18)]
                 : const [],
           ),
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Row(children: [
               Icon(Icons.warning_amber_rounded,
-                color: selected ? const Color(0xFFFF767F) : const Color(0xFFFFB45F), size: 17),
+                color: selected ? const Color(0xFFE0A095) : const Color(0xFFE7BA77), size: 17),
               const SizedBox(width: 6),
               Expanded(child: Text(
                 'POTENTIAL SPATIAL OVERLAP',
                 style: TextStyle(
-                  color: selected ? const Color(0xFFFFA1A6) : const Color(0xFFFFD18D),
-                  fontSize: 8, fontWeight: FontWeight.w900, letterSpacing: .7,
+                  color: selected ? const Color(0xFFEABEB6) : const Color(0xFFEECE9E),
+                  fontSize: 11, fontWeight: FontWeight.w900, letterSpacing: .7,
                 ),
               )),
               Text(distance.round().toString() + ' m',
-                style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w900)),
+                style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w900)),
             ]),
             const SizedBox(height: 8),
             Text(title, maxLines: 2, overflow: TextOverflow.ellipsis,
               style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w800)),
             const SizedBox(height: 6),
-            Text(window, style: const TextStyle(color: Color(0xFFB8C9D8), fontSize: 9)),
+            Text(window, style: const TextStyle(color: Color(0xFFD2CABE), fontSize: 11)),
             const SizedBox(height: 7),
             Text(
               'Coordinator review required · verify owner records and field conditions',
-              style: TextStyle(color: selected ? const Color(0xFFFFA6AB) : const Color(0xFF91D7D0),
-                fontSize: 9, fontWeight: FontWeight.w700),
+              style: TextStyle(color: selected ? const Color(0xFFEBC1BA) : const Color(0xFF9DCAA4),
+                fontSize: 11, fontWeight: FontWeight.w700),
             ),
           ]),
         ),
@@ -13333,11 +13161,11 @@ class _ClashVisualizerPageState extends State<ClashVisualizerPage>
   Widget _sceneBadge(String text, Color color) => Container(
     padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
     decoration: BoxDecoration(
-      color: const Color(0xE90B1A2B),
+      color: const Color(0xE91D1B19),
       borderRadius: BorderRadius.circular(8),
       border: Border.all(color: color.withValues(alpha: .6)),
     ),
-    child: Text(text, style: TextStyle(color: color, fontSize: 8,
+    child: Text(text, style: TextStyle(color: color, fontSize: 11,
       fontWeight: FontWeight.w900, letterSpacing: .6)),
   );
 
@@ -13348,7 +13176,7 @@ class _ClashVisualizerPageState extends State<ClashVisualizerPage>
         decoration: BoxDecoration(color: color, shape: BoxShape.circle,
           boxShadow: [BoxShadow(color: color.withValues(alpha: .45), blurRadius: 7)])),
       const SizedBox(width: 5),
-      Text(label, style: const TextStyle(color: Color(0xFFB8C9D8), fontSize: 8, fontWeight: FontWeight.w700)),
+      Text(label, style: const TextStyle(color: Color(0xFFD2CABE), fontSize: 11, fontWeight: FontWeight.w700)),
     ],
   );
 
@@ -13372,13 +13200,13 @@ class _ClashVisualizerPageState extends State<ClashVisualizerPage>
             Positioned(left: 13, top: 13,
               child: _sceneBadge(
                 widget.candidates.isEmpty ? 'NO CURRENT CANDIDATES' : 'POTENTIAL OVERLAP DETECTED',
-                widget.candidates.isEmpty ? const Color(0xFF39C6B5) : const Color(0xFFFF666F),
+                widget.candidates.isEmpty ? const Color(0xFF59A666) : const Color(0xFFDD9588),
               ),
             ),
             Positioned(right: 12, top: 12,
-              child: _sceneBadge('3D CUTAWAY · ADVISORY', const Color(0xFF8BDCD3))),
+              child: _sceneBadge('3D CUTAWAY · ADVISORY', const Color(0xFF9DCAA4))),
             Positioned(right: 12, bottom: 12,
-              child: _sceneBadge('SCHEMATIC · NOT SURVEYED', const Color(0xFFFFD18D))),
+              child: _sceneBadge('SCHEMATIC · NOT SURVEYED', const Color(0xFFEECE9E))),
           ]),
         ),
       ),
@@ -13388,9 +13216,9 @@ class _ClashVisualizerPageState extends State<ClashVisualizerPage>
         runSpacing: 8,
         crossAxisAlignment: WrapCrossAlignment.center,
         children: [
-          _legendDot(const Color(0xFF31BFF2), 'Water'),
-          _legendDot(const Color(0xFFFFA34B), 'Sewer'),
-          _legendDot(const Color(0xFFB88CFF), 'Power / fibre'),
+          _legendDot(const Color(0xFF6898BB), 'Water'),
+          _legendDot(const Color(0xFFE4B266), 'Sewer'),
+          _legendDot(const Color(0xFFD2BDB9), 'Power / fibre'),
           FilledButton.icon(
             onPressed: () => Navigator.of(context).push(
               MaterialPageRoute(builder: (_) => const MapPage()),
@@ -13398,9 +13226,9 @@ class _ClashVisualizerPageState extends State<ClashVisualizerPage>
             icon: const Icon(Icons.map_outlined, size: 16),
             label: const Text('Open live GIS'),
             style: FilledButton.styleFrom(
-              backgroundColor: const Color(0xFF167D87),
+              backgroundColor: const Color(0xFF37663F),
               foregroundColor: Colors.white,
-              textStyle: const TextStyle(fontSize: 10, fontWeight: FontWeight.w800),
+              textStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800),
             ),
           ),
         ],
@@ -13410,20 +13238,19 @@ class _ClashVisualizerPageState extends State<ClashVisualizerPage>
 
   @override
   Widget build(BuildContext context) => Scaffold(
-    backgroundColor: const Color(0xFF071426),
+    backgroundColor: const Color(0xFF181715),
     appBar: AppBar(
-      backgroundColor: const Color(0xFF0B1D31),
-      foregroundColor: Colors.white,
+      backgroundColor: const Color(0xFF201E1C),
       title: Row(children: [
-        const Icon(Icons.hub_rounded, color: Color(0xFF5ED8D0), size: 22),
+        const Icon(Icons.hub_rounded, color: Color(0xFF7DB987), size: 22),
         const SizedBox(width: 9),
         const Expanded(child: Text('CLASH DETECTION & CONFLICT ALERT',
           style: TextStyle(fontSize: 13, fontWeight: FontWeight.w900, letterSpacing: .55))),
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 6),
-          decoration: BoxDecoration(color: const Color(0xFF4B2029), borderRadius: BorderRadius.circular(9)),
+          decoration: BoxDecoration(color: const Color(0xFF4B2620), borderRadius: BorderRadius.circular(9)),
           child: Text(widget.candidates.length.toString() + ' CANDIDATE(S)',
-            style: const TextStyle(color: Color(0xFFFF8990), fontSize: 8, fontWeight: FontWeight.w900)),
+            style: const TextStyle(color: Color(0xFFE4AEA4), fontSize: 11, fontWeight: FontWeight.w900)),
         ),
       ]),
     ),
@@ -13433,27 +13260,27 @@ class _ClashVisualizerPageState extends State<ClashVisualizerPage>
         width: wide ? 350 : double.infinity,
         padding: const EdgeInsets.all(13),
         decoration: BoxDecoration(
-          color: const Color(0xFF0E2035),
+          color: const Color(0xFF24221F),
           borderRadius: BorderRadius.circular(17),
-          border: Border.all(color: const Color(0xFF283D55)),
+          border: Border.all(color: const Color(0xFF433F3A)),
         ),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Row(children: [
             const Expanded(child: Text('CONFLICT CANDIDATES',
-              style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: .8))),
+              style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w900, letterSpacing: .8))),
             Text(widget.candidates.length.toString(),
-              style: const TextStyle(color: Color(0xFFFF7C84), fontSize: 17, fontWeight: FontWeight.w900)),
+              style: const TextStyle(color: Color(0xFFE2A499), fontSize: 17, fontWeight: FontWeight.w900)),
           ]),
           const SizedBox(height: 7),
           const Text('Different work domains within 100 m with overlapping planned dates.',
-            style: TextStyle(color: Color(0xFF9EB3C6), fontSize: 9, height: 1.4)),
+            style: TextStyle(color: Color(0xFFB7B3AD), fontSize: 11, height: 1.4)),
           const SizedBox(height: 12),
           Expanded(
             child: widget.candidates.isEmpty
                 ? const Center(child: Text(
                     'No qualifying candidates in the current record window.\nCases without coordinates or planned dates are not assessed.',
                     textAlign: TextAlign.center,
-                    style: TextStyle(color: Color(0xFF9EB3C6), fontSize: 11, height: 1.5),
+                    style: TextStyle(color: Color(0xFFB7B3AD), fontSize: 12, height: 1.5),
                   ))
                 : ListView.builder(
                     itemCount: widget.candidates.length,
@@ -13466,16 +13293,16 @@ class _ClashVisualizerPageState extends State<ClashVisualizerPage>
       final scene = Container(
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: const Color(0xFF0D1C2D),
+          color: const Color(0xFF1F1D1B),
           borderRadius: BorderRadius.circular(17),
-          border: Border.all(color: const Color(0xFF28445D)),
+          border: Border.all(color: const Color(0xFF47433E)),
         ),
         child: Column(children: [
           Expanded(child: _scenePanel()),
           const SizedBox(height: 10),
           const Text(
             'This view is a coordination aid, not an underground utility survey. Candidate generation is rule-based. The 3D crossing graphic is illustrative; live pipe routes appear only when verified owner-authorised geometry is available.',
-            style: TextStyle(color: Color(0xFFFFD18D), fontSize: 8.5, height: 1.45),
+            style: TextStyle(color: Color(0xFFEECE9E), fontSize: 8.5, height: 1.45),
           ),
         ]),
       );
@@ -13510,19 +13337,19 @@ class _DemoUndergroundCrossSectionPainter extends CustomPainter {
     final w = size.width;
     final h = size.height;
     final ground = h * .34;
-    final soil = Paint()..color = const Color(0xFF25384A);
+    final soil = Paint()..color = const Color(0xFF3B3834);
     canvas.drawRect(Rect.fromLTWH(0, ground, w, h - ground), soil);
     canvas.drawRect(
       Rect.fromLTWH(0, ground - 12, w, 12),
-      Paint()..color = const Color(0xFF64748B),
+      Paint()..color = const Color(0xFF80796F),
     );
     canvas.drawRect(
       Rect.fromLTWH(0, ground - 3, w, 3),
-      Paint()..color = const Color(0xFFCBD5E1),
+      Paint()..color = const Color(0xFFDDD7CF),
     );
 
     final lane = Paint()
-      ..color = const Color(0xFFE2E8F0)
+      ..color = const Color(0xFFF3EBDF)
       ..strokeWidth = 1.4
       ..strokeCap = StrokeCap.round;
     for (var x = 10.0; x < w; x += 25) {
@@ -13530,7 +13357,7 @@ class _DemoUndergroundCrossSectionPainter extends CustomPainter {
     }
 
     final strata = Paint()
-      ..color = const Color(0xFF78909C).withValues(alpha: .35)
+      ..color = const Color(0xFF928C82).withValues(alpha: .35)
       ..strokeWidth = 1;
     for (var y = ground + 22; y < h; y += 20) {
       canvas.drawLine(Offset(0, y), Offset(w, y), strata);
@@ -13544,7 +13371,7 @@ class _DemoUndergroundCrossSectionPainter extends CustomPainter {
       canvas.drawPath(
         path,
         Paint()
-          ..color = const Color(0xFF07111D)
+          ..color = const Color(0xFF131211)
           ..style = PaintingStyle.stroke
           ..strokeWidth = thickness + 4
           ..strokeCap = StrokeCap.round,
@@ -13559,21 +13386,21 @@ class _DemoUndergroundCrossSectionPainter extends CustomPainter {
       );
     }
 
-    conduit(ground + 23, const Color(0xFF38BDF8), 5, phase: 2);
-    conduit(ground + 43, const Color(0xFF22C55E), 4, phase: -2);
-    conduit(ground + 62, const Color(0xFFFBBF24), 3);
-    conduit(ground + 80, const Color(0xFFFB7185), 4, phase: 1);
+    conduit(ground + 23, const Color(0xFF719FBF), 5, phase: 2);
+    conduit(ground + 43, const Color(0xFF51965C), 4, phase: -2);
+    conduit(ground + 62, const Color(0xFFDE9F41), 3);
+    conduit(ground + 80, const Color(0xFFDE9A8E), 4, phase: 1);
 
-    final marker = Paint()..color = const Color(0xFFCBD5E1);
+    final marker = Paint()..color = const Color(0xFFDDD7CF);
     for (final x in [w * .18, w * .48, w * .78]) {
       canvas.drawCircle(Offset(x, ground + 23), 2.3, marker);
     }
 
     final labels = [
-      ('WATER', const Color(0xFF38BDF8)),
-      ('DRAIN', const Color(0xFF22C55E)),
-      ('POWER / FIBRE', const Color(0xFFFBBF24)),
-      ('GAS', const Color(0xFFFB7185)),
+      ('WATER', const Color(0xFF719FBF)),
+      ('DRAIN', const Color(0xFF51965C)),
+      ('POWER / FIBRE', const Color(0xFFDE9F41)),
+      ('GAS', const Color(0xFFDE9A8E)),
     ];
     for (var i = 0; i < labels.length; i++) {
       final painter = TextPainter(
@@ -13612,7 +13439,7 @@ class _Clash3DScenePainter extends CustomPainter {
     canvas.drawRect(rect, Paint()
       ..shader = const LinearGradient(
         begin: Alignment.topCenter, end: Alignment.bottomCenter,
-        colors: [Color(0xFF0C2439), Color(0xFF091829), Color(0xFF050F1C)],
+        colors: [Color(0xFF252320), Color(0xFF1B1917), Color(0xFF12110F)],
       ).createShader(rect));
 
     final roadTop = Path()
@@ -13621,9 +13448,9 @@ class _Clash3DScenePainter extends CustomPainter {
       ..lineTo(w * .98, h * .48)
       ..lineTo(w * .07, h * .62)
       ..close();
-    canvas.drawPath(roadTop, Paint()..color = const Color(0xFF384B5E));
+    canvas.drawPath(roadTop, Paint()..color = const Color(0xFF504C46));
     canvas.drawPath(roadTop, Paint()
-      ..color = const Color(0xFF9FB4C4).withValues(alpha: .65)
+      ..color = const Color(0xFFB7B3AC).withValues(alpha: .65)
       ..style = PaintingStyle.stroke..strokeWidth = 1.2);
 
     final soil = Path()
@@ -13635,7 +13462,7 @@ class _Clash3DScenePainter extends CustomPainter {
     canvas.drawPath(soil, Paint()
       ..shader = const LinearGradient(
         begin: Alignment.topCenter, end: Alignment.bottomCenter,
-        colors: [Color(0xFF354854), Color(0xFF1E3443), Color(0xFF102538)],
+        colors: [Color(0xFF494540), Color(0xFF34312D), Color(0xFF272521)],
       ).createShader(Rect.fromLTWH(0, h * .48, w, h * .52)));
 
     for (var i = 0; i < 4; i++) {
@@ -13644,7 +13471,7 @@ class _Clash3DScenePainter extends CustomPainter {
         ..moveTo(w * .07, y)
         ..cubicTo(w * .34, y - h * .035, w * .64, y + h * .02, w * .98, y - h * .04);
       canvas.drawPath(band, Paint()
-        ..color = const Color(0xFFB0C3BF).withValues(alpha: .16)
+        ..color = const Color(0xFFA5CEAC).withValues(alpha: .16)
         ..style = PaintingStyle.stroke..strokeWidth = 1.1);
     }
 
@@ -13652,7 +13479,7 @@ class _Clash3DScenePainter extends CustomPainter {
       ..moveTo(w * .06, h * .39)
       ..cubicTo(w * .35, h * .34, w * .62, h * .28, w * .96, h * .23);
     canvas.drawPath(centre, Paint()
-      ..color = const Color(0xFFD3E0E8).withValues(alpha: .70)
+      ..color = const Color(0xFFEDE1CE).withValues(alpha: .70)
       ..style = PaintingStyle.stroke..strokeWidth = 1.2);
 
     Path pipe(double y, bool reverse) {
@@ -13671,7 +13498,7 @@ class _Clash3DScenePainter extends CustomPainter {
 
     void drawTube(Path path, Color color, double width, double offset) {
       canvas.drawPath(path, Paint()
-        ..color = const Color(0xFF050C16)
+        ..color = const Color(0xFF0E0E0D)
         ..style = PaintingStyle.stroke..strokeWidth = width + 11
         ..strokeCap = StrokeCap.round..strokeJoin = StrokeJoin.round);
       canvas.drawPath(path, Paint()
@@ -13699,22 +13526,22 @@ class _Clash3DScenePainter extends CustomPainter {
       }
     }
 
-    drawTube(pipe(h * .72, false), const Color(0xFF27BDF5), 9, 0);
-    drawTube(pipe(h * .84, true), const Color(0xFFFF9848), 8, .28);
-    drawTube(pipe(h * .64, true), const Color(0xFF22C9A6), 5, .55);
+    drawTube(pipe(h * .72, false), const Color(0xFF6395B9), 9, 0);
+    drawTube(pipe(h * .84, true), const Color(0xFFE4B063), 8, .28);
+    drawTube(pipe(h * .64, true), const Color(0xFF52995E), 5, .55);
 
     final c = Offset(w * .54, h * .77);
     if (hasCandidate) {
       final pulse = .5 + .5 * math.sin(phase * math.pi * 2);
       canvas.drawCircle(c, 17 + pulse * 16,
-        Paint()..color = const Color(0xFFFF334B).withValues(alpha: .19)
+        Paint()..color = const Color(0xFFD17261).withValues(alpha: .19)
           ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 18));
       canvas.drawCircle(c, 10 + pulse * 4,
-        Paint()..color = const Color(0xFFFF334B).withValues(alpha: .18)
+        Paint()..color = const Color(0xFFD17261).withValues(alpha: .18)
           ..style = PaintingStyle.stroke..strokeWidth = 2);
-      canvas.drawCircle(c, 5, Paint()..color = const Color(0xFFFF6A73));
+      canvas.drawCircle(c, 5, Paint()..color = const Color(0xFFDD988C));
     } else {
-      canvas.drawCircle(c, 5, Paint()..color = const Color(0xFF44C9B6));
+      canvas.drawCircle(c, 5, Paint()..color = const Color(0xFF62AB6E));
     }
 
     final grid = Paint()..color = Colors.white.withValues(alpha: .07)..strokeWidth = .7;
@@ -13725,7 +13552,7 @@ class _Clash3DScenePainter extends CustomPainter {
     final tp = TextPainter(
       text: TextSpan(
         text: hasCandidate ? 'POTENTIAL CONFLICT · REVIEW REQUIRED' : 'NO CURRENT COORDINATION CANDIDATE',
-        style: const TextStyle(color: Color(0xFFFFA3A8), fontSize: 9,
+        style: const TextStyle(color: Color(0xFFEAC0B8), fontSize: 9,
           fontWeight: FontWeight.w900, letterSpacing: .7),
       ),
       textDirection: TextDirection.ltr,
@@ -14503,13 +14330,13 @@ class _MapPageState extends State<MapPage> {
               decoration: BoxDecoration(
                 color: panelNavy,
                 borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: const Color(0x665F7C93)),
+                border: Border.all(color: const Color(0x66817B71)),
               ),
               child: Text(
                 message,
                 style:  TextStyle(
                   color: mutedInk,
-                  fontSize: 10,
+                  fontSize: 12,
                   height: 1.4,
                 ),
               ),
@@ -14538,7 +14365,7 @@ class _MapPageState extends State<MapPage> {
                       Row(
                         children: [
                           const Icon(Icons.account_tree_outlined,
-                              color: Color(0xFF55D9CE)),
+                              color: Color(0xFF78B682)),
                           const SizedBox(width: 9),
                           const Expanded(
                             child: Text(
@@ -14563,7 +14390,7 @@ class _MapPageState extends State<MapPage> {
                         'Choose a level from the imported directory. Missing district, city or ward records are not filled with estimates.',
                         style: TextStyle(
                           color: mutedInk,
-                          fontSize: 10,
+                          fontSize: 12,
                           height: 1.4,
                         ),
                       ),
@@ -14721,7 +14548,7 @@ class _MapPageState extends State<MapPage> {
                                         : 'SEARCH SELECTED STATE / UT',
                           ),
                           style: FilledButton.styleFrom(
-                            backgroundColor: const Color(0xFF13A89E),
+                            backgroundColor: const Color(0xFF417A4B),
                             foregroundColor: background,
                             padding: const EdgeInsets.symmetric(vertical: 14),
                           ),
@@ -14731,8 +14558,8 @@ class _MapPageState extends State<MapPage> {
                       const Text(
                         'MAP NAVIGATION ONLY: The selected LGD name is sent to the map search provider. Search-result coordinates are geocoding results, not official boundary polygons or legal jurisdiction geometry. Imported LGD rows remain unverified until authority review.',
                         style: TextStyle(
-                          color: Color(0xFFF6C66B),
-                          fontSize: 9,
+                          color: Color(0xFFE7BB7A),
+                          fontSize: 11,
                           height: 1.4,
                         ),
                       ),
@@ -15083,7 +14910,7 @@ class _MapPageState extends State<MapPage> {
                   const SizedBox(height: 8),
                   const Text(
                     'Preview route only. This public routing service does not provide live traffic, guaranteed turn-by-turn guidance or excavation clearance.',
-                    style: TextStyle(fontSize: 12, color: Colors.deepOrange),
+                    style: TextStyle(fontSize: 12, color: Color(0xFFA54130)),
                   ),
                   const SizedBox(height: 12),
                   ...instructions.map((instruction) => Padding(
@@ -16540,7 +16367,7 @@ class _MapPageState extends State<MapPage> {
                   title,
                   style: const TextStyle(
                     color: Colors.white,
-                    fontSize: 10,
+                    fontSize: 12,
                     fontWeight: FontWeight.w900,
                     letterSpacing: 0.5,
                   ),
@@ -16550,7 +16377,7 @@ class _MapPageState extends State<MapPage> {
                   detail,
                   style:  TextStyle(
                     color: mutedInk,
-                    fontSize: 10,
+                    fontSize: 12,
                     height: 1.35,
                   ),
                 ),
@@ -16592,7 +16419,7 @@ class _MapPageState extends State<MapPage> {
                     const SizedBox(height: 5),
                      Text(
                       'Layers are drawn only from records your account is authorised to access.',
-                      style: TextStyle(color: mutedInk, fontSize: 11),
+                      style: TextStyle(color: mutedInk, fontSize: 12),
                     ),
                     const SizedBox(height: 12),
                     Container(
@@ -16601,7 +16428,7 @@ class _MapPageState extends State<MapPage> {
                       decoration: BoxDecoration(
                         color: panelNavy,
                         borderRadius: BorderRadius.circular(14),
-                        border: Border.all(color: const Color(0x5541BFB4)),
+                        border: Border.all(color: const Color(0x555AA667)),
                       ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -16609,8 +16436,8 @@ class _MapPageState extends State<MapPage> {
                           const Text(
                             'NATIONAL DATA READINESS',
                             style: TextStyle(
-                              color: Color(0xFF55D9CE),
-                              fontSize: 10,
+                              color: Color(0xFF78B682),
+                              fontSize: 12,
                               fontWeight: FontWeight.w900,
                               letterSpacing: 1.0,
                             ),
@@ -16619,7 +16446,7 @@ class _MapPageState extends State<MapPage> {
                           _readinessRow(
                             icon: Icons.water_drop_outlined,
                             title: 'GROUNDWATER',
-                            color: const Color(0xFFA78BFA),
+                            color: const Color(0xFFD0B9B5),
                             detail: _groundwaterReadinessLoaded
                                 ? '$_groundwaterStationCount station point(s) in this map extent · up to 1,000 displayed · viewport timestamp: $_groundwaterFreshnessLabel · archive-wide latest observation: $_groundwaterArchiveLatestObservation · historical archive, not live telemetry · publisher: $_groundwaterLatestAgency · $_groundwaterTelemetryGaps of $_groundwaterCoverageJurisdictions State/UT coverage entries still lack a verified 2021–2025 telemetry feed'
                                 : 'Coverage summary unavailable; station layer remains independently controlled.',
@@ -16627,7 +16454,7 @@ class _MapPageState extends State<MapPage> {
                           _readinessRow(
                             icon: Icons.account_balance_outlined,
                             title: 'BUILDING APPROVALS',
-                            color: const Color(0xFFFBBF24),
+                            color: const Color(0xFFDE9F41),
                             detail: _buildingReadinessLoaded
                                 ? '$_approvalRecordCount public-register record(s) · $_approvalMappedCount geocoded · $_approvalFloorCount with approved floor count. Address-only records are not plotted at guessed locations.'
                                 : 'Public approval register summary unavailable.',
@@ -16635,7 +16462,7 @@ class _MapPageState extends State<MapPage> {
                           _readinessRow(
                             icon: Icons.hub_outlined,
                             title: 'UNDERGROUND UTILITY GIS',
-                            color: const Color(0xFF38BDF8),
+                            color: const Color(0xFF719FBF),
                             detail: _utilityReadinessLoaded
                                 ? '$_utilityLayerCatalogueCount State/UT coverage entry(ies) · $_utilityLayersPending awaiting authority asset GIS · $_utilityLayersOperational operationally enabled'
                                 : 'Utility catalogue summary unavailable or access restricted.',
@@ -16644,8 +16471,8 @@ class _MapPageState extends State<MapPage> {
                           const Text(
                             '3D buildings use live OpenStreetMap footprints with mapped heights/levels where available; missing heights receive a 6 m visual estimate and must not be used for compliance decisions. Underground 3D cells show relative density in generalised 250 m cells—not physical depth, elevation, dimensions or routes. Exact assets remain access-controlled; an empty layer is not excavation clearance.',
                             style: TextStyle(
-                              color: Color(0xFFF6C66B),
-                              fontSize: 9,
+                              color: Color(0xFFE7BB7A),
+                              fontSize: 11,
                               height: 1.4,
                             ),
                           ),
@@ -16655,12 +16482,12 @@ class _MapPageState extends State<MapPage> {
                     const SizedBox(height: 8),
                     SwitchListTile(
                       value: _showRequests,
-                      activeThumbColor: const Color(0xFF20D6C2),
+                      activeThumbColor: const Color(0xFF56A062),
                       title: const Text('Work request locations',
                           style: TextStyle(color: Colors.white)),
                       subtitle: Text(
                         '$_requestMarkerCount request marker(s) visible to your account',
-                        style:  TextStyle(color: mutedInk, fontSize: 11),
+                        style:  TextStyle(color: mutedInk, fontSize: 12),
                       ),
                       onChanged: (value) {
                         setSheetState(() {});
@@ -16669,7 +16496,7 @@ class _MapPageState extends State<MapPage> {
                     ),
                     SwitchListTile(
                       value: _showCoimbatoreWardBoundaries,
-                      activeThumbColor: const Color(0xFF20D6C2),
+                      activeThumbColor: const Color(0xFF56A062),
                       title: const Text(
                         'Coimbatore-only ward reference (2024)',
                         style: TextStyle(color: Colors.white),
@@ -16678,7 +16505,7 @@ class _MapPageState extends State<MapPage> {
                         '${_coimbatoreWardCount == 0 ? 'Not loaded' : '$_coimbatoreWardCount polygons'} · OpenCity Public Domain · local reference only; not national or statutory coverage',
                         style:  TextStyle(
                           color: mutedInk,
-                          fontSize: 11,
+                          fontSize: 12,
                         ),
                       ),
                       onChanged: (value) {
@@ -16688,11 +16515,11 @@ class _MapPageState extends State<MapPage> {
                     ),
                     SwitchListTile(
                       value: _showIndiaStateBoundaries,
-                      activeThumbColor: const Color(0xFF20D6C2),
+                      activeThumbColor: const Color(0xFF56A062),
                       title: const Text('India State / UT boundaries', style: TextStyle(color: Colors.white)),
                       subtitle: Text(
                         '$_indiaStateBoundaryCount areas · vintage $_indiaStateBoundaryVintage · source data updated $_indiaStateBoundarySourceUpdateDate · provider build $_indiaStateBoundaryBuildDate · $_indiaStateBoundaryAttribution · reference only',
-                        style: TextStyle(color: mutedInk, fontSize: 10, height: 1.35),
+                        style: TextStyle(color: mutedInk, fontSize: 12, height: 1.35),
                       ),
                       onChanged: (value) {
                         setSheetState(() {});
@@ -16701,11 +16528,11 @@ class _MapPageState extends State<MapPage> {
                     ),
                     SwitchListTile(
                       value: _showIndiaDistrictBoundaries,
-                      activeThumbColor: const Color(0xFF20D6C2),
+                      activeThumbColor: const Color(0xFF56A062),
                       title: const Text('India district boundaries', style: TextStyle(color: Colors.white)),
                       subtitle: Text(
                         '$_indiaDistrictBoundaryCount districts · vintage $_indiaDistrictBoundaryVintage · source data updated $_indiaDistrictBoundarySourceUpdateDate · provider build $_indiaDistrictBoundaryBuildDate · $_indiaDistrictBoundaryAttribution · optional detail layer',
-                        style: TextStyle(color: mutedInk, fontSize: 10, height: 1.35),
+                        style: TextStyle(color: mutedInk, fontSize: 12, height: 1.35),
                       ),
                       onChanged: (value) {
                         setSheetState(() {});
@@ -16716,12 +16543,12 @@ class _MapPageState extends State<MapPage> {
                       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
                       child: Text(
                         _indiaBoundaryStatus + ' Use the Local Government Directory / competent authority for official jurisdiction codes and decisions.',
-                        style: const TextStyle(color: Color(0xFFF6C66B), fontSize: 9, height: 1.35),
+                        style: const TextStyle(color: Color(0xFFE7BB7A), fontSize: 11, height: 1.35),
                       ),
                     ),
                     SwitchListTile(
                       value: _showGroundwaterTelemetry,
-                      activeThumbColor: const Color(0xFFA78BFA),
+                      activeThumbColor: const Color(0xFFD0B9B5),
                       title: const Text(
                         'National groundwater monitoring stations (2021–2025)',
                         style: TextStyle(color: Colors.white),
@@ -16730,7 +16557,7 @@ class _MapPageState extends State<MapPage> {
                         '$_groundwaterStationCount station point(s) in the current map extent · up to 1,000 displayed · archive-wide latest observation: $_groundwaterArchiveLatestObservation · historical data, not live telemetry · tap for the published reading and timestamp · not a borewell register or complete station inventory',
                         style:  TextStyle(
                           color: mutedInk,
-                          fontSize: 11,
+                          fontSize: 12,
                         ),
                       ),
                       onChanged: (value) {
@@ -16741,12 +16568,12 @@ class _MapPageState extends State<MapPage> {
                     if (_canViewDepartmentAssets)
                       SwitchListTile(
                         value: _showVerifiedAssets,
-                        activeThumbColor: const Color(0xFF20D6C2),
+                        activeThumbColor: const Color(0xFF56A062),
                         title: const Text('Verified department assets',
                             style: TextStyle(color: Colors.white)),
                         subtitle: Text(
                           '$_verifiedAssetCount verified asset(s) mapped · $_unverifiedAssetCount unverified withheld',
-                          style:  TextStyle(color: mutedInk, fontSize: 11),
+                          style:  TextStyle(color: mutedInk, fontSize: 12),
                         ),
                         onChanged: (value) {
                           setSheetState(() {});
@@ -16754,17 +16581,17 @@ class _MapPageState extends State<MapPage> {
                         },
                       ),
                     if (_canViewConflictScreening) ...[
-                       const Divider(color: Color(0x334B647C)),
+                       const Divider(color: Color(0x336A655D)),
                        Row(
                          children: [
-                           const Icon(Icons.warning_amber_rounded, color: Color(0xFFF87171), size: 18),
+                           const Icon(Icons.warning_amber_rounded, color: Color(0xFFDD988C), size: 18),
                            const SizedBox(width: 8),
-                           const Expanded(child: Text('UTILITY PROXIMITY SCREENING', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w800, letterSpacing: 0.7, fontSize: 11))),
-                           Text('$_utilityConflictCount request(s)', style: const TextStyle(color: Color(0xFFFCA5A5), fontWeight: FontWeight.w700, fontSize: 11)),
+                           const Expanded(child: Text('UTILITY PROXIMITY SCREENING', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w800, letterSpacing: 0.7, fontSize: 12))),
+                           Text('$_utilityConflictCount request(s)', style: const TextStyle(color: Color(0xFFEABFB7), fontWeight: FontWeight.w700, fontSize: 12)),
                          ],
                        ),
                        const SizedBox(height: 6),
-                       Text(_utilityConflictStatus, style:  TextStyle(color: mutedInk, fontSize: 11, height: 1.4)),
+                       Text(_utilityConflictStatus, style:  TextStyle(color: mutedInk, fontSize: 12, height: 1.4)),
                        ..._utilityConflictDetails.values.take(5).map((detail) {
                          final conflicts = (detail['conflicts'] as List?) ?? const [];
                          final summary = conflicts.take(2).map((raw) {
@@ -16774,25 +16601,25 @@ class _MapPageState extends State<MapPage> {
                          return ListTile(
                            dense: true,
                            contentPadding: EdgeInsets.zero,
-                           leading: const Icon(Icons.location_searching, color: Color(0xFFF87171), size: 17),
-                           title: Text('${detail['request_number']} · ${detail['candidate_count']} potential match(es)', style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w700)),
-                           subtitle: Text(summary, style:  TextStyle(color: mutedInk, fontSize: 10)),
+                           leading: const Icon(Icons.location_searching, color: Color(0xFFDD988C), size: 17),
+                           title: Text('${detail['request_number']} · ${detail['candidate_count']} potential match(es)', style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w700)),
+                           subtitle: Text(summary, style:  TextStyle(color: mutedInk, fontSize: 12)),
                          );
                        }),
                        if (_utilityConflictDetails.length > 5)
-                         Text('And ${_utilityConflictDetails.length - 5} more. Tap red map markers for details.', style:  TextStyle(color: mutedInk, fontSize: 10)),
+                         Text('And ${_utilityConflictDetails.length - 5} more. Tap red map markers for details.', style:  TextStyle(color: mutedInk, fontSize: 12)),
                        const SizedBox(height: 8),
-                       const Text('Cross-department screening runs on the server against verified assets. The phone receives advisory metadata only, never another department’s exact route geometry. No warning is not a safety clearance.', style: TextStyle(color: Color(0xFFF6C66B), fontSize: 10, height: 1.4)),
+                       const Text('Cross-department screening runs on the server against verified assets. The phone receives advisory metadata only, never another department’s exact route geometry. No warning is not a safety clearance.', style: TextStyle(color: Color(0xFFE7BB7A), fontSize: 12, height: 1.4)),
                      ],
                      if (_canViewUtilityOverview)
                        SwitchListTile(
                         value: _showUtilityZones,
-                        activeThumbColor: const Color(0xFFF59E0B),
+                        activeThumbColor: const Color(0xFFD99227),
                         title: const Text('Generalised utility coverage',
                             style: TextStyle(color: Colors.white)),
                         subtitle: Text(
                           '$_utilityCellCount aggregate cell(s); not individual utility routes',
-                          style:  TextStyle(color: mutedInk, fontSize: 11),
+                          style:  TextStyle(color: mutedInk, fontSize: 12),
                         ),
                         onChanged: (value) {
                           setSheetState(() {});
@@ -16801,15 +16628,15 @@ class _MapPageState extends State<MapPage> {
                       )
                     else
                        ListTile(
-                        leading: Icon(Icons.lock_outline, color: Color(0xFFF6C66B)),
+                        leading: Icon(Icons.lock_outline, color: Color(0xFFE7BB7A)),
                         title: Text('Utility coverage restricted',
                             style: TextStyle(color: Colors.white)),
                         subtitle: Text(
                           'Only generalised public coverage is shown. Exact infrastructure records remain restricted.',
-                          style: TextStyle(color: mutedInk, fontSize: 11),
+                          style: TextStyle(color: mutedInk, fontSize: 12),
                         ),
                       ),
-                    const Divider(color: Color(0x334B647C)),
+                    const Divider(color: Color(0x336A655D)),
                     const Text(
                       'Data integrity',
                       style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700),
@@ -16817,7 +16644,7 @@ class _MapPageState extends State<MapPage> {
                     const SizedBox(height: 5),
                     Text(
                       _layerStatus,
-                      style:  TextStyle(color: mutedInk, fontSize: 11, height: 1.4),
+                      style:  TextStyle(color: mutedInk, fontSize: 12, height: 1.4),
                     ),
                   ],
                 );
@@ -16831,19 +16658,19 @@ class _MapPageState extends State<MapPage> {
 
   Widget _undergroundModelPanel() {
     final layers = <({Color color, IconData icon, String title})>[
-      (color: const Color(0xFF38BDF8), icon: Icons.water_drop_outlined, title: 'Water & wastewater'),
-      (color: const Color(0xFF22C55E), icon: Icons.waves_outlined, title: 'Stormwater & drainage'),
-      (color: const Color(0xFFFBBF24), icon: Icons.bolt_outlined, title: 'Power & telecom'),
-      (color: const Color(0xFFFB7185), icon: Icons.hub_outlined, title: 'Gas & other networks'),
+      (color: const Color(0xFF719FBF), icon: Icons.water_drop_outlined, title: 'Water & wastewater'),
+      (color: const Color(0xFF51965C), icon: Icons.waves_outlined, title: 'Stormwater & drainage'),
+      (color: const Color(0xFFDE9F41), icon: Icons.bolt_outlined, title: 'Power & telecom'),
+      (color: const Color(0xFFDE9A8E), icon: Icons.hub_outlined, title: 'Gas & other networks'),
     ];
 
     return Container(
       width: 258,
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: const Color(0xF2182638),
+        color: const Color(0xF22B2925),
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: const Color(0x6645D9CE)),
+        border: Border.all(color: const Color(0x666DB179)),
         boxShadow: const [
           BoxShadow(color: Color(0x33000000), blurRadius: 16, offset: Offset(0, 5)),
         ],
@@ -16854,16 +16681,16 @@ class _MapPageState extends State<MapPage> {
         children: [
           Row(
             children: [
-              const Icon(Icons.layers_outlined, color: Color(0xFF55D9CE), size: 17),
+              const Icon(Icons.layers_outlined, color: Color(0xFF78B682), size: 17),
               const SizedBox(width: 7),
               const Expanded(
                 child: Text('BELOW-GROUND MODEL',
-                  style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 1.0)),
+                  style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w900, letterSpacing: 1.0)),
               ),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
-                decoration: BoxDecoration(color: const Color(0x3320D6C2), borderRadius: BorderRadius.circular(6)),
-                child: const Text('3D VIEW', style: TextStyle(color: Color(0xFF7DE9DE), fontSize: 8, fontWeight: FontWeight.w800)),
+                decoration: BoxDecoration(color: const Color(0x3356A062), borderRadius: BorderRadius.circular(6)),
+                child: const Text('3D VIEW', style: TextStyle(color: Color(0xFF9CCAA4), fontSize: 11, fontWeight: FontWeight.w800)),
               ),
             ],
           ),
@@ -16875,9 +16702,9 @@ class _MapPageState extends State<MapPage> {
             height: 112,
             width: double.infinity,
             decoration: BoxDecoration(
-              color: const Color(0xFF0A1725),
+              color: const Color(0xFF191816),
               borderRadius: BorderRadius.circular(10),
-              border: Border.all(color: const Color(0x5545D9CE)),
+              border: Border.all(color: const Color(0x556DB179)),
             ),
             clipBehavior: Clip.antiAlias,
             child: const CustomPaint(
@@ -16890,7 +16717,7 @@ class _MapPageState extends State<MapPage> {
                     child: Text(
                       'SIMULATED DEMO SCHEMATIC · NOT GEO-REFERENCED',
                       style: TextStyle(
-                        color: Color(0xFFFFD98B),
+                        color: Color(0xFFEECD9C),
                         fontSize: 6.5,
                         fontWeight: FontWeight.w900,
                         letterSpacing: .35,
@@ -16913,41 +16740,41 @@ class _MapPageState extends State<MapPage> {
                 ),
                 const SizedBox(width: 8),
                 Expanded(child: Text(layer.title,
-                  style: const TextStyle(color: Color(0xFFE5EEF5), fontSize: 9, fontWeight: FontWeight.w700))),
+                  style: const TextStyle(color: Color(0xFFF5EFE5), fontSize: 11, fontWeight: FontWeight.w700))),
                 Text('REFERENCE', style: TextStyle(color: layer.color, fontSize: 7, fontWeight: FontWeight.w800, letterSpacing: 0.4)),
               ],
             ),
           )),
-          const Divider(height: 9, color: Color(0x334B647C)),
+          const Divider(height: 9, color: Color(0x336A655D)),
           const Text('DATA TRUST CLASSES',
-            style: TextStyle(color: Color(0xFF55D9CE), fontSize: 8, letterSpacing: .8, fontWeight: FontWeight.w900)),
+            style: TextStyle(color: Color(0xFF78B682), fontSize: 11, letterSpacing: .8, fontWeight: FontWeight.w900)),
           const SizedBox(height: 5),
           _trustClassRow(
-            color: const Color(0xFF55D9CE),
+            color: const Color(0xFF78B682),
             label: 'VERIFIED OWNER GEOMETRY',
             value: _canViewDepartmentAssets ? 'OWNER-DEPT VIEW · $_verifiedAssetCount' : 'OWNER-DEPT ACCESS ONLY',
           ),
           _trustClassRow(
-            color: const Color(0xFF38BDF8),
+            color: const Color(0xFF719FBF),
             label: 'GENERALISED COVERAGE',
             value: 'AGGREGATE · NOT CLEARANCE',
           ),
           _trustClassRow(
-            color: const Color(0xFFF6C66B),
+            color: const Color(0xFFE7BB7A),
             label: 'CONTEXT / ESTIMATED',
             value: 'REFERENCE ONLY · EXCLUDED FROM CLEARANCE',
           ),
-          const Divider(height: 9, color: Color(0x334B647C)),
+          const Divider(height: 9, color: Color(0x336A655D)),
           const Text('GROUNDWATER SOURCE FRESHNESS',
-            style: TextStyle(color: Color(0xFF55D9CE), fontSize: 8, letterSpacing: .8, fontWeight: FontWeight.w900)),
+            style: TextStyle(color: Color(0xFF78B682), fontSize: 11, letterSpacing: .8, fontWeight: FontWeight.w900)),
           const SizedBox(height: 4),
           Text('Latest timestamp among loaded records (up to 1,000 in this map extent): $_groundwaterFreshnessLabel',
-            style: const TextStyle(color: Color(0xFFE5EEF5), fontSize: 8, height: 1.35)),
+            style: const TextStyle(color: Color(0xFFF5EFE5), fontSize: 11, height: 1.35)),
           Text('Latest observation in the full source archive: $_groundwaterArchiveLatestObservation. Historical monitoring data only; this is not live telemetry.',
-            style: const TextStyle(color: Color(0xFFF6C66B), fontSize: 8, height: 1.35)),
+            style: const TextStyle(color: Color(0xFFE7BB7A), fontSize: 11, height: 1.35)),
           Text('Publisher: $_groundwaterLatestAgency · source-reported values; coordinate accuracy is not independently validated here.',
             style: TextStyle(color: mutedInk, fontSize: 7.5, height: 1.35)),
-          const Divider(height: 9, color: Color(0x334B647C)),
+          const Divider(height: 9, color: Color(0x336A655D)),
           Row(
             children: [
               Expanded(child: _undergroundStat('UTILITY CATALOGUE', '$_utilityLayerCatalogueCount')),
@@ -16964,7 +16791,7 @@ class _MapPageState extends State<MapPage> {
           const SizedBox(height: 8),
           const Text(
             '3D blocks show relative aggregate density inside generalized coverage cells. They are not pipes, surveyed alignments, asset depths or excavation-clearance data. Owner-authorised geometry is a separate restricted layer.',
-            style: TextStyle(color: Color(0xFFF6C66B), fontSize: 8, height: 1.35),
+            style: TextStyle(color: Color(0xFFE7BB7A), fontSize: 11, height: 1.35),
           ),
         ],
       ),
@@ -16985,7 +16812,7 @@ class _MapPageState extends State<MapPage> {
         Text(value, maxLines: 1, overflow: TextOverflow.ellipsis,
           style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w900)),
         Text(label, maxLines: 2, overflow: TextOverflow.ellipsis,
-          style: TextStyle(color: mutedInk, fontSize: 8, fontWeight: FontWeight.w700, height: 1.25)),
+          style: TextStyle(color: mutedInk, fontSize: 11, fontWeight: FontWeight.w700, height: 1.25)),
       ]),
     ));
   }
@@ -16998,9 +16825,9 @@ class _MapPageState extends State<MapPage> {
   }) => SwitchListTile.adaptive(
     dense: true,
     contentPadding: EdgeInsets.zero,
-    activeThumbColor: const Color(0xFF55D9CE),
-    title: Text(title, style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w800)),
-    subtitle: Text(detail, style: TextStyle(color: mutedInk, fontSize: 8, height: 1.3)),
+    activeThumbColor: const Color(0xFF78B682),
+    title: Text(title, style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w800)),
+    subtitle: Text(detail, style: TextStyle(color: mutedInk, fontSize: 11, height: 1.3)),
     value: value,
     onChanged: onChanged,
   );
@@ -17009,50 +16836,50 @@ class _MapPageState extends State<MapPage> {
     width: 292,
     padding: const EdgeInsets.all(12),
     decoration: BoxDecoration(
-      color: const Color(0xF20B1B2D),
+      color: const Color(0xF21E1C1A),
       borderRadius: BorderRadius.circular(16),
-      border: Border.all(color: const Color(0x6645D9CE)),
+      border: Border.all(color: const Color(0x666DB179)),
       boxShadow: const [BoxShadow(color: Color(0x33000000), blurRadius: 18, offset: Offset(0, 7))],
     ),
     child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
       Row(children: [
         Container(width: 31, height: 31,
-          decoration: BoxDecoration(color: const Color(0x2220D6C2), borderRadius: BorderRadius.circular(9)),
-          child: const Icon(Icons.hub_rounded, color: Color(0xFF55D9CE), size: 18)),
+          decoration: BoxDecoration(color: const Color(0x2256A062), borderRadius: BorderRadius.circular(9)),
+          child: const Icon(Icons.hub_rounded, color: Color(0xFF78B682), size: 18)),
         const SizedBox(width: 9),
         const Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text('NATIONAL GIS COMMAND', style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: .7)),
+          Text('NATIONAL GIS COMMAND', style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w900, letterSpacing: .7)),
           SizedBox(height: 2),
-          Text('INDIA · AUTHORISED MAP VIEW', style: TextStyle(color: Color(0xFF55D9CE), fontSize: 7, fontWeight: FontWeight.w800, letterSpacing: .55)),
+          Text('INDIA · AUTHORISED MAP VIEW', style: TextStyle(color: Color(0xFF78B682), fontSize: 7, fontWeight: FontWeight.w800, letterSpacing: .55)),
         ])),
         IconButton(tooltip: 'Open layer catalogue', visualDensity: VisualDensity.compact,
           onPressed: _openLayerPanel, icon:  Icon(Icons.tune_rounded, color: mutedInk, size: 18)),
       ]),
       const SizedBox(height: 9),
       Text('LIVE COUNTS · CURRENT MAP EXTENT',
-        style: TextStyle(color: mutedInk, fontSize: 8, fontWeight: FontWeight.w900, letterSpacing: .7)),
+        style: TextStyle(color: mutedInk, fontSize: 11, fontWeight: FontWeight.w900, letterSpacing: .7)),
       const SizedBox(height: 7),
       Row(children: [
-        _desktopGisMetric('VISIBLE CASES', '$_requestMarkerCount', Icons.assignment_outlined, const Color(0xFF55D9CE)),
+        _desktopGisMetric('VISIBLE CASES', '$_requestMarkerCount', Icons.assignment_outlined, const Color(0xFF78B682)),
         const SizedBox(width: 7),
-        _desktopGisMetric('GROUNDWATER POINTS', '$_groundwaterStationCount', Icons.water_drop_outlined, const Color(0xFFA78BFA)),
+        _desktopGisMetric('GROUNDWATER POINTS', '$_groundwaterStationCount', Icons.water_drop_outlined, const Color(0xFFD0B9B5)),
       ]),
       const SizedBox(height: 7),
       Row(children: [
         _desktopGisMetric('VERIFIED OWNER ASSETS', _canViewDepartmentAssets ? '$_verifiedAssetCount' : 'Restricted',
-          Icons.verified_user_outlined, const Color(0xFF38BDF8)),
+          Icons.verified_user_outlined, const Color(0xFF719FBF)),
         const SizedBox(width: 7),
         _desktopGisMetric('GENERAL COVERAGE CELLS', _canViewUtilityOverview ? '$_utilityCellCount' : 'Restricted',
-          Icons.grid_view_rounded, const Color(0xFFFBBF24)),
+          Icons.grid_view_rounded, const Color(0xFFDE9F41)),
       ]),
       if (_canViewConflictScreening) ...[
         const SizedBox(height: 8),
         Text('$_utilityConflictCount advisory conflict candidate(s)',
-          style: const TextStyle(color: Color(0xFFFCA5A5), fontSize: 9, fontWeight: FontWeight.w800)),
+          style: const TextStyle(color: Color(0xFFEABFB7), fontSize: 11, fontWeight: FontWeight.w800)),
       ],
-      const Divider(color: Color(0x334B647C), height: 18),
+      const Divider(color: Color(0x336A655D), height: 18),
       const Text('MAP LAYERS',
-        style: TextStyle(color: Color(0xFF55D9CE), fontSize: 9, fontWeight: FontWeight.w900, letterSpacing: .9)),
+        style: TextStyle(color: Color(0xFF78B682), fontSize: 11, fontWeight: FontWeight.w900, letterSpacing: .9)),
       Expanded(child: SingleChildScrollView(child: Column(children: [
         _desktopGisLayerToggle(title: 'Work request locations',
           detail: 'Visible cases permitted for this account', value: _showRequests,
@@ -17080,25 +16907,25 @@ class _MapPageState extends State<MapPage> {
         if (_canViewConflictScreening)
           Padding(padding: const EdgeInsets.symmetric(vertical: 7),
             child: Text(_utilityConflictStatus,
-              style: const TextStyle(color: Color(0xFFF6C66B), fontSize: 8, height: 1.35))),
-        const Divider(color: Color(0x334B647C), height: 14),
+              style: const TextStyle(color: Color(0xFFE7BB7A), fontSize: 11, height: 1.35))),
+        const Divider(color: Color(0x336A655D), height: 14),
         Wrap(spacing: 7, runSpacing: 7, children: [
           OutlinedButton.icon(onPressed: _openJurisdictionNavigator,
             icon: const Icon(Icons.account_tree_outlined, size: 15), label: const Text('Jurisdiction'),
-            style: OutlinedButton.styleFrom(foregroundColor: const Color(0xFF8DECE2),
-              side: const BorderSide(color: Color(0x6655D9CE)),
+            style: OutlinedButton.styleFrom(foregroundColor: const Color(0xFFA9D0AF),
+              side: const BorderSide(color: Color(0x6678B682)),
               padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 8),
-              textStyle: const TextStyle(fontSize: 9, fontWeight: FontWeight.w800))),
+              textStyle: const TextStyle(fontSize: 11, fontWeight: FontWeight.w800))),
           OutlinedButton.icon(onPressed: _openLayerPanel,
             icon: const Icon(Icons.layers_outlined, size: 15), label: const Text('All layers'),
-            style: OutlinedButton.styleFrom(foregroundColor: const Color(0xFF8DECE2),
-              side: const BorderSide(color: Color(0x6655D9CE)),
+            style: OutlinedButton.styleFrom(foregroundColor: const Color(0xFFA9D0AF),
+              side: const BorderSide(color: Color(0x6678B682)),
               padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 8),
-              textStyle: const TextStyle(fontSize: 9, fontWeight: FontWeight.w800))),
+              textStyle: const TextStyle(fontSize: 11, fontWeight: FontWeight.w800))),
         ]),
         const SizedBox(height: 7),
         const Text('Coverage counts are not underground asset counts. Exact utility geometry remains restricted. Missing or unverified data is never excavation clearance.',
-          style: TextStyle(color: Color(0xFFF6C66B), fontSize: 8, height: 1.35)),
+          style: TextStyle(color: Color(0xFFE7BB7A), fontSize: 11, height: 1.35)),
       ]))),
     ]),
   );
@@ -17115,7 +16942,7 @@ class _MapPageState extends State<MapPage> {
           decoration: BoxDecoration(color: color, shape: BoxShape.circle)),
         const SizedBox(width: 7),
         Expanded(child: Text(label, style: const TextStyle(
-          color: Color(0xFFE5EEF5), fontSize: 7, fontWeight: FontWeight.w800))),
+          color: Color(0xFFF5EFE5), fontSize: 7, fontWeight: FontWeight.w800))),
         const SizedBox(width: 5),
         Flexible(child: Text(value, textAlign: TextAlign.right,
           style: TextStyle(color: color, fontSize: 6.5, fontWeight: FontWeight.w900))),
@@ -17129,7 +16956,7 @@ class _MapPageState extends State<MapPage> {
       children: [
         Text(label, style: TextStyle(color: mutedInk, fontSize: 6.5, fontWeight: FontWeight.w700, letterSpacing: 0.35)),
         const SizedBox(height: 2),
-        Text(value, style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w900)),
+        Text(value, style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w900)),
       ],
     );
   }
@@ -17142,7 +16969,7 @@ class _MapPageState extends State<MapPage> {
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: Material(
-        color: const Color(0xF2182638),
+        color: const Color(0xF22B2925),
         elevation: 5,
         borderRadius: BorderRadius.circular(12),
         child: IconButton(
@@ -17168,7 +16995,7 @@ class _MapPageState extends State<MapPage> {
           curve: Curves.easeInOut,
           padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
           decoration: BoxDecoration(
-            color: selected ? const Color(0xFF13A89E) : Colors.transparent,
+            color: selected ? const Color(0xFF417A4B) : Colors.transparent,
             borderRadius: BorderRadius.circular(9),
           ),
           child: Center(
@@ -17176,7 +17003,7 @@ class _MapPageState extends State<MapPage> {
               label,
               style: TextStyle(
                 color: Colors.white,
-                fontSize: 11,
+                fontSize: 12,
                 fontWeight: selected ? FontWeight.w900 : FontWeight.w600,
                 letterSpacing: 0.5,
               ),
@@ -17208,7 +17035,7 @@ class _MapPageState extends State<MapPage> {
 
     await showModalBottomSheet<void>(
       context: context,
-      backgroundColor: const Color(0xFF0D2034),
+      backgroundColor: const Color(0xFF23211E),
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -17232,8 +17059,8 @@ class _MapPageState extends State<MapPage> {
               const Text(
                 'These LPU pages document public water and wastewater infrastructure. They are reference material, not survey-grade underground utility geometry or excavation clearance.',
                 style: TextStyle(
-                  color: Color(0xFFB9CADA),
-                  fontSize: 10,
+                  color: Color(0xFFD3CBC0),
+                  fontSize: 12,
                   height: 1.4,
                 ),
               ),
@@ -17241,7 +17068,7 @@ class _MapPageState extends State<MapPage> {
               ...sources.map((source) => Padding(
                 padding: const EdgeInsets.only(bottom: 9),
                 child: Material(
-                  color: const Color(0xFF142D47),
+                  color: const Color(0xFF312E2A),
                   borderRadius: BorderRadius.circular(12),
                   child: ListTile(
                     contentPadding: const EdgeInsets.symmetric(horizontal: 13, vertical: 4),
@@ -17249,21 +17076,21 @@ class _MapPageState extends State<MapPage> {
                       source['title']!,
                       style: const TextStyle(
                         color: Colors.white,
-                        fontSize: 11,
+                        fontSize: 12,
                         fontWeight: FontWeight.w800,
                       ),
                     ),
                     subtitle: Text(
                       source['subtitle']!,
                       style: const TextStyle(
-                        color: Color(0xFFB9CADA),
-                        fontSize: 9,
+                        color: Color(0xFFD3CBC0),
+                        fontSize: 11,
                         height: 1.3,
                       ),
                     ),
                     trailing: const Icon(
                       Icons.open_in_new_rounded,
-                      color: Color(0xFF55D9CE),
+                      color: Color(0xFF78B682),
                       size: 17,
                     ),
                     onTap: () async {
@@ -17328,8 +17155,6 @@ class _MapPageState extends State<MapPage> {
     return Scaffold(
       backgroundColor: panelNavy,
       appBar: AppBar(
-        backgroundColor: navy,
-        foregroundColor: Colors.white,
         titleSpacing: 16,
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -17348,7 +17173,7 @@ class _MapPageState extends State<MapPage> {
                   ? 'GEOSPATIAL INFRASTRUCTURE WORKSPACE'
                   : 'CAMPUS BASEMAP · VERIFIED DATA ONLY',
               style: TextStyle(
-                fontSize: 9,
+                fontSize: 11,
                 letterSpacing: 1.35,
                 color: mutedInk,
               ),
@@ -17456,18 +17281,18 @@ class _MapPageState extends State<MapPage> {
           if (!_styleReady)
             const Positioned.fill(
               child: ColoredBox(
-                color: Color(0x66101B29),
+                color: Color(0x661E1D1B),
                 child: Center(
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      CircularProgressIndicator(color: Color(0xFF23C5B5)),
+                      CircularProgressIndicator(color: Color(0xFF51975D)),
                       SizedBox(height: 14),
                       Text(
                         'INITIALISING GIS ENGINE',
                         style: TextStyle(
                           color: Colors.white,
-                          fontSize: 11,
+                          fontSize: 12,
                           letterSpacing: 1.7,
                           fontWeight: FontWeight.w700,
                         ),
@@ -17485,9 +17310,9 @@ class _MapPageState extends State<MapPage> {
               constraints: const BoxConstraints(maxWidth: 218),
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
               decoration: BoxDecoration(
-                color: const Color(0xE6102031),
+                color: const Color(0xE623211E),
                 borderRadius: BorderRadius.circular(11),
-                border: Border.all(color: const Color(0x5539BDB0)),
+                border: Border.all(color: const Color(0x5556A062)),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -17496,7 +17321,7 @@ class _MapPageState extends State<MapPage> {
                     _satellite ? 'SATELLITE HYBRID' : 'VECTOR BASEMAP',
                     style: TextStyle(
                       color: mutedInk,
-                      fontSize: 9,
+                      fontSize: 11,
                       letterSpacing: 1.3,
                       fontWeight: FontWeight.w800,
                     ),
@@ -17517,8 +17342,8 @@ class _MapPageState extends State<MapPage> {
                     Text(
                       'DEVICE GPS  $_deviceCoordinateLabel',
                       style: const TextStyle(
-                        color: Color(0xFF55D9CE),
-                        fontSize: 8,
+                        color: Color(0xFF78B682),
+                        fontSize: 11,
                         fontWeight: FontWeight.w700,
                         fontFeatures: [FontFeature.tabularFigures()],
                       ),
@@ -17537,7 +17362,7 @@ class _MapPageState extends State<MapPage> {
                             : 'Real OpenStreetMap building footprints are extruded in 3D. Mapped height or floor tags are used where available; otherwise a clearly labelled 6 m visual estimate is used. This is not a statutory building-approval record.',
                     style:  TextStyle(
                       color: mutedInk,
-                      fontSize: 9,
+                      fontSize: 11,
                       height: 1.3,
                     ),
                   ),
@@ -17546,17 +17371,17 @@ class _MapPageState extends State<MapPage> {
                     Container(
                       padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(
-                        color: const Color(0x33F6C66B),
+                        color: const Color(0x33E7BB7A),
                         borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: const Color(0x88F6C66B)),
+                        border: Border.all(color: const Color(0x88E7BB7A)),
                       ),
                       child: Text(
                         _utilityCellCount == 0 && _verifiedAssetCount == 0
                             ? 'LPU CAMPUS DATA STATUS: No verified underground utility records are currently loaded. This is a basemap-only view, not a utility survey and not proof that underground assets are absent.'
                             : 'LPU CAMPUS DATA STATUS: $_utilityCellCount generalised coverage cell(s) and $_verifiedAssetCount owner-department verified feature(s) are available in this view. Exact routes remain restricted; this is not an excavation clearance.',
                         style: const TextStyle(
-                          color: Color(0xFFFFD98B),
-                          fontSize: 8,
+                          color: Color(0xFFEECD9C),
+                          fontSize: 11,
                           height: 1.35,
                           fontWeight: FontWeight.w700,
                         ),
@@ -17578,9 +17403,9 @@ class _MapPageState extends State<MapPage> {
             child: Container(
               padding: const EdgeInsets.only(left: 12, right: 4),
               decoration: BoxDecoration(
-                color: const Color(0xF2182638),
+                color: const Color(0xF22B2925),
                 borderRadius: BorderRadius.circular(13),
-                border: Border.all(color: const Color(0x6639BDB0)),
+                border: Border.all(color: const Color(0x6656A062)),
                 boxShadow: const [
                   BoxShadow(
                     color: Color(0x26000000),
@@ -17591,7 +17416,7 @@ class _MapPageState extends State<MapPage> {
               ),
               child: Row(
                 children: [
-                  const Icon(Icons.search_rounded, color: Color(0xFF55D9CE), size: 20),
+                  const Icon(Icons.search_rounded, color: Color(0xFF78B682), size: 20),
                   const SizedBox(width: 9),
                   Expanded(
                     child: TextField(
@@ -17601,7 +17426,7 @@ class _MapPageState extends State<MapPage> {
                       style: const TextStyle(color: Colors.white, fontSize: 12),
                       decoration: InputDecoration(
                         hintText: 'Search India: state, district, city, ward or road',
-                        hintStyle: TextStyle(color: mutedInk, fontSize: 11),
+                        hintStyle: TextStyle(color: mutedInk, fontSize: 12),
                         border: InputBorder.none,
                         isDense: true,
                         contentPadding: EdgeInsets.symmetric(vertical: 14),
@@ -17617,7 +17442,7 @@ class _MapPageState extends State<MapPage> {
                             height: 17,
                             child: CircularProgressIndicator(
                               strokeWidth: 2,
-                              color: Color(0xFF55D9CE),
+                              color: Color(0xFF78B682),
                             ),
                           )
                         : const Icon(Icons.arrow_forward_rounded, color: Colors.white, size: 19),
@@ -17635,31 +17460,31 @@ class _MapPageState extends State<MapPage> {
               child: Container(
                 constraints: const BoxConstraints(maxHeight: 240),
                 decoration: BoxDecoration(
-                  color: const Color(0xF2182638),
+                  color: const Color(0xF22B2925),
                   borderRadius: BorderRadius.circular(13),
-                  border: Border.all(color: const Color(0x6639BDB0)),
+                  border: Border.all(color: const Color(0x6656A062)),
                 ),
                 child: ListView.separated(
                   shrinkWrap: true,
                   padding: const EdgeInsets.symmetric(vertical: 5),
                   itemCount: _placeResults.length,
-                  separatorBuilder: (_, _) => const Divider(height: 1, color: Color(0x334B647C)),
+                  separatorBuilder: (_, _) => const Divider(height: 1, color: Color(0x336A655D)),
                   itemBuilder: (context, index) {
                     final feature = _placeResults[index];
                     return ListTile(
                       dense: true,
-                      leading: const Icon(Icons.location_on_outlined, color: Color(0xFF55D9CE), size: 20),
+                      leading: const Icon(Icons.location_on_outlined, color: Color(0xFF78B682), size: 20),
                       title: Text(
                         (feature['text'] ?? 'Place').toString(),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w700),
+                        style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w700),
                       ),
                       subtitle: Text(
                         (feature['place_name'] ?? '').toString(),
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
-                        style:  TextStyle(color: mutedInk, fontSize: 9),
+                        style:  TextStyle(color: mutedInk, fontSize: 11),
                       ),
                       onTap: () => _selectPlace(feature),
                     );
@@ -17704,9 +17529,9 @@ class _MapPageState extends State<MapPage> {
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
                 decoration: BoxDecoration(
-                  color: const Color(0xE6102031),
+                  color: const Color(0xE623211E),
                   borderRadius: BorderRadius.circular(9),
-                  border: Border.all(color: const Color(0x5539BDB0)),
+                  border: Border.all(color: const Color(0x5556A062)),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -17716,7 +17541,7 @@ class _MapPageState extends State<MapPage> {
                       _scaleLabel,
                       style: const TextStyle(
                         color: Colors.white,
-                        fontSize: 9,
+                        fontSize: 11,
                         fontWeight: FontWeight.w700,
                       ),
                     ),
@@ -17725,7 +17550,7 @@ class _MapPageState extends State<MapPage> {
                       width: _scaleWidth,
                       height: 3,
                       decoration: BoxDecoration(
-                        color: const Color(0xFF55D9CE),
+                        color: const Color(0xFF78B682),
                         borderRadius: BorderRadius.circular(2),
                       ),
                     ),
@@ -17741,9 +17566,9 @@ class _MapPageState extends State<MapPage> {
             child: Container(
               padding: const EdgeInsets.all(4),
               decoration: BoxDecoration(
-                color: const Color(0xF2182638),
+                color: const Color(0xF22B2925),
                 borderRadius: BorderRadius.circular(13),
-                border: Border.all(color: const Color(0x5539BDB0)),
+                border: Border.all(color: const Color(0x5556A062)),
               ),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
@@ -17764,7 +17589,7 @@ class _MapPageState extends State<MapPage> {
                     ],
                   ),
                   const SizedBox(height: 4),
-                  const Divider(height: 1, color: Color(0x334B647C)),
+                  const Divider(height: 1, color: Color(0x336A655D)),
                   const SizedBox(height: 4),
                   Row(
                     children: [
@@ -17779,7 +17604,7 @@ class _MapPageState extends State<MapPage> {
                         onTap: () => _changeBasemap(true),
                       ),
                       const SizedBox(width: 4),
-                      Container(width: 1, height: 24, color: const Color(0x554B647C)),
+                      Container(width: 1, height: 24, color: const Color(0x556A655D)),
                       const SizedBox(width: 4),
                       _pill(
                         label: '2D',
@@ -17812,13 +17637,13 @@ class _MapPageState extends State<MapPage> {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
               decoration: BoxDecoration(
-                color: const Color(0xF2182638),
+                color: const Color(0xF22B2925),
                 borderRadius: BorderRadius.circular(11),
-                border: Border.all(color: const Color(0x5539BDB0)),
+                border: Border.all(color: const Color(0x5556A062)),
               ),
               child: Row(
                 children: [
-                  const Icon(Icons.hub_outlined, color: Color(0xFF35C6B5), size: 19),
+                  const Icon(Icons.hub_outlined, color: Color(0xFF58A364), size: 19),
                   const SizedBox(width: 9),
                   Expanded(
                     child: Text(
@@ -17828,8 +17653,8 @@ class _MapPageState extends State<MapPage> {
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
-                        color: Color(0xFFD4E1EA),
-                        fontSize: 9,
+                        color: Color(0xFFEDE2D1),
+                        fontSize: 11,
                         height: 1.3,
                       ),
                     ),
@@ -17840,7 +17665,7 @@ class _MapPageState extends State<MapPage> {
                       height: 15,
                       child: CircularProgressIndicator(
                         strokeWidth: 2,
-                        color: Color(0xFF35C6B5),
+                        color: Color(0xFF58A364),
                       ),
                     )
                   else
@@ -17871,8 +17696,8 @@ class _MapPageState extends State<MapPage> {
                               : 'Source: Esri, Maxar, Earthstar Geographics, USDA FSA, USGS and the GIS User Community')
                           : '© OpenFreeMap · © OpenStreetMap contributors',
                       style: const TextStyle(
-                        color: Color(0xFFE1EAF1),
-                        fontSize: 8,
+                        color: Color(0xFFF3EBDF),
+                        fontSize: 11,
                         decoration: TextDecoration.underline,
                       ),
                     ),
@@ -17881,7 +17706,7 @@ class _MapPageState extends State<MapPage> {
                 if (_locating)
                   const Text(
                     'LOCATING',
-                    style: TextStyle(color: Color(0xFF35C6B5), fontSize: 8),
+                    style: TextStyle(color: Color(0xFF58A364), fontSize: 11),
                   ),
               ],
             ),
@@ -18256,13 +18081,13 @@ class _AssetGeoJsonImportPageState extends State<AssetGeoJsonImportPage> {
                       decoration: BoxDecoration(color: navy, borderRadius: BorderRadius.circular(18)),
                       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                         const Text('AUTHORISED DATA SOURCE',
-                            style: TextStyle(color: Color(0xFF8EDFD6), fontSize: 10, letterSpacing: 1.2, fontWeight: FontWeight.w800)),
+                            style: TextStyle(color: Color(0xFFA1CCA8), fontSize: 12, letterSpacing: 1.2, fontWeight: FontWeight.w800)),
                         const SizedBox(height: 7),
                         Text(_departmentName,
                             style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w800)),
                         const SizedBox(height: 8),
                         const Text('Owner-supplied and field-surveyed geometry only. Imported records remain UNVERIFIED.',
-                            style: TextStyle(color: Color(0xFFD3E0EA), height: 1.4, fontSize: 12)),
+                            style: TextStyle(color: Color(0xFFEDE1D0), height: 1.4, fontSize: 12)),
                       ]),
                     ),
                     const SizedBox(height: 12),
@@ -18273,7 +18098,7 @@ class _AssetGeoJsonImportPageState extends State<AssetGeoJsonImportPage> {
                             style: TextStyle(fontWeight: FontWeight.w800, color: ink, letterSpacing: 0.7)),
                         const SizedBox(height: 6),
                          Text('These fields create an audit declaration. They do not independently prove that the submitter has permission. The receiving authority must review the source before the records are verified.',
-                            style: TextStyle(color: mutedInk, fontSize: 11, height: 1.4)),
+                            style: TextStyle(color: mutedInk, fontSize: 12, height: 1.4)),
                         const SizedBox(height: 12),
                         _metadataField(_sourceTitleController, 'Official source / dataset title'),
                         _metadataField(_sourceOrganisationController, 'Utility owner / survey organisation'),
@@ -18312,7 +18137,7 @@ class _AssetGeoJsonImportPageState extends State<AssetGeoJsonImportPage> {
                           hint: 'https://…',
                         ),
                          Text('Coordinate reference system: EPSG:4326 only. Reproject the source file before upload; the server does not guess or transform CRSs.',
-                            style: TextStyle(color: ink, fontSize: 11, height: 1.4, fontWeight: FontWeight.w600)),
+                            style: TextStyle(color: ink, fontSize: 12, height: 1.4, fontWeight: FontWeight.w600)),
                       ]),
                     )),
                     const SizedBox(height: 12),
@@ -18329,7 +18154,7 @@ class _AssetGeoJsonImportPageState extends State<AssetGeoJsonImportPage> {
                             style: TextStyle(color: ink, fontSize: 12, fontWeight: FontWeight.w700)),
                         const SizedBox(height: 6),
                          Text('Optional: depth_m, horizontal_accuracy_m, vertical_accuracy_m, material, diameter_mm and surveyed_at. Field-survey batches must include surveyed_at.',
-                            style: TextStyle(color: mutedInk, fontSize: 11, height: 1.4)),
+                            style: TextStyle(color: mutedInk, fontSize: 12, height: 1.4)),
                         const SizedBox(height: 14),
                         SizedBox(width: double.infinity, child: FilledButton.icon(
                           onPressed: _loadingFile || _importing ? null : _pickFile,
@@ -18354,7 +18179,7 @@ class _AssetGeoJsonImportPageState extends State<AssetGeoJsonImportPage> {
                           Row(children: [
                             Expanded(child: _countTile('VALID', validCount, teal)),
                             const SizedBox(width: 7),
-                            Expanded(child: _countTile('INVALID', invalidCount, Colors.red)),
+                            Expanded(child: _countTile('INVALID', invalidCount, Color(0xFFB14633))),
                             const SizedBox(width: 7),
                             Expanded(child: _countTile('TOTAL', _records.length, navy)),
                           ]),
@@ -18369,16 +18194,16 @@ class _AssetGeoJsonImportPageState extends State<AssetGeoJsonImportPage> {
                               dense: true,
                               contentPadding: EdgeInsets.zero,
                               leading: Icon(error == null ? Icons.check_circle_outline : Icons.error_outline,
-                                  color: error == null ? teal : Colors.red),
+                                  color: error == null ? teal : Color(0xFFB14633)),
                               title: Text((p['asset_code'] ?? 'Feature ${entry.key + 1}').toString(), 
                                   style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 12)),
                               subtitle: Text(error ?? '${p['asset_name'] ?? ''} · ${p['asset_type'] ?? ''} · ${(f['geometry'] as Map?)?['type'] ?? ''}',
-                                  style: const TextStyle(fontSize: 10)),
+                                  style: const TextStyle(fontSize: 12)),
                             );
                           }),
                           if (_records.length > 20)
                             Text('Showing first 20 of ${_records.length} features.',
-                                style:  TextStyle(color: mutedInk, fontSize: 11)),
+                                style:  TextStyle(color: mutedInk, fontSize: 12)),
                           if (_importing) ...[
                             const SizedBox(height: 8),
                             LinearProgressIndicator(value: _records.isEmpty ? null : _progress / validCount),
@@ -18400,28 +18225,28 @@ class _AssetGeoJsonImportPageState extends State<AssetGeoJsonImportPage> {
                         padding: const EdgeInsets.all(14),
                         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                           const Text('VALIDATION / IMPORT ERRORS',
-                              style: TextStyle(color: Colors.red, fontWeight: FontWeight.w800)),
+                              style: TextStyle(color: Color(0xFFB14633), fontWeight: FontWeight.w800)),
                           const SizedBox(height: 8),
                           ..._errors.take(30).map((e) => Padding(
                             padding: const EdgeInsets.only(bottom: 6),
-                            child: Text('• $e', style: const TextStyle(fontSize: 11, color: Colors.red)), 
+                            child: Text('• $e', style: const TextStyle(fontSize: 12, color: Color(0xFFB14633))), 
                           )),
                         ]),
                       )),
                     ],
                     const SizedBox(height: 12),
-                    Card(color: const Color(0xFFFFF7E6), child: Padding(
+                    Card(color: const Color(0xFFFBF4EA), child: Padding(
                       padding: const EdgeInsets.all(14),
                       child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                        const Icon(Icons.verified_user_outlined, color: Color(0xFF9A6700)),
+                        const Icon(Icons.verified_user_outlined, color: Color(0xFF835817)),
                         const SizedBox(width: 10),
                         Expanded(child: Text(_status,
-                            style: const TextStyle(color: Color(0xFF664B16), fontSize: 12, height: 1.45))),
+                            style: const TextStyle(color: Color(0xFF664616), fontSize: 12, height: 1.45))),
                       ]),
                     )),
                     const SizedBox(height: 10),
                      Text('Only import records your department is authorised to submit. This tool does not independently verify geometry and does not issue excavation clearance or safety certification.',
-                        style: TextStyle(color: mutedInk, fontSize: 10, height: 1.4)),
+                        style: TextStyle(color: mutedInk, fontSize: 12, height: 1.4)),
                   ],
                 ),
     );
@@ -18434,7 +18259,7 @@ class _AssetGeoJsonImportPageState extends State<AssetGeoJsonImportPage> {
       child: Column(children: [
         Text(value.toString(), style: TextStyle(color: color, fontSize: 20, fontWeight: FontWeight.w900)),
         const SizedBox(height: 3),
-        Text(label, style: TextStyle(color: color, fontSize: 9, fontWeight: FontWeight.w800)),
+        Text(label, style: TextStyle(color: color, fontSize: 11, fontWeight: FontWeight.w800)),
       ]),
     );
   }
@@ -18722,7 +18547,7 @@ class _ProfilePageState extends State<ProfilePage> {
           child: Icon(icon, color: tileColor),
         ),
         title: Text(title, style: TextStyle(fontWeight: FontWeight.w700, color: ink)),
-        subtitle: Text(subtitle, style: TextStyle(fontSize: 11, color: mutedInk)),
+        subtitle: Text(subtitle, style: TextStyle(fontSize: 12, color: mutedInk)),
         trailing: Icon(Icons.chevron_right_rounded, color: mutedInk),
         onTap: action,
       ),
@@ -18797,7 +18622,7 @@ class _ProfilePageState extends State<ProfilePage> {
         Container(
           padding: const EdgeInsets.all(21),
           decoration: BoxDecoration(
-            gradient:  LinearGradient(colors: [navy, Color(0xFF123B65), Color(0xFF075E72)],
+            gradient:  LinearGradient(colors: [navy, Color(0xFF403C37), Color(0xFF413D38)],
               begin: Alignment.topLeft, end: Alignment.bottomRight),
             borderRadius: BorderRadius.circular(22),
             border: Border.all(color: cyanAccent.withValues(alpha: .25))),
@@ -18816,22 +18641,22 @@ class _ProfilePageState extends State<ProfilePage> {
             ),
             const SizedBox(height: 12),
             Text(data['name'].toString(), textAlign: TextAlign.center,
-              style: GoogleFonts.spaceGrotesk(color: Colors.white, fontSize: 22, fontWeight: FontWeight.w700)),
+              style: svDisplayFont(color: Colors.white, fontSize: 22, fontWeight: FontWeight.w700)),
             const SizedBox(height: 4),
             Text(data['email'].toString(), textAlign: TextAlign.center,
-              style: const TextStyle(color: Color(0xFFD6E6F2), fontSize: 12)),
+              style: const TextStyle(color: Color(0xFFF0E6D8), fontSize: 12)),
             const SizedBox(height: 4),
             Text(
               (data['phone'] ?? '').toString().isEmpty
                   ? 'No verified mobile number linked'
                   : 'Verified mobile: ' + data['phone'].toString(),
               textAlign: TextAlign.center,
-              style: const TextStyle(color: Color(0xFFD6E6F2), fontSize: 11),
+              style: const TextStyle(color: Color(0xFFF0E6D8), fontSize: 12),
             ),
             const SizedBox(height: 12),
             Wrap(alignment: WrapAlignment.center, spacing: 7, runSpacing: 7, children: [
               _badge(_displayRoleName(data['role'].toString()), cyanAccent),
-              _badge(data['department'].toString(), const Color(0xFFB9D4FF)),
+              _badge(data['department'].toString(), const Color(0xFFECDFCC)),
             ]),
           ]),
         ),
@@ -18861,7 +18686,7 @@ class _ProfilePageState extends State<ProfilePage> {
                       const SizedBox(height: 3),
                       Text(
                         'Open Citizen, Officer, Coordinator or Administrator demo workspaces.',
-                        style: TextStyle(color: mutedInk, fontSize: 11),
+                        style: TextStyle(color: mutedInk, fontSize: 12),
                       ),
                     ],
                   ),
@@ -18912,31 +18737,31 @@ class _ProfilePageState extends State<ProfilePage> {
           () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const PublicExcavationTrackerPage()))),
         _tile(Icons.calendar_month_outlined, 'Coordinated works calendar', 'Compare planned works across departments and identify possible schedule overlaps',
           () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const CoordinatedWorkCalendarPage())),
-          color: const Color(0xFF35C6B5)),
+          color: const Color(0xFF58A364)),
         _tile(Icons.notifications_none_rounded, 'Notifications', 'Read assignment, review and case updates',
           () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const NotificationsPage()))),
         _tile(Icons.public_rounded, 'India data coverage', 'Explore imported coverage and data gaps',
           () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const IndiaCoverageExplorerPage()))),
         _tile(Icons.phone_android_rounded, 'Link mobile number', 'Verify your mobile number to enable OTP sign-in by phone',
           () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const PhoneNumberLinkPage())),
-          color: const Color(0xFF0E8A78)),
+          color: const Color(0xFF35633D)),
         _tile(Icons.lock_outline_rounded, 'Security settings', 'Request a password reset through Supabase Auth',
-          _passwordReset, color: const Color(0xFF0E8A78)),
+          _passwordReset, color: const Color(0xFF35633D)),
         _tile(Icons.info_outline_rounded, 'About SAMANVAY', 'Platform purpose, departments, data integrity and governance',
-          _aboutSamanvay, color: const Color(0xFF35B6C8)),
+          _aboutSamanvay, color: const Color(0xFF59A465)),
         _tile(Icons.help_outline_rounded, 'Help and guidance', 'Understand modules and data-safety limits',
-          _help, color: const Color(0xFF8A62C7)),
+          _help, color: const Color(0xFFAC847D)),
         const SizedBox(height: 10),
         OutlinedButton.icon(onPressed: _logout, icon: const Icon(Icons.logout_rounded),
           label: const Text('Sign out'),
           style: OutlinedButton.styleFrom(
-            foregroundColor: const Color(0xFFB33B45),
-            side: const BorderSide(color: Color(0xFFE7B9BD)),
+            foregroundColor: const Color(0xFFB34D3B),
+            side: const BorderSide(color: Color(0xFFE7C0B9)),
             padding: const EdgeInsets.symmetric(vertical: 14),
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(13)))),
         const SizedBox(height: 10),
          Text('Account identity and activity are loaded from authenticated records. Evidence remains in private storage.',
-          textAlign: TextAlign.center, style: TextStyle(color: mutedInk, fontSize: 10, height: 1.4)),
+          textAlign: TextAlign.center, style: TextStyle(color: mutedInk, fontSize: 12, height: 1.4)),
         const SizedBox(height: 18),
         ClipRRect(
           borderRadius: BorderRadius.circular(14),
@@ -18956,7 +18781,7 @@ class _ProfilePageState extends State<ProfilePage> {
     decoration: BoxDecoration(color: color.withValues(alpha: .14),
       borderRadius: BorderRadius.circular(30),
       border: Border.all(color: color.withValues(alpha: .45))),
-    child: Text(text, style: TextStyle(color: color, fontSize: 9,
+    child: Text(text, style: TextStyle(color: color, fontSize: 11,
       letterSpacing: .5, fontWeight: FontWeight.w800)),
   );
 
@@ -18970,7 +18795,7 @@ class _ProfilePageState extends State<ProfilePage> {
       Text(value, style: GoogleFonts.robotoMono(color: ink, fontSize: 19, fontWeight: FontWeight.w800)),
       Text(label, textAlign: TextAlign.center,
         maxLines: 2, overflow: TextOverflow.ellipsis,
-        style: TextStyle(color: mutedInk, fontSize: 9, fontWeight: FontWeight.w700)),
+        style: TextStyle(color: mutedInk, fontSize: 11, fontWeight: FontWeight.w700)),
     ]),
   );
 }
@@ -19235,13 +19060,13 @@ class _PhoneNumberLinkPageState extends State<PhoneNumberLinkPage> {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: _success ? const Color(0xFFE2F4EB) : const Color(0xFFFFE9E8),
+                  color: _success ? const Color(0xFFE5F1E7) : const Color(0xFFFAEFED),
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: Text(
                   _message!,
                   style: TextStyle(
-                    color: _success ? const Color(0xFF145B3B) : const Color(0xFF8A2525),
+                    color: _success ? const Color(0xFF27482C) : const Color(0xFF883627),
                     fontSize: 12,
                   ),
                 ),
@@ -19567,7 +19392,7 @@ class _CaseWorkspacePageState extends State<CaseWorkspacePage> {
                       'GPS: ${capturedPosition!.latitude.toStringAsFixed(6)}, '
                       '${capturedPosition!.longitude.toStringAsFixed(6)} · '
                       '±${capturedPosition!.accuracy.toStringAsFixed(1)} m',
-                      style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700),
+                      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
                     ),
                   ),
                 ],
@@ -19618,13 +19443,13 @@ class _CaseWorkspacePageState extends State<CaseWorkspacePage> {
                     alignment: Alignment.centerLeft,
                     child: Text('Photo ready: ${capturedPhoto!.name}',
                       maxLines: 1, overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700)),
+                      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700)),
                   ),
                 const SizedBox(height: 10),
                 const Text(
                   'GPS is device-reported and may be inaccurate indoors or near tall structures. '
                   'A photo and GPS tag do not independently verify a utility location, depth, permit or site safety.',
-                  style: TextStyle(fontSize: 10, color: Colors.black54),
+                  style: TextStyle(fontSize: 12, color: Colors.black54),
                 ),
               ]),
             ),
@@ -19759,7 +19584,7 @@ class _CaseWorkspacePageState extends State<CaseWorkspacePage> {
               _arrayText('Recommended checks', assessment['recommended_checks']),
               const SizedBox(height: 10),
                Text('Advisory only. Authorised officers must verify information and make official decisions.',
-                style: TextStyle(fontSize: 11, color: mutedInk)),
+                style: TextStyle(fontSize: 12, color: mutedInk)),
             ]),
           ),
           actions: [
@@ -19811,7 +19636,7 @@ class _CaseWorkspacePageState extends State<CaseWorkspacePage> {
         builder: (dialogContext) => AlertDialog(
           icon: Icon(
             possibleOverlap ? Icons.warning_amber_rounded : Icons.info_outline,
-            color: possibleOverlap ? Colors.deepOrange : teal,
+            color: possibleOverlap ? Color(0xFFA54130) : teal,
             size: 34,
           ),
           title: Text(
@@ -19830,7 +19655,7 @@ class _CaseWorkspacePageState extends State<CaseWorkspacePage> {
                 const SizedBox(height: 12),
                  Text(
                   'This check uses only the records currently available to SAMANVAY. It is not a utility-location certificate, permit, site clearance or guarantee of safety. Obtain clearance from utility owners and complete required field verification before work.',
-                  style: TextStyle(fontSize: 11, color: mutedInk),
+                  style: TextStyle(fontSize: 12, color: mutedInk),
                 ),
               ],
             ),
@@ -19883,7 +19708,7 @@ class _CaseWorkspacePageState extends State<CaseWorkspacePage> {
                           child: ListTile(
                             leading: Icon(
                               overlap ? Icons.warning_amber_rounded : Icons.fact_check_outlined,
-                              color: overlap ? Colors.deepOrange : teal,
+                              color: overlap ? Color(0xFFA54130) : teal,
                             ),
                             title: Text(overlap
                                 ? 'Possible recorded overlap'
@@ -20046,17 +19871,17 @@ class _CaseWorkspacePageState extends State<CaseWorkspacePage> {
         margin: const EdgeInsets.symmetric(vertical: 5),
         padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 10),
         decoration: BoxDecoration(
-          color: mine ? const Color(0xFF123C4A) : panelNavy,
+          color: mine ? const Color(0xFF312F2B) : panelNavy,
           borderRadius: BorderRadius.circular(15),
-          border: Border.all(color: mine ? const Color(0xFF286B72) : borderColor),
+          border: Border.all(color: mine ? const Color(0xFF36643E) : borderColor),
         ),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Text(mine ? 'You' : 'Case participant',
-            style:  TextStyle(fontSize: 9, color: mutedInk, fontWeight: FontWeight.w700)),
+            style:  TextStyle(fontSize: 11, color: mutedInk, fontWeight: FontWeight.w700)),
           const SizedBox(height: 4),
           Text(item['body']?.toString() ?? '', style:  TextStyle(color: ink)),
           if (time.isNotEmpty) Align(alignment: Alignment.bottomRight,
-            child: Text(time, style:  TextStyle(fontSize: 9, color: mutedInk))),
+            child: Text(time, style:  TextStyle(fontSize: 11, color: mutedInk))),
         ]),
       ),
     );
@@ -20110,7 +19935,7 @@ class _CaseWorkspacePageState extends State<CaseWorkspacePage> {
             const SizedBox(width: 8),
              Expanded(child: Text(
               'Case messages and evidence are restricted to authenticated participants.',
-              style: TextStyle(fontSize: 10, color: mutedInk))),
+              style: TextStyle(fontSize: 12, color: mutedInk))),
             if (_uploading || _aiBusy) const SizedBox(width: 15, height: 15,
               child: CircularProgressIndicator(strokeWidth: 2)),
           ]),
@@ -20275,17 +20100,17 @@ class _NotificationsPageState extends State<NotificationsPage> {
                 _ => Icons.notifications_outlined,
               };
               return Card(
-                color: fresh ? const Color(0xFF123C4A) : panelNavy,
+                color: fresh ? const Color(0xFF312F2B) : panelNavy,
                 child: ListTile(
                   leading: CircleAvatar(
-                    backgroundColor: const Color(0x3320D6C2),
+                    backgroundColor: const Color(0x3356A062),
                     child: Icon(icon, color: cyanAccent)),
                   title: Text(item['title']?.toString() ?? 'SAMANVAY update',
                     style: const TextStyle(fontWeight: FontWeight.w700, color: Colors.white)),
                   subtitle: Text('$notificationBody\n$dateText', style:  TextStyle(color: mutedInk)),
                   isThreeLine: true,
                   trailing: fresh
-                    ? const Icon(Icons.circle, color: Color(0xFF13A89E), size: 10)
+                    ? const Icon(Icons.circle, color: Color(0xFF417A4B), size: 10)
                     :  Icon(Icons.check, color: mutedInk, size: 18),
                   onTap: () => _openNotification(item),
                 ),
@@ -20389,7 +20214,7 @@ class _AdminManagementPageState extends State<AdminManagementPage> {
                 const SizedBox(height: 4),
                 Text(
                   'Account reference: ${userId.substring(0, userId.length > 8 ? 8 : userId.length)}',
-                  style:  TextStyle(fontSize: 10, color: mutedInk),
+                  style:  TextStyle(fontSize: 12, color: mutedInk),
                 ),
                 const SizedBox(height: 14),
                 DropdownButtonFormField<String>(
@@ -20429,7 +20254,7 @@ class _AdminManagementPageState extends State<AdminManagementPage> {
                 const SizedBox(height: 12),
                  Text(
                   'Changes are checked and recorded by the database. Users cannot assign roles to themselves.',
-                  style: TextStyle(fontSize: 11, color: mutedInk),
+                  style: TextStyle(fontSize: 12, color: mutedInk),
                 ),
               ],
             ),
@@ -20492,7 +20317,7 @@ class _AdminManagementPageState extends State<AdminManagementPage> {
               const SizedBox(height: 8),
                Text(
                 'Use the official department name for the relevant city/state jurisdiction. Creating a routing group does not establish statutory authority.',
-                style: TextStyle(fontSize: 11, color: mutedInk),
+                style: TextStyle(fontSize: 12, color: mutedInk),
               ),
             ],
           ),
@@ -20602,7 +20427,7 @@ class _AdminManagementPageState extends State<AdminManagementPage> {
                 ),
                  Text(
                   'This configures a suggestion only. It does not automatically assign a case or establish statutory authority.',
-                  style: TextStyle(fontSize: 11, color: mutedInk),
+                  style: TextStyle(fontSize: 12, color: mutedInk),
                 ),
               ],
             ),
@@ -20639,7 +20464,7 @@ class _AdminManagementPageState extends State<AdminManagementPage> {
         children: [
           Text(title, style:  TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: ink)),
           const SizedBox(height: 3),
-          Text(subtitle, style:  TextStyle(fontSize: 11, color: mutedInk)),
+          Text(subtitle, style:  TextStyle(fontSize: 12, color: mutedInk)),
         ],
       ),
     );
@@ -20662,7 +20487,7 @@ class _AdminManagementPageState extends State<AdminManagementPage> {
               padding: const EdgeInsets.all(17),
               decoration: BoxDecoration(
                 gradient: LinearGradient(
-                  colors: [navy, Color(0xFF14515E)],
+                  colors: [navy, Color(0xFF3D3A35)],
                   begin: Alignment.topLeft, end: Alignment.bottomRight),
                 borderRadius: BorderRadius.circular(18),
               ),
@@ -20675,7 +20500,7 @@ class _AdminManagementPageState extends State<AdminManagementPage> {
                   SizedBox(height: 5),
                   Text(
                     'Manage platform access, routing groups and audit history. Statutory authority remains with the responsible government organisation.',
-                    style: TextStyle(color: Colors.white70, fontSize: 11, height: 1.4),
+                    style: TextStyle(color: Colors.white70, fontSize: 12, height: 1.4),
                   ),
                 ],
               ),
@@ -20684,7 +20509,7 @@ class _AdminManagementPageState extends State<AdminManagementPage> {
             if (_error != null)
               Card(child: Padding(
                 padding: const EdgeInsets.all(14),
-                child: Text(_error!, style: const TextStyle(color: Colors.red)),
+                child: Text(_error!, style: const TextStyle(color: Color(0xFFB14633))),
               )),
             if (_loading)
               const Center(child: Padding(
@@ -20707,11 +20532,11 @@ class _AdminManagementPageState extends State<AdminManagementPage> {
                   margin: const EdgeInsets.only(bottom: 8),
                   child: ListTile(
                     leading: CircleAvatar(
-                      backgroundColor: const Color(0xFFE7F8F6),
+                      backgroundColor: const Color(0xFFEBF4EC),
                       child: Icon(icon, color: teal),
                     ),
                     title: Text(name, style: const TextStyle(fontWeight: FontWeight.w700)),
-                    subtitle: Text(subtitle, style: const TextStyle(fontSize: 10)),
+                    subtitle: Text(subtitle, style: const TextStyle(fontSize: 12)),
                     trailing: IconButton(
                       tooltip: isSelf ? 'Own role is locked' : 'Edit role and department',
                       onPressed: isSelf ? null : () => _editUser(user),
@@ -20768,7 +20593,7 @@ class _AdminManagementPageState extends State<AdminManagementPage> {
                     title: Text(department['name'].toString(),
                       style: const TextStyle(fontWeight: FontWeight.w700)),
                     subtitle: Text('$categoryName · $priorityName',
-                      style: const TextStyle(fontSize: 10)),
+                      style: const TextStyle(fontSize: 12)),
                   ),
                 );
               }),

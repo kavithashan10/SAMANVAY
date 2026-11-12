@@ -214,11 +214,11 @@ class _CoordinatedWorkCalendarPageState
   }
 
   Color _statusColor(String status) => switch (status.toLowerCase()) {
-        'approved' || 'completed' || 'resolved' => const Color(0xFF41C98E),
-        'rejected' || 'cancelled' => const Color(0xFFF16F79),
-        'in_progress' => const Color(0xFFF5A64A),
-        'under_review' => const Color(0xFFF0C56A),
-        _ => const Color(0xFF62B8E8),
+        'approved' || 'completed' || 'resolved' => const Color(0xFF60AA6D),
+        'rejected' || 'cancelled' => const Color(0xFFDB9285),
+        'in_progress' => const Color(0xFFE2AD5D),
+        'under_review' => const Color(0xFFE6B874),
+        _ => const Color(0xFF83ABC7),
       };
 
   Widget _metric(String label, String value, IconData icon) => Expanded(
@@ -290,7 +290,7 @@ class _CoordinatedWorkCalendarPageState
         color: _panel,
         borderRadius: BorderRadius.circular(14),
         border: Border.all(
-          color: overlap ? const Color(0xFFB77A34) : _border,
+          color: overlap ? const Color(0xFFB78334) : _border,
           width: overlap ? 1.2 : 1,
         ),
       ),
@@ -335,20 +335,20 @@ class _CoordinatedWorkCalendarPageState
           Container(
             padding: const EdgeInsets.all(9),
             decoration: BoxDecoration(
-              color: const Color(0x22D99135),
+              color: const Color(0x22D99735),
               borderRadius: BorderRadius.circular(9),
             ),
             child: const Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Icon(Icons.warning_amber_rounded,
-                    color: Color(0xFFFFC36B), size: 17),
+                    color: Color(0xFFE9BF81), size: 17),
                 SizedBox(width: 7),
                 Expanded(
                   child: Text(
                     'Potential nearby schedule overlap: another active work case is within 100 m and has overlapping planned dates. Coordinate with the responsible departments before scheduling.',
                     style: TextStyle(
-                        color: Color(0xFFFFDDA8), fontSize: 10, height: 1.4),
+                        color: Color(0xFFF2DAB5), fontSize: 10, height: 1.4),
                   ),
                 ),
               ],
@@ -411,7 +411,7 @@ class _CoordinatedWorkCalendarPageState
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         const Icon(Icons.cloud_off_outlined,
-                            color: Color(0xFFF16F79), size: 38),
+                            color: Color(0xFFDB9285), size: 38),
                         const SizedBox(height: 10),
                         Text(_error!,
                             textAlign: TextAlign.center,
@@ -435,8 +435,8 @@ class _CoordinatedWorkCalendarPageState
                         decoration: BoxDecoration(
                           gradient: LinearGradient(
                             colors: _isLight
-                                ? const [Color(0xFFE3F2EF), Color(0xFFDDECF0)]
-                                : const [Color(0xFF123B65), Color(0xFF075E72)],
+                                ? const [Color(0xFFE4F1E6), Color(0xFFF2E9DB)]
+                                : const [Color(0xFF403C37), Color(0xFF413D38)],
                           ),
                           borderRadius: BorderRadius.circular(15),
                         ),
@@ -445,7 +445,7 @@ class _CoordinatedWorkCalendarPageState
                           children: [
                             Text('ONE PLAN · MULTIPLE DEPARTMENTS',
                                 style: TextStyle(
-                                    color: _isLight ? _accent : const Color(0xFF9DECE1),
+                                    color: _isLight ? _accent : const Color(0xFFB3D6B9),
                                     fontSize: 9,
                                     fontWeight: FontWeight.w900,
                                     letterSpacing: 1)),

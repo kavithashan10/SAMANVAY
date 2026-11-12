@@ -129,9 +129,9 @@ class _SamanvayAiAssistantPageState extends State<SamanvayAiAssistantPage> {
   Widget _notice(String text, {bool warning = false}) => Container(
     padding: const EdgeInsets.all(14),
     decoration: BoxDecoration(
-      color: warning ? (_isLight ? const Color(0xFFFFE8E8) : const Color(0xFF462B32)) : _aiPanel,
+      color: warning ? (_isLight ? const Color(0xFFFAEFED) : const Color(0xFF462F2B)) : _aiPanel,
       borderRadius: BorderRadius.circular(13),
-      border: Border.all(color: warning ? const Color(0xFFB85D67) : _aiBorder),
+      border: Border.all(color: warning ? const Color(0xFFB86B5D) : _aiBorder),
     ),
     child: Text(text, style: TextStyle(color: _aiInk, fontSize: 12, height: 1.4)),
   );
@@ -188,7 +188,7 @@ class _SamanvayAiAssistantPageState extends State<SamanvayAiAssistantPage> {
           Icon(Icons.auto_awesome, color: _aiCyan, size: 20), const SizedBox(width: 8),
           Expanded(child: Text('Rule-based case assessment', style: TextStyle(color: _aiInk, fontSize: 16, fontWeight: FontWeight.w800))),
           if (_assessmentId != null && _assessmentId!.isNotEmpty)
-            const Icon(Icons.verified_outlined, color: Color(0xFF77D5B0), size: 18),
+            const Icon(Icons.verified_outlined, color: Color(0xFF8BC194), size: 18),
         ]),
         const SizedBox(height: 12),
         Text((data['summary'] ?? 'No summary returned.').toString(), style: TextStyle(color: _aiInk, fontSize: 13, height: 1.5)),
@@ -249,7 +249,7 @@ class _SamanvayAiAssistantPageState extends State<SamanvayAiAssistantPage> {
           Container(
             padding: const EdgeInsets.all(18),
             decoration: BoxDecoration(
-              gradient: LinearGradient(colors: _isLight ? const [Color(0xFFE3F2EF), Color(0xFFDDECF0), Color(0xFFEAF1F7)] : [_aiPanel, const Color(0xFF124B6C), const Color(0xFF123B72)], begin: Alignment.topLeft, end: Alignment.bottomRight),
+              gradient: LinearGradient(colors: _isLight ? const [Color(0xFFE4F1E6), Color(0xFFF2E9DB), Color(0xFFF7F2EA)] : [_aiPanel, const Color(0xFF43403B), const Color(0xFF47433D)], begin: Alignment.topLeft, end: Alignment.bottomRight),
               borderRadius: BorderRadius.circular(20), border: Border.all(color: _aiCyan.withValues(alpha: .35)),
             ),
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -257,10 +257,10 @@ class _SamanvayAiAssistantPageState extends State<SamanvayAiAssistantPage> {
                 Container(width: 43, height: 43, decoration: BoxDecoration(color: _aiCyan.withValues(alpha: .14), borderRadius: BorderRadius.circular(13)), child: Icon(Icons.smart_toy_outlined, color: _aiCyan, size: 25)),
                 const SizedBox(width: 12),
                 Expanded(child: Text('Case intelligence', style: GoogleFonts.spaceGrotesk(color: _isLight ? _aiInk : Colors.white, fontWeight: FontWeight.w700, fontSize: 21))),
-                const Chip(label: Text('ADVISORY', style: TextStyle(fontSize: 8, color: Colors.white, fontWeight: FontWeight.w800)), backgroundColor: Color(0xFF266A82), side: BorderSide.none, visualDensity: VisualDensity.compact),
+                const Chip(label: Text('ADVISORY', style: TextStyle(fontSize: 8, color: Colors.white, fontWeight: FontWeight.w800)), backgroundColor: Color(0xFF345974), side: BorderSide.none, visualDensity: VisualDensity.compact),
               ]),
               const SizedBox(height: 11),
-              Text('Run a structured summary, triage or coordination assessment against a case your authenticated role is allowed to access.', style: TextStyle(color: _isLight ? _aiMuted : const Color(0xFFD7E7F2), fontSize: 12, height: 1.45)),
+              Text('Run a structured summary, triage or coordination assessment against a case your authenticated role is allowed to access.', style: TextStyle(color: _isLight ? _aiMuted : const Color(0xFFF0E7D9), fontSize: 12, height: 1.45)),
             ]),
           ),
           const SizedBox(height: 16),
@@ -283,7 +283,7 @@ class _SamanvayAiAssistantPageState extends State<SamanvayAiAssistantPage> {
                 hintStyle: TextStyle(color: _aiMuted, fontSize: 11),
                 prefixIcon: Icon(Icons.folder_open, color: _aiCyan),
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(13), borderSide: BorderSide(color: _aiBorder)),
-                enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(13), borderSide: const BorderSide(color: Color(0xFF31536F))),
+                enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(13), borderSide: const BorderSide(color: Color(0xFF32556E))),
               ),
               items: requests.map((r) {
                 final number = (r['request_number'] ?? r['id']).toString();

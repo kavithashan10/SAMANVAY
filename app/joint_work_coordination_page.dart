@@ -473,12 +473,12 @@ class _JointWorkCoordinationPageState extends State<JointWorkCoordinationPage> {
     switch (status) {
       case 'scheduled':
       case 'ready_for_coordinator':
-        return Colors.green;
+        return Color(0xFF3B6E44);
       case 'declined':
       case 'rejected_by_coordinator':
-        return Colors.redAccent;
+        return Color(0xFFB94936);
       default:
-        return Colors.orange;
+        return Color(0xFFAC731E);
     }
   }
 
@@ -529,12 +529,12 @@ class _JointWorkCoordinationPageState extends State<JointWorkCoordinationPage> {
             const SizedBox(height: 8),
             Text('Proposed window: ' + _dateLabel(proposal['proposed_start_on']) +
                 ' – ' + _dateLabel(proposal['proposed_end_on']),
-                style: const TextStyle(fontSize: 11, color: Colors.blueGrey)),
+                style: const TextStyle(fontSize: 11, color: Color(0xFF8A8379))),
             if (status == 'scheduled') ...[
               const SizedBox(height: 7),
               Text('Recorded schedule: ' + _dateLabel(proposal['scheduled_start_on']) +
                   ' – ' + _dateLabel(proposal['scheduled_end_on']),
-                  style: const TextStyle(fontWeight: FontWeight.w700, color: Colors.green)),
+                  style: const TextStyle(fontWeight: FontWeight.w700, color: Color(0xFF3B6E44))),
             ],
             if (_value(proposal, 'coordinator_remarks', '').isNotEmpty) ...[
               const SizedBox(height: 7),
@@ -557,8 +557,8 @@ class _JointWorkCoordinationPageState extends State<JointWorkCoordinationPage> {
                       style: const TextStyle(fontSize: 11))),
                   Text(_label(responseStatus),
                       style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700,
-                          color: responseStatus == 'accepted' ? Colors.green :
-                              responseStatus == 'declined' ? Colors.redAccent : Colors.orange)),
+                          color: responseStatus == 'accepted' ? Color(0xFF3B6E44) :
+                              responseStatus == 'declined' ? Color(0xFFB94936) : Color(0xFFAC731E))),
                 ]),
               );
             }),
@@ -584,7 +584,7 @@ class _JointWorkCoordinationPageState extends State<JointWorkCoordinationPage> {
             if (_canCoordinate && status == 'ready_for_coordinator') ...[
               const SizedBox(height: 12),
               const Text('All participating departments have accepted. Final coordinator decision is pending.',
-                  style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Colors.green)),
+                  style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Color(0xFF3B6E44))),
               const SizedBox(height: 8),
               FilledButton.icon(
                 onPressed: _working ? null : () => _finalise(proposal, 'schedule'),
@@ -679,16 +679,16 @@ class _JointWorkCoordinationPageState extends State<JointWorkCoordinationPage> {
                       Container(
                         padding: const EdgeInsets.all(15),
                         decoration: BoxDecoration(
-                          color: const Color(0xFF102B40),
+                          color: const Color(0xFF2B2925),
                           borderRadius: BorderRadius.circular(15),
-                          border: Border.all(color: const Color(0xFF294763)),
+                          border: Border.all(color: const Color(0xFF4B4741)),
                         ),
                         child: const Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text('ONE LOCATION · COORDINATED DELIVERY',
                                 style: TextStyle(fontSize: 9, fontWeight: FontWeight.w900,
-                                    letterSpacing: .8, color: Color(0xFF35D7C2))),
+                                    letterSpacing: .8, color: Color(0xFF62AA6E))),
                             SizedBox(height: 8),
                             Text(
                               'Propose a shared work window across related cases. Participating departments record their responses, then an authorised coordinator records the final planning decision.',
@@ -712,19 +712,19 @@ class _JointWorkCoordinationPageState extends State<JointWorkCoordinationPage> {
                         Container(
                           padding: const EdgeInsets.all(22),
                           decoration: BoxDecoration(
-                            color: const Color(0xFF10243A),
+                            color: const Color(0xFF282622),
                             borderRadius: BorderRadius.circular(13),
-                            border: Border.all(color: const Color(0xFF25415E)),
+                            border: Border.all(color: const Color(0xFF46423D)),
                           ),
                           child: const Column(children: [
-                            Icon(Icons.hub_outlined, size: 34, color: Color(0xFF35C6B5)),
+                            Icon(Icons.hub_outlined, size: 34, color: Color(0xFF58A364)),
                             SizedBox(height: 8),
                             Text('No joint-work proposals yet.',
                                 style: TextStyle(fontWeight: FontWeight.w700)),
                             SizedBox(height: 5),
                             Text('New proposals will appear here when a coordinator links two assigned cases.',
                                 textAlign: TextAlign.center,
-                                style: TextStyle(fontSize: 11, color: Color(0xFFB6C7D6))),
+                                style: TextStyle(fontSize: 11, color: Color(0xFFD0C8BC))),
                           ]),
                         )
                       else
@@ -732,7 +732,7 @@ class _JointWorkCoordinationPageState extends State<JointWorkCoordinationPage> {
                       const SizedBox(height: 12),
                       const Text(
                         'This workflow is a coordination aid. A scheduled proposal is not an excavation permit, utility-owner clearance, legal approval or safety certification. Existing statutory approvals, no-dig rules, owner clearances and field verification remain separate requirements.',
-                        style: TextStyle(fontSize: 10, height: 1.45, color: Color(0xFFB6C7D6)),
+                        style: TextStyle(fontSize: 10, height: 1.45, color: Color(0xFFD0C8BC)),
                       ),
                     ],
                   ),
@@ -744,15 +744,15 @@ class _JointWorkCoordinationPageState extends State<JointWorkCoordinationPage> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 13),
       decoration: BoxDecoration(
-        color: const Color(0xFF10243A),
+        color: const Color(0xFF282622),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFF25415E)),
+        border: Border.all(color: const Color(0xFF46423D)),
       ),
       child: Column(children: [
         Text(value, style: const TextStyle(fontSize: 19, fontWeight: FontWeight.w900)),
         const SizedBox(height: 3),
         Text(label, textAlign: TextAlign.center,
-            style: const TextStyle(fontSize: 9, color: Color(0xFFB6C7D6))),
+            style: const TextStyle(fontSize: 9, color: Color(0xFFD0C8BC))),
       ]),
     );
   }

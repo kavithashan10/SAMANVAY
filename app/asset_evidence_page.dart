@@ -72,10 +72,10 @@ class _UtilityAssetEvidenceSubmissionPageState
   }
 
   Color _statusColor(String status) {
-    if (status == 'owner_confirmed') return const Color(0xFFE4F4E9);
-    if (status == 'field_surveyed') return const Color(0xFFE6F0FB);
-    if (status == 'disputed') return const Color(0xFFFFE8E8);
-    return const Color(0xFFFFF0D7);
+    if (status == 'owner_confirmed') return const Color(0xFFE6F2E8);
+    if (status == 'field_surveyed') return const Color(0xFFF7F2EA);
+    if (status == 'disputed') return const Color(0xFFFAEFED);
+    return const Color(0xFFF9EEDD);
   }
 
   Future<Map<String, String>?> _collectMetadata() async {
@@ -140,7 +140,7 @@ class _UtilityAssetEvidenceSubmissionPageState
                   const SizedBox(height: 6),
                   const Text(
                     'Do not enter coordinates, utility layouts, routes, depths, or excavation-clearance details.',
-                    style: TextStyle(fontSize: 10, color: Color(0xFF9A6700), height: 1.35),
+                    style: TextStyle(fontSize: 10, color: Color(0xFF835817), height: 1.35),
                   ),
                 ],
               ),
@@ -361,7 +361,7 @@ class _UtilityAssetEvidenceSubmissionPageState
                           SizedBox(height: 7),
                           Text(
                             'The original document remains private to the owner department. Do not submit unrestricted network maps, precise coordinates, routes, depths or excavation-clearance information.',
-                            style: TextStyle(fontSize: 10, color: Color(0xFF9A6700), height: 1.4),
+                            style: TextStyle(fontSize: 10, color: Color(0xFF835817), height: 1.4),
                           ),
                         ],
                       ),

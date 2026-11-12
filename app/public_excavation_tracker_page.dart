@@ -187,20 +187,20 @@ class _PublicExcavationTrackerPageState extends State<PublicExcavationTrackerPag
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
               gradient: LinearGradient(colors: _isLight
-                  ? const [Color(0xFFE3F2EF), Color(0xFFDDECF0), Color(0xFFEAF1F7)]
-                  : [_trackerNavy, const Color(0xFF123B65), const Color(0xFF075E72)],
+                  ? const [Color(0xFFE4F1E6), Color(0xFFF2E9DB), Color(0xFFF7F2EA)]
+                  : [_trackerNavy, const Color(0xFF403C37), const Color(0xFF413D38)],
                 begin: Alignment.topLeft, end: Alignment.bottomRight),
               borderRadius: BorderRadius.circular(22),
               border: Border.all(color: _trackerCyan.withValues(alpha: .28))),
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Text('PUBLIC INFRASTRUCTURE NOTICES',
-                style: TextStyle(color: _isLight ? _trackerBlue : const Color(0xFFB8E6F4), fontSize: 10, letterSpacing: 1.3, fontWeight: FontWeight.w800)),
+                style: TextStyle(color: _isLight ? _trackerBlue : const Color(0xFFDDD7CF), fontSize: 10, letterSpacing: 1.3, fontWeight: FontWeight.w800)),
               const SizedBox(height: 10),
               Text('Know what is happening in your ward.',
                 style: GoogleFonts.spaceGrotesk(color: _isLight ? _trackerInk : Colors.white, fontSize: 23, fontWeight: FontWeight.w700)),
               const SizedBox(height: 7),
               Text('Authority-published excavation notices, work dates, progress updates and no-dig notices.',
-                style: TextStyle(color: _isLight ? _trackerMuted : const Color(0xFFD8E7F3), fontSize: 12, height: 1.45)),
+                style: TextStyle(color: _isLight ? _trackerMuted : const Color(0xFFF1E8DA), fontSize: 12, height: 1.45)),
             ]),
           ),
           const SizedBox(height: 14),
@@ -259,8 +259,8 @@ class _PublicExcavationTrackerPageState extends State<PublicExcavationTrackerPag
             Expanded(child: Text((notice['notice_code'] ?? 'Published notice').toString(),
               style: TextStyle(color: _trackerBlue, fontSize: 11, fontWeight: FontWeight.w800))),
             Chip(label: Text(noDig ? 'NO-DIG' : 'EXCAVATION'),
-              backgroundColor: noDig ? const Color(0xFFFFF1D8) : const Color(0xFFE8F5FF),
-              labelStyle: TextStyle(color: noDig ? const Color(0xFF8C5A06) : const Color(0xFF195B9A),
+              backgroundColor: noDig ? const Color(0xFFF9EEDE) : const Color(0xFFF9F5EE),
+              labelStyle: TextStyle(color: noDig ? const Color(0xFF7C5316) : const Color(0xFF375F7C),
                 fontWeight: FontWeight.w900, fontSize: 9),
               visualDensity: VisualDensity.compact),
           ]),
@@ -302,7 +302,7 @@ class _PublicExcavationTrackerPageState extends State<PublicExcavationTrackerPag
             const SizedBox(height: 5),
             ClipRRect(borderRadius: BorderRadius.circular(8),
               child: LinearProgressIndicator(value: fraction.toDouble(), minHeight: 7,
-                backgroundColor: const Color(0xFFE8EEF5),
+                backgroundColor: const Color(0xFFF6F0E7),
                 valueColor: AlwaysStoppedAnimation<Color>(_trackerBlue))),
           ] else
             Padding(padding: EdgeInsets.only(top: 8),
