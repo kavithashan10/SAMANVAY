@@ -712,10 +712,14 @@ ThemeData samanvayAppTheme({required bool dark}) {
     ),
     chipTheme: ChipThemeData(
       backgroundColor: Colors.transparent,
-      selectedColor: p.surface,
-      side: BorderSide(color: p.hairline),
+      selectedColor: p.ink,
+      side: WidgetStateBorderSide.resolveWith(
+        (states) => BorderSide(color: states.contains(WidgetState.selected) ? p.ink : p.hairline),
+      ),
       shape: const StadiumBorder(),
-      labelStyle: SvType.ui(p.ink),
+      labelStyle: SvType.ui(p.ink).copyWith(
+        color: WidgetStateColor.resolveWith((states) => states.contains(WidgetState.selected) ? p.canvas : p.ink),
+      ),
       showCheckmark: false,
     ),
     navigationRailTheme: NavigationRailThemeData(

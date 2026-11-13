@@ -864,6 +864,7 @@ class LpuDemoStore extends ChangeNotifier {
     grievances = _seedGrievances();
     activity = _seedActivity();
     _grievanceSeq = 14;
+    _workSeq = 6;
     if (notify) notifyListeners();
   }
 
@@ -1038,6 +1039,53 @@ class LpuDemoStore extends ChangeNotifier {
     b.jointWith = a.id;
     _log('Joint work proposed: ${a.id} + ${b.id} share one trench window', ref: a.id, public: true, icon: Icons.merge_type_outlined);
     notifyListeners();
+  }
+
+  // ---- new work requests ------------------------------------------------
+
+  int _workSeq = 6;
+
+  /// Files a new work request in the demonstration (status Submitted), with a
+  /// review for the applicant's department and each [reviewDepts].
+  WorkItem addWork({
+    required String title,
+    required String road,
+    required String applicantDept,
+    required String workType,
+    required String description,
+    required List<Offset> route,
+    required DateTime start,
+    required DateTime end,
+    required List<String> reviewDepts,
+  }) {
+    final id = 'SR-2026-${(_workSeq++).toString().padLeft(3, '0')}';
+    final depts = {applicantDept, ...reviewDepts}.toList();
+    final w = WorkItem(
+      id: id,
+      title: title,
+      road: road,
+      applicantDept: applicantDept,
+      contractor: 'To be confirmed',
+      workType: workType,
+      description: description,
+      route: route,
+      start: start,
+      end: end,
+      status: WorkStatus.submitted,
+      reviews: [
+        for (final d in depts)
+          DepartmentReview(
+            deptId: d,
+            checks: List.filled(deptById(d).checklist.length, false),
+            isApplicant: d == applicantDept,
+          ),
+      ],
+      restoration: Restoration(method: 'Specification to be agreed', lengthM: 0, widthM: 0),
+    );
+    works.insert(0, w);
+    _log('New work request filed: $title', ref: id, public: true, icon: Icons.add_circle_outline);
+    notifyListeners();
+    return w;
   }
 
   // ---- grievances -------------------------------------------------------

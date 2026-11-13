@@ -28,6 +28,7 @@ import 'lpu_demo_app.dart';
 import 'samanvay_design.dart';
 import 'department_checklists.dart';
 import 'case_screening.dart';
+import 'src/ui/app.dart';
 
 const String supabaseUrl =
     String.fromEnvironment('SUPABASE_URL');
@@ -39,8 +40,11 @@ const String supabasePublishableKey =
 // so slow storage/network initialization cannot hide the opening animation.
 Future<void> _samanvayBootFuture = Future<void>.value();
 
-/// `--dart-define=SAMANVAY_START=lpu-demo` builds a presentation APK that opens
-/// straight into the offline LPU demonstration (no backend required).
+/// Start modes:
+/// - default: the SAMANVAY app (one flow for every role, live or demonstration)
+/// - `--dart-define=SAMANVAY_START=lpu-demo`: presentation build that opens the
+///   standalone offline LPU demonstration
+/// - `--dart-define=SAMANVAY_START=classic`: the previous portal-based app
 const String samanvayStartMode = String.fromEnvironment('SAMANVAY_START');
 
 Future<void> main() async {
@@ -49,8 +53,12 @@ Future<void> main() async {
     runApp(const LpuDemoApp());
     return;
   }
-  runApp(const SamanvayApp());
   _samanvayBootFuture = _initialiseSamanvayServices();
+  if (samanvayStartMode == 'classic') {
+    runApp(const SamanvayApp());
+    return;
+  }
+  runApp(SamanvayV2App(backendBoot: _samanvayBootFuture));
 }
 
 Future<void> _initialiseSamanvayServices() async {

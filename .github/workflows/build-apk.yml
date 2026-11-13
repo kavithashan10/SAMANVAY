@@ -204,6 +204,7 @@ jobs:
           PY
           # Copy every app module so new pages are never left out of the build.
           cp app/*.dart lib/
+          mkdir -p lib/src && cp -R app/src/. lib/src/
 
           if [ ! -s assets/reference/coimbatore/coimbatore_wards_2024_public_domain.geojson ]; then
             echo "ERROR: Coimbatore ward reference GeoJSON is missing from the repository."

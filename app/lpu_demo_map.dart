@@ -155,7 +155,8 @@ class LpuCampusMapState extends State<LpuCampusMap> {
         scale: _scale,
       );
       return ClipRect(
-        child: ColoredBox(
+        child: Stack(children: [
+          Positioned.fill(child: ColoredBox(
           color: p.isDark ? const Color(0xFF1E1D20) : const Color(0xFFF3ECE1),
           child: InteractiveViewer(
             transformationController: _controller,
@@ -172,10 +173,75 @@ class LpuCampusMapState extends State<LpuCampusMap> {
               child: CustomPaint(size: campusSize, painter: painter),
             ),
           ),
-        ),
+          )),
+          Positioned(left: 12, top: 52, child: IgnorePointer(child: MapFurniture(scale: _scale))),
+        ]),
       );
     });
   }
+}
+
+/// Screen-space north arrow and scale bar. One schematic unit is one metre
+/// on the ground, so the bar is rescaled from the current zoom and always
+/// shows a round distance.
+class MapFurniture extends StatelessWidget {
+  const MapFurniture({super.key, required this.scale});
+  final double scale;
+
+  static const _steps = [2, 5, 10, 20, 25, 50, 100, 200, 250, 500, 1000];
+
+  @override
+  Widget build(BuildContext context) {
+    final p = SvPalette.of(context);
+    var metres = _steps.last;
+    for (final m in _steps) {
+      if (m * scale >= 56) {
+        metres = m;
+        break;
+      }
+    }
+    final width = (metres * scale).clamp(20.0, 160.0);
+    final label = metres >= 1000 ? '${metres ~/ 1000} km' : '$metres m';
+    return Container(
+      padding: const EdgeInsets.fromLTRB(8, 6, 10, 6),
+      decoration: BoxDecoration(
+        color: p.surface.withValues(alpha: .86),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: p.hairline),
+      ),
+      child: Row(mainAxisSize: MainAxisSize.min, children: [
+        Column(mainAxisSize: MainAxisSize.min, children: [
+          Icon(Icons.navigation, size: 14, color: p.ink),
+          Text('N', style: GoogleFonts.inter(fontSize: 9, fontWeight: FontWeight.w700, color: p.ink, height: 1)),
+        ]),
+        const SizedBox(width: 10),
+        Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
+          SizedBox(width: width, height: 6, child: CustomPaint(painter: _ScaleBarPainter(p.ink))),
+          const SizedBox(height: 3),
+          Text(label, style: GoogleFonts.inter(fontSize: 10, fontWeight: FontWeight.w600, color: p.inkSoft, height: 1)),
+        ]),
+      ]),
+    );
+  }
+}
+
+class _ScaleBarPainter extends CustomPainter {
+  _ScaleBarPainter(this.color);
+  final Color color;
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = color
+      ..strokeWidth = 1.6;
+    final y = size.height - 1;
+    canvas.drawLine(Offset(0, y), Offset(size.width, y), paint);
+    canvas.drawLine(Offset(0, 0), Offset(0, y), paint);
+    canvas.drawLine(Offset(size.width, 0), Offset(size.width, y), paint);
+    canvas.drawLine(Offset(size.width / 2, size.height / 2), Offset(size.width / 2, y), paint);
+  }
+
+  @override
+  bool shouldRepaint(_ScaleBarPainter old) => old.color != color;
 }
 
 class CampusMapPainter extends CustomPainter {
@@ -383,24 +449,6 @@ class CampusMapPainter extends CustomPainter {
     _text('MAIN GATE', GoogleFonts.inter(fontSize: 9, fontWeight: FontWeight.w700, letterSpacing: 1.2, color: palette.inkSoft))
         .paint(canvas, mainGate + const Offset(20, -8));
 
-    // North arrow and scale bar.
-    final north = Offset(size.width - 52, 34);
-    final arrow = Path()
-      ..moveTo(north.dx, north.dy - 14)
-      ..lineTo(north.dx + 7, north.dy + 8)
-      ..lineTo(north.dx, north.dy + 3)
-      ..lineTo(north.dx - 7, north.dy + 8)
-      ..close();
-    canvas.drawPath(arrow, Paint()..color = palette.inkSoft);
-    _text('N', GoogleFonts.inter(fontSize: 10, fontWeight: FontWeight.w700, color: palette.inkSoft)).paint(canvas, north + const Offset(-3.5, 10));
-    final s0 = const Offset(40, 22);
-    final barPaint = Paint()
-      ..color = palette.inkSoft
-      ..strokeWidth = 2;
-    canvas.drawLine(s0, s0 + const Offset(100, 0), barPaint);
-    canvas.drawLine(s0, s0 + const Offset(0, -5), barPaint);
-    canvas.drawLine(s0 + const Offset(100, 0), s0 + const Offset(100, -5), barPaint);
-    _text('100 m (schematic)', GoogleFonts.inter(fontSize: 9, color: palette.muted)).paint(canvas, s0 + const Offset(0, 4));
   }
 
   void _dashed(Canvas canvas, Offset a, Offset b, Paint paint, {double dash = 6, double gap = 4}) {

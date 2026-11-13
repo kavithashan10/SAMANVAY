@@ -49,6 +49,7 @@ jobs:
           mkdir -p lib assets/reference assets/brand
           # Copy every app module so new pages are never left out of the build.
           cp app/*.dart lib/
+          mkdir -p lib/src && cp -R app/src/. lib/src/
           cp -R app/assets/brand/. assets/brand/
           cp -R app/assets/reference/. assets/reference/
 

@@ -266,7 +266,7 @@ class _LpuDemoShellState extends State<LpuDemoShell> {
     final store = LpuDemoScope.of(context);
     final pages = [
       _HomeTab(onOpenMap: () => goTo(1), onOpenReports: () => goTo(3)),
-      const _MapTab(),
+      const LpuDemoMapTab(),
       const _WorksTab(),
       const _ReportsTab(),
       const _ActivityTab(),
@@ -809,7 +809,24 @@ class _AdminHome extends StatelessWidget {
 // Works
 // =============================================================================
 
-void _openWork(BuildContext context, WorkItem w) =>
+/// Lets a host app (the main SAMANVAY app) open work items and reports from
+/// the campus map in its own screens instead of the standalone demo pages.
+class LpuDemoActions extends InheritedWidget {
+  const LpuDemoActions({super.key, required this.openWork, required this.openGrievance, required super.child});
+  final void Function(BuildContext context, String workId) openWork;
+  final void Function(BuildContext context, String grievanceId) openGrievance;
+  static LpuDemoActions? maybeOf(BuildContext context) => context.dependOnInheritedWidgetOfExactType<LpuDemoActions>();
+  @override
+  bool updateShouldNotify(LpuDemoActions oldWidget) => false;
+}
+
+void _openWork(BuildContext context, WorkItem w) {
+  final host = LpuDemoActions.maybeOf(context);
+  if (host != null) return host.openWork(context, w.id);
+  _openWorkLocal(context, w);
+}
+
+void _openWorkLocal(BuildContext context, WorkItem w) =>
     Navigator.of(context).push(MaterialPageRoute(builder: (_) => WorkDetailPage(workId: w.id)));
 
 class _WorkCard extends StatelessWidget {
@@ -1396,13 +1413,13 @@ class _TimelineRow extends StatelessWidget {
 // Map tab
 // =============================================================================
 
-class _MapTab extends StatefulWidget {
-  const _MapTab();
+class LpuDemoMapTab extends StatefulWidget {
+  const LpuDemoMapTab({super.key});
   @override
-  State<_MapTab> createState() => _MapTabState();
+  State<LpuDemoMapTab> createState() => _MapTabState();
 }
 
-class _MapTabState extends State<_MapTab> {
+class _MapTabState extends State<LpuDemoMapTab> {
   final _mapKey = GlobalKey<LpuCampusMapState>();
   MapSelection? _selection;
 
@@ -1614,8 +1631,11 @@ class _ReportsTab extends StatelessWidget {
   }
 }
 
-void _openGrievance(BuildContext context, Grievance g) =>
-    Navigator.of(context).push(MaterialPageRoute(builder: (_) => _GrievanceDetail(id: g.id)));
+void _openGrievance(BuildContext context, Grievance g) {
+  final host = LpuDemoActions.maybeOf(context);
+  if (host != null) return host.openGrievance(context, g.id);
+  Navigator.of(context).push(MaterialPageRoute(builder: (_) => _GrievanceDetail(id: g.id)));
+}
 
 void _openGrievanceForm(BuildContext context) =>
     Navigator.of(context).push(MaterialPageRoute(builder: (_) => const _GrievanceForm()));

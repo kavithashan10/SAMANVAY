@@ -36,6 +36,15 @@ class ReviewChecklistItem {
       );
 }
 
+String _reviewLabel(String s) => switch (s) {
+      'pending' => 'Not started',
+      'under_review' || 'in_review' => 'In review',
+      'approved' => 'Cleared',
+      'rejected' => 'Refused',
+      'conflict_detected' => 'Conflict found',
+      _ => s.replaceAll('_', ' '),
+    };
+
 /// Thrown when the checklist functions are not deployed to this Supabase project.
 class ChecklistUnavailable implements Exception {
   const ChecklistUnavailable();
@@ -77,6 +86,7 @@ String checklistErrorMessage(Object error) {
   if (text.contains('DEPARTMENT_CHECKLIST_INCOMPLETE')) {
     return 'Tick every item in your department checklist before approving.';
   }
+  if (text.contains('DEPARTMENT_CHECKLIST_INCOMPLETE')) return 'Tick every item in your department checklist before approving.';
   if (text.contains('Only the reviewing department')) return 'Only the reviewing department can tick this checklist.';
   if (text.contains('finalised')) return 'This review is finalised; its checklist can no longer change.';
   if (text.contains('Not authorised')) return 'You are not authorised to view this checklist.';
@@ -93,7 +103,19 @@ class ReviewChecklistBox extends StatefulWidget {
     required this.departmentName,
     this.onChanged,
     this.initiallyExpanded = true,
+    this.loader,
+    this.saver,
+    this.refreshToken,
   });
+
+  /// When this changes (for example the review's status after a decision),
+  /// the checklist reloads in place without collapsing.
+  final Object? refreshToken;
+
+  /// Data source overrides (the offline demonstration supplies its own);
+  /// default to the live Supabase RPCs.
+  final Future<List<ReviewChecklistItem>> Function(String reviewId)? loader;
+  final Future<void> Function(String reviewId, String itemKey, bool checked)? saver;
 
   final String reviewId;
   final String departmentName;
@@ -117,9 +139,15 @@ class _ReviewChecklistBoxState extends State<ReviewChecklistBox> {
     _load();
   }
 
+  @override
+  void didUpdateWidget(covariant ReviewChecklistBox oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.refreshToken != widget.refreshToken) _load();
+  }
+
   Future<void> _load() async {
     try {
-      final items = await loadReviewChecklist(widget.reviewId);
+      final items = await (widget.loader ?? loadReviewChecklist)(widget.reviewId);
       if (!mounted) return;
       setState(() {
         _items = items;
@@ -150,7 +178,7 @@ class _ReviewChecklistBoxState extends State<ReviewChecklistBox> {
     });
     _report();
     try {
-      await setReviewChecklistItem(widget.reviewId, item.key, value);
+      await (widget.saver ?? setReviewChecklistItem)(widget.reviewId, item.key, value);
     } catch (e) {
       if (!mounted) return;
       setState(() => item.checked = !value);
@@ -178,7 +206,7 @@ class _ReviewChecklistBoxState extends State<ReviewChecklistBox> {
           SvTag(
             _unavailable
                 ? 'Checklist not deployed'
-                : status.replaceAll('_', ' '),
+                : _reviewLabel(status),
             color: _unavailable
                 ? SvColors.ash
                 : (status == 'approved'
@@ -247,7 +275,9 @@ class _ReviewChecklistBoxState extends State<ReviewChecklistBox> {
                 child: Text(
                   editable
                       ? (done == total ? 'Checklist complete — you can approve.' : 'Tick all $total items before approving.')
-                      : 'Only the ${widget.departmentName} officer can tick this checklist.',
+                      : (status == 'approved' || status == 'rejected')
+                          ? 'Decision recorded — this checklist is now locked.'
+                          : 'Only the ${widget.departmentName} officer can tick this checklist.',
                   style: SvType.caption(p.muted),
                 ),
               ),
