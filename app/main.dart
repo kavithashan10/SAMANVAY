@@ -26,6 +26,7 @@ import 'coordinated_work_calendar_page.dart';
 import 'public_transparency_dashboard_page.dart';
 import 'lpu_demo_app.dart';
 import 'samanvay_design.dart';
+import 'department_checklists.dart';
 
 const String supabaseUrl =
     String.fromEnvironment('SUPABASE_URL');
@@ -2251,8 +2252,8 @@ class _OperationalPortalState extends State<_OperationalPortal> {
                           ),
                           const SizedBox(height: 9),
                           Text(steps[index].$2,
-                            style: const TextStyle(fontSize: 12,
-                              fontWeight: FontWeight.w800, color: Colors.white)),
+                            style: TextStyle(fontSize: 12,
+                              fontWeight: FontWeight.w800, color: ink)),
                           const SizedBox(height: 5),
                           Text(steps[index].$3,
                             style: TextStyle(fontSize: 12,
@@ -2432,8 +2433,8 @@ class _OperationalPortalState extends State<_OperationalPortal> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text('Live operations metrics',
-          style: TextStyle(fontSize: 19, fontWeight: FontWeight.w800, color: Colors.white)),
+        Text('Live operations metrics',
+          style: TextStyle(fontSize: 19, fontWeight: FontWeight.w800, color: ink)),
         const SizedBox(height: 4),
         Text('Counts are calculated from records visible to the signed-in role.',
           style: TextStyle(color: mutedInk, fontSize: 12)),
@@ -2613,6 +2614,10 @@ class _OperationalPortalState extends State<_OperationalPortal> {
     );
 
     String selectedStatus = 'under_review';
+    bool checklistComplete = false;
+    bool checklistAvailable = true;
+    final reviewId = review['id'].toString();
+    final reviewDepartment = departmentName(review['department_id'].toString());
 
     final result = await showDialog<Map<String, String>>(
       context: context,
@@ -2626,35 +2631,53 @@ class _OperationalPortalState extends State<_OperationalPortal> {
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    ReviewChecklistBox(
+                      reviewId: reviewId,
+                      departmentName: reviewDepartment,
+                      onChanged: (complete, available) => setDialogState(() {
+                        checklistComplete = complete;
+                        checklistAvailable = available;
+                        if (selectedStatus == 'approved' && available && !complete) {
+                          selectedStatus = 'under_review';
+                        }
+                      }),
+                    ),
+                    const SizedBox(height: 16),
                     const Text(
                       'Select your department response.',
                     ),
                     const SizedBox(height: 12),
                     DropdownButtonFormField<String>(
+                      key: ValueKey('decision-$selectedStatus'),
                       initialValue: selectedStatus,
                       isExpanded: true,
                       decoration: const InputDecoration(
                         labelText: 'Review decision',
                         border: OutlineInputBorder(),
                       ),
-                      items: const [
-                        DropdownMenuItem(
+                      items: [
+                        const DropdownMenuItem(
                           value: 'under_review',
                           child: Text('Under review'),
                         ),
                         DropdownMenuItem(
                           value: 'approved',
-                          child: Text('Approved'),
+                          enabled: checklistComplete || !checklistAvailable,
+                          child: Text(
+                            checklistComplete || !checklistAvailable
+                                ? 'Approved'
+                                : 'Approved (complete the checklist first)',
+                          ),
                         ),
-                        DropdownMenuItem(
+                        const DropdownMenuItem(
                           value: 'rejected',
                           child: Text('Rejected'),
                         ),
-                        DropdownMenuItem(
+                        const DropdownMenuItem(
                           value: 'conflict_detected',
                           child: Text('Conflict detected'),
                         ),
-                        DropdownMenuItem(
+                        const DropdownMenuItem(
                           value: 'clarification_required',
                           child: Text('Clarification required'),
                         ),
@@ -2724,7 +2747,9 @@ class _OperationalPortalState extends State<_OperationalPortal> {
       await loadRequests();
       notify('Department review submitted.');
     } catch (error) {
-      notify('Review was not submitted: $error');
+      notify(error.toString().contains('DEPARTMENT_CHECKLIST_INCOMPLETE')
+          ? checklistErrorMessage(error)
+          : 'Review was not submitted: $error');
     }
   }
 
@@ -3156,6 +3181,21 @@ class _OperationalPortalState extends State<_OperationalPortal> {
               reviewSummary,
               style: const TextStyle(fontSize: 12),
             ),
+            if (!widget.isDepartment && assignedReviews.isNotEmpty) ...[
+              const SizedBox(height: 8),
+              OutlinedButton.icon(
+                onPressed: () => showDepartmentChecklistsSheet(
+                  context,
+                  requestLabel: number,
+                  reviews: [
+                    for (final review in assignedReviews)
+                      (review['id'].toString(), departmentName(review['department_id'].toString())),
+                  ],
+                ),
+                icon: const Icon(Icons.fact_check_outlined, size: 18),
+                label: const Text('Department checklists'),
+              ),
+            ],
             if (widget.isDepartment && ownReview != null) ...[
               const SizedBox(height: 10),
               statusLabel(
@@ -6883,7 +6923,7 @@ class _CommandCentreActivityBoardState extends State<CommandCentreActivityBoard>
         child: Icon(icon, color: accent, size: 16)),
       const SizedBox(width: 10),
       Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Text(title, style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w800)),
+        Text(title, style: TextStyle(color: ink, fontSize: 12, fontWeight: FontWeight.w800)),
         const SizedBox(height: 2),
         Text(subtitle, style:  TextStyle(color: mutedInk, fontSize: 11, height: 1.35)),
       ])),
@@ -6899,8 +6939,8 @@ class _CommandCentreActivityBoardState extends State<CommandCentreActivityBoard>
       Row(children: [
          Icon(Icons.timeline_rounded, color: cyanAccent, size: 19),
         const SizedBox(width: 8),
-        const Expanded(child: Text('Command-centre activity',
-          style: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w800))),
+        Expanded(child: Text('Command-centre activity',
+          style: TextStyle(color: ink, fontSize: 15, fontWeight: FontWeight.w800))),
         IconButton(onPressed: loading ? null : refresh,
           tooltip: 'Refresh activity', icon:  Icon(Icons.refresh_rounded, color: cyanAccent)),
       ]),
@@ -7328,8 +7368,8 @@ class _PublicWorksOperationsBoardState extends State<PublicWorksOperationsBoard>
       Row(children: [
          Icon(Icons.campaign_outlined, color: cyanAccent, size: 19),
         const SizedBox(width: 8),
-        const Expanded(child: Text('Public works publishing & review',
-          style: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w800))),
+        Expanded(child: Text('Public works publishing & review',
+          style: TextStyle(color: ink, fontSize: 15, fontWeight: FontWeight.w800))),
         IconButton(onPressed: loading ? null : refresh, icon:  Icon(Icons.refresh, color: cyanAccent)),
       ]),
        Text('Create department-owned drafts, publish source-backed notices, update work timelines and review reports using existing RLS rules.',
@@ -7351,7 +7391,7 @@ class _PublicWorksOperationsBoardState extends State<PublicWorksOperationsBoard>
         style: TextStyle(color: mutedInk, fontSize: 12)),
       ...notices.map((notice) => Container(
         margin: const EdgeInsets.only(top: 7), padding: const EdgeInsets.all(10),
-        decoration: BoxDecoration(color: navy, borderRadius: BorderRadius.circular(11),
+        decoration: BoxDecoration(color: _usesLegacyLightPalette ? background : navy, borderRadius: BorderRadius.circular(11),
           border: Border.all(color: borderColor)),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Row(children: [
@@ -7361,7 +7401,7 @@ class _PublicWorksOperationsBoardState extends State<PublicWorksOperationsBoard>
               style: const TextStyle(color: Color(0xFFE7B975), fontSize: 11, fontWeight: FontWeight.w900)),
           ]),
           Text((notice['title'] ?? 'Public works notice').toString(),
-            style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w800)),
+            style: TextStyle(color: _usesLegacyLightPalette ? ink : Colors.white, fontSize: 12, fontWeight: FontWeight.w800)),
           Text((notice['city'] ?? '').toString() + ' · ' + (notice['responsible_department_name'] ?? 'Department not listed').toString(),
             style:  TextStyle(color: mutedInk, fontSize: 12)),
           if (['highway department', 'roads & highways'].contains(
@@ -7396,12 +7436,12 @@ class _PublicWorksOperationsBoardState extends State<PublicWorksOperationsBoard>
         style: TextStyle(color: mutedInk, fontSize: 12)),
       ...reports.map((report) => Container(
         margin: const EdgeInsets.only(top: 7), padding: const EdgeInsets.all(10),
-        decoration: BoxDecoration(color: navy, borderRadius: BorderRadius.circular(11),
+        decoration: BoxDecoration(color: _usesLegacyLightPalette ? background : navy, borderRadius: BorderRadius.circular(11),
           border: Border.all(color: borderColor)),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Row(children: [
             Expanded(child: Text(pretty((report['report_type'] ?? 'other').toString()),
-              style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w900))),
+              style: TextStyle(color: _usesLegacyLightPalette ? ink : Colors.white, fontSize: 12, fontWeight: FontWeight.w900))),
             Text(pretty((report['report_status'] ?? 'submitted').toString()),
               style: const TextStyle(color: Color(0xFFE7B975), fontSize: 11, fontWeight: FontWeight.w900)),
           ]),
@@ -20059,9 +20099,9 @@ class _NotificationsPageState extends State<NotificationsPage> {
         stream: _stream,
         builder: (context, snapshot) {
           if (snapshot.hasError) {
-            return const Center(
+            return Center(
               child: Text('Notifications could not be loaded.',
-                style: TextStyle(color: Colors.white)),
+                style: TextStyle(color: ink)),
             );
           }
           if (!snapshot.hasData) {
@@ -20072,9 +20112,9 @@ class _NotificationsPageState extends State<NotificationsPage> {
           final rows = snapshot.data!;
           final unread = rows.where((x) => x['read_at'] == null).length;
           if (rows.isEmpty) {
-            return const Center(
+            return Center(
               child: Text('You are all caught up.',
-                style: TextStyle(color: Colors.white)),
+                style: TextStyle(color: ink)),
             );
           }
           final total = rows.length;
@@ -20106,7 +20146,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
                     backgroundColor: const Color(0x3356A062),
                     child: Icon(icon, color: cyanAccent)),
                   title: Text(item['title']?.toString() ?? 'SAMANVAY update',
-                    style: const TextStyle(fontWeight: FontWeight.w700, color: Colors.white)),
+                    style: TextStyle(fontWeight: FontWeight.w700, color: ink)),
                   subtitle: Text('$notificationBody\n$dateText', style:  TextStyle(color: mutedInk)),
                   isThreeLine: true,
                   trailing: fresh
