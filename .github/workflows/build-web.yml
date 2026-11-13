@@ -126,21 +126,9 @@ jobs:
         run: flutter analyze --no-fatal-infos --no-fatal-warnings
 
       - name: Build browser portal
-        env:
-          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          SUPABASE_PUBLISHABLE_KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
-          MAPTILER_API_KEY: ${{ secrets.MAPTILER_API_KEY }}
         run: |
-          if [ -z "$SUPABASE_URL" ] || [ -z "$SUPABASE_PUBLISHABLE_KEY" ]; then
-            echo "Required Supabase public configuration is missing."
-            exit 1
-          fi
-
-          flutter build web --release \
-            --base-href "/" \
-            --dart-define=SUPABASE_URL="$SUPABASE_URL" \
-            --dart-define=SUPABASE_PUBLISHABLE_KEY="$SUPABASE_PUBLISHABLE_KEY" \
-            --dart-define=MAPTILER_API_KEY="$MAPTILER_API_KEY"
+          # The app runs on the device; no backend configuration is needed.
+          flutter build web --release --base-href "/"
 
       - name: Smoke-test browser output and bundled GIS assets
         run: |

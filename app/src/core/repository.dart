@@ -2,8 +2,8 @@ import '../../department_checklists.dart' show ReviewChecklistItem;
 import 'models.dart';
 
 /// Everything the screens need, independent of where the data lives.
-/// [LiveRepository] talks to Supabase; [DemoRepository] serves the offline
-/// LPU demonstration. Both enforce the same role rules so the flow is identical.
+/// [LocalRepository] keeps the data on the device; another implementation
+/// (for example a shared server) can be added later without touching screens.
 abstract class SamanvayRepository {
   bool get isDemo;
   AppUser get user;

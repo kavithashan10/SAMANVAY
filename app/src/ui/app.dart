@@ -6,16 +6,21 @@ import 'session.dart';
 import 'shell.dart';
 import 'welcome.dart';
 
-/// SAMANVAY application root: one flow for every role, live or demonstration.
+/// SAMANVAY application root: one flow for every role, running on the device.
 class SamanvayV2App extends StatefulWidget {
-  const SamanvayV2App({super.key, required this.backendBoot});
-  final Future<void> backendBoot;
+  const SamanvayV2App({super.key});
   @override
   State<SamanvayV2App> createState() => _SamanvayV2AppState();
 }
 
 class _SamanvayV2AppState extends State<SamanvayV2App> {
-  late final AppSession session = AppSession(widget.backendBoot);
+  final AppSession session = AppSession();
+
+  @override
+  void dispose() {
+    session.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -42,11 +47,11 @@ class _Gate extends StatelessWidget {
   Widget build(BuildContext context) {
     final s = context.session;
     final repo = s.repo;
-    final Widget child = s.restoring && repo == null
+    final Widget child = s.restoring
         ? const _Splash()
         : repo == null
             ? const WelcomeScreen()
-            : AppShell(key: ValueKey('${repo.isDemo}-${repo.user.id}'));
+            : AppShell(key: ValueKey(repo.user.id));
     return AnimatedSwitcher(duration: const Duration(milliseconds: 350), child: child);
   }
 }

@@ -183,30 +183,3 @@ class Gap extends StatelessWidget {
   Widget build(BuildContext context) => SizedBox(height: h);
 }
 
-/// Gold strip that marks every screen while demonstration data is in use.
-class DemoStrip extends StatelessWidget {
-  const DemoStrip({super.key, required this.label, this.onTap});
-  final String label;
-  final VoidCallback? onTap;
-  @override
-  Widget build(BuildContext context) {
-    final p = SvPalette.of(context);
-    return Material(
-      color: SvColors.goldPale.withValues(alpha: p.isDark ? .18 : .5),
-      child: InkWell(
-        onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 7),
-          child: Row(children: [
-            Expanded(
-              child: Text(label.toUpperCase(),
-                  overflow: TextOverflow.ellipsis,
-                  style: SvType.eyebrow(p.isDark ? SvColors.goldPale : SvColors.goldDeep).copyWith(fontSize: 10)),
-            ),
-            if (onTap != null) Icon(Icons.swap_horiz, size: 16, color: p.isDark ? SvColors.goldPale : SvColors.goldDeep),
-          ]),
-        ),
-      ),
-    );
-  }
-}

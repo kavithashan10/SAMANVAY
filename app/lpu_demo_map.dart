@@ -33,7 +33,11 @@ class LpuCampusMap extends StatefulWidget {
     this.onSelect,
     this.focusWork,
     this.interactive = true,
+    this.onViewChanged,
   });
+
+  /// Called whenever the person pans or zooms.
+  final VoidCallback? onViewChanged;
 
   final LpuDemoStore store;
   final ValueChanged<MapSelection?>? onSelect;
@@ -50,6 +54,12 @@ class LpuCampusMapState extends State<LpuCampusMap> {
   MapSelection? _selected;
 
   double get _scale => _controller.value.getMaxScaleOnAxis();
+
+  /// The campus point (local metres) under the centre of the view.
+  Offset? get centreInCampus {
+    final v = _viewport;
+    return v == null ? null : _controller.toScene(v.center(Offset.zero));
+  }
 
   @override
   void dispose() {
@@ -166,7 +176,10 @@ class LpuCampusMapState extends State<LpuCampusMap> {
             boundaryMargin: const EdgeInsets.all(400),
             panEnabled: widget.interactive,
             scaleEnabled: widget.interactive,
-            onInteractionUpdate: (_) => setState(() {}),
+            onInteractionUpdate: (_) {
+              setState(() {});
+              widget.onViewChanged?.call();
+            },
             child: GestureDetector(
               behavior: HitTestBehavior.opaque,
               onTapUp: widget.interactive ? (d) => _handleTap(d.localPosition) : null,
@@ -488,7 +501,7 @@ class MapLayerPanel extends StatelessWidget {
           const SizedBox(height: 6),
           Text('What lies below', style: SvType.heading2(p.ink)),
           const SizedBox(height: 4),
-          Text('Every utility record on this map is synthetic demonstration data.', style: SvType.bodySm(p.inkSoft)),
+          Text('Every utility record on this map is synthetic sample data, not a survey.', style: SvType.bodySm(p.inkSoft)),
           const SizedBox(height: 16),
           for (final k in UtilityKind.values)
             _LayerRow(
@@ -531,7 +544,7 @@ class MapLayerPanel extends StatelessWidget {
           const SizedBox(height: 20),
           const SvEyebrow('Line styles'),
           const SizedBox(height: 8),
-          Text('Solid line · demonstration record\nDashed line · estimated or pending verification', style: SvType.caption(p.inkSoft)),
+          Text('Solid line · sample record\nDashed line · estimated or pending verification', style: SvType.caption(p.inkSoft)),
         ],
       ),
     );
@@ -662,7 +675,7 @@ class UndergroundCrossSection extends StatelessWidget {
       Text(
         '${lines.length} parallel records within 14 m'
         '${crossings > 0 ? ' · $crossings service connection${crossings == 1 ? '' : 's'} cross the trench' : ''}. '
-        'Visualization of demonstration records — not surveyed depth.',
+        'Visualization of sample records — not surveyed depth.',
         style: SvType.caption(p.muted),
       ),
     ]);

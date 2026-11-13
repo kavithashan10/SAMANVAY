@@ -1,10 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../coordinated_work_calendar_page.dart';
 import '../../lpu_demo_data.dart' show campusPlaces;
-import '../../main.dart' show AdminManagementPage, IndiaCoverageExplorerPage, LpuCampusModelPage, RoleGate;
-import '../../public_excavation_tracker_page.dart';
-import '../../samanvay_ai_chat_page.dart';
 import '../../samanvay_design.dart';
 import '../core/models.dart';
 import '../core/repository.dart';
@@ -250,8 +246,7 @@ class ProfileScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final p = SvPalette.of(context);
-    final s = context.session;
-    final repo = s.repo!;
+    final repo = context.repo;
     final u = repo.user;
     return Scaffold(
       appBar: AppBar(),
@@ -259,80 +254,63 @@ class ProfileScreen extends StatelessWidget {
         const BrandMark(size: 56),
         const Gap(18),
         Text(u.name, style: SvType.heading1(p.ink)),
-        if (u.email != null) ...[const Gap(4), Text(u.email!, style: SvType.bodySm(p.inkSoft))],
         const Gap(12),
         Wrap(spacing: 8, runSpacing: 8, children: [
           SvTag(u.role.label, color: SvColors.stone, icon: u.role.icon),
           if (u.departmentName != null) SvTag(u.departmentName!, color: SvColors.olive),
-          if (repo.isDemo) const SvTag('Demonstration', color: SvColors.goldDeep),
         ]),
         const Gap(28),
         SvCard(
           padding: EdgeInsets.zero,
           child: Column(children: [
             ListTile(
+              leading: const Icon(Icons.swap_horiz),
+              title: const Text('Change role'),
+              subtitle: const Text('Citizen, department officer, coordinator or administrator'),
+              onTap: () => showRolePicker(context).then((_) {
+                if (context.mounted) Navigator.of(context).popUntil((r) => r.isFirst);
+              }),
+            ),
+            ListTile(
               leading: const Icon(Icons.contrast),
               title: const Text('Theme'),
               subtitle: Text(Theme.of(context).brightness == Brightness.dark ? 'Ink (dark)' : 'Paper (light)'),
               trailing: const ThemeToggleButton(),
             ),
-            if (repo.isDemo)
-              ListTile(
-                leading: const Icon(Icons.swap_horiz),
-                title: const Text('Switch demonstration role'),
-                onTap: () => showDemoRolePicker(context).then((_) {
-                  if (context.mounted) Navigator.of(context).pop();
-                }),
-              ),
-            if (!repo.isDemo && u.role.isStaff)
-              ListTile(leading: const Icon(Icons.handyman_outlined), title: const Text('More tools'), subtitle: const Text('National data, calendar, assistant, admin'), onTap: () => openClassicTools(context)),
-            if (!repo.isDemo && !u.role.isStaff)
-              ListTile(
-                leading: const Icon(Icons.campaign_outlined),
-                title: const Text('Public works tracker'),
-                onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const PublicExcavationTrackerPage())),
-              ),
+            ListTile(
+              leading: const Icon(Icons.restart_alt),
+              title: const Text('Reset to sample data'),
+              subtitle: const Text('Removes the works and reports added on this device'),
+              onTap: () => _confirmReset(context),
+            ),
           ]),
-        ),
-        const Gap(28),
-        SvPillButton(
-          label: repo.isDemo ? 'Exit demonstration' : 'Sign out',
-          icon: Icons.logout,
-          kind: SvButtonKind.outline,
-          expand: true,
-          onPressed: () async {
-            Navigator.of(context).popUntil((r) => r.isFirst);
-            await s.signOut();
-          },
         ),
         const Gap(24),
         Text(
-          'SAMANVAY coordinates work on shared roads. Map records are advice, not clearance: field verification and the owning department’s approval always come first.',
+          'Your works, checklists and reports are saved on this device. The utility records on the map are sample data for the LPU campus, not a survey. '
+          'Map records are advice, not clearance: field verification and the owning department’s approval always come first.',
           style: SvType.caption(p.muted),
         ),
       ]),
     );
   }
-}
 
-/// Tools that have not yet moved into the new flow, kept one tap away.
-void openClassicTools(BuildContext context) {
-  final role = context.repo.user.role;
-  void go(Widget page) => Navigator.of(context).push(MaterialPageRoute(builder: (_) => page));
-  showModalBottomSheet<void>(
-    context: context,
-    builder: (sheet) => SafeArea(
-      child: ListView(shrinkWrap: true, padding: const EdgeInsets.fromLTRB(12, 0, 12, 16), children: [
-        const Padding(padding: EdgeInsets.fromLTRB(12, 0, 12, 8), child: SvEyebrow('More tools')),
-        ListTile(leading: const Icon(Icons.public), title: const Text('National data coverage'), onTap: () => go(const IndiaCoverageExplorerPage())),
-        ListTile(leading: const Icon(Icons.calendar_month_outlined), title: const Text('Coordinated works calendar'), onTap: () => go(const CoordinatedWorkCalendarPage())),
-        ListTile(leading: const Icon(Icons.campaign_outlined), title: const Text('Public works tracker'), onTap: () => go(const PublicExcavationTrackerPage())),
-        ListTile(leading: const Icon(Icons.view_in_ar_outlined), title: const Text('LPU campus 3D map (live)'), onTap: () => go(const LpuCampusModelPage())),
-        ListTile(leading: const Icon(Icons.chat_bubble_outline), title: const Text('SAMANVAY assistant'), onTap: () => go(const SamanvayAiChatPage())),
-        if (role == AppRole.admin)
-          ListTile(leading: const Icon(Icons.admin_panel_settings_outlined), title: const Text('Users, roles & departments'), onTap: () => go(const AdminManagementPage())),
-        ListTile(leading: const Icon(Icons.history_toggle_off), title: const Text('Classic operations portal'), onTap: () => go(const RoleGate())),
-      ]),
-    ),
-  );
+  Future<void> _confirmReset(BuildContext context) async {
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (d) => AlertDialog(
+        title: const Text('Reset to sample data?'),
+        content: const Text('Works, decisions and reports added on this device will be removed.'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(d, false), child: const Text('Cancel')),
+          FilledButton(onPressed: () => Navigator.pop(d, true), child: const Text('Reset')),
+        ],
+      ),
+    );
+    if (ok != true || !context.mounted) return;
+    await context.session.resetData();
+    if (!context.mounted) return;
+    Navigator.of(context).popUntil((r) => r.isFirst);
+    toast(context, 'Sample data restored.');
+  }
 }

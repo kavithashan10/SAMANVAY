@@ -47,7 +47,11 @@ class _AppShellState extends State<AppShell> {
           automaticallyImplyLeading: false,
           toolbarHeight: 64,
           titleSpacing: 20,
-          title: BrandTitle(subtitle: subtitle),
+          title: GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: () => showRolePicker(context),
+            child: BrandTitle(subtitle: subtitle),
+          ),
           actions: [
             const ThemeToggleButton(),
             const SizedBox(width: 8),
@@ -61,15 +65,6 @@ class _AppShellState extends State<AppShell> {
               ),
             ),
           ],
-          bottom: repo.isDemo
-              ? PreferredSize(
-                  preferredSize: const Size.fromHeight(30),
-                  child: DemoStrip(
-                    label: 'Demo data · ${user.role.label} · switch role',
-                    onTap: () => showDemoRolePicker(context),
-                  ),
-                )
-              : null,
         ),
         body: IndexedStack(
           index: _tab.index,

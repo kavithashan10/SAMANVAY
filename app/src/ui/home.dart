@@ -209,10 +209,6 @@ class _CoordinatorHome extends StatelessWidget {
           ]);
         },
       ),
-      if (admin && !context.repo.isDemo) ...[
-        const Gap(28),
-        SvPillButton(label: 'Administration tools', icon: Icons.admin_panel_settings_outlined, expand: true, onPressed: () => openClassicTools(context)),
-      ],
     ]);
   }
 }

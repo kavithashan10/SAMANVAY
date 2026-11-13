@@ -63,15 +63,15 @@ const _categoryDept = {
   'other': 'municipal',
 };
 
-class DemoRepository implements SamanvayRepository {
-  DemoRepository({AppRole role = AppRole.citizen, String departmentId = 'power'}) {
+class LocalRepository implements SamanvayRepository {
+  LocalRepository({AppRole role = AppRole.citizen, String departmentId = 'power'}) {
     switchRole(role, departmentId: departmentId);
   }
 
   final LpuDemoStore store = LpuDemoStore();
   late AppUser _user;
 
-  /// Requests filed in this session: case id → (filer's user id, activity id).
+  /// Requests filed on this device: case id → (filer's user id, activity id).
   final Map<String, (String, String)> _filed = {};
 
   @override
@@ -84,17 +84,43 @@ class DemoRepository implements SamanvayRepository {
     store.setOfficerDept(dept);
     store.setRole(_demoRole(role));
     _user = AppUser(
-      id: 'demo-${role.name}',
+      id: 'local-${role.name}',
       name: switch (role) {
-        AppRole.citizen => 'Ananya (demo citizen)',
-        AppRole.department => '${deptById(dept).name} officer (demo)',
-        AppRole.coordinator => 'Campus works coordinator (demo)',
-        AppRole.admin => 'Platform administrator (demo)',
+        AppRole.citizen => 'Ananya',
+        AppRole.department => '${deptById(dept).name} officer',
+        AppRole.coordinator => 'Campus works coordinator',
+        AppRole.admin => 'Platform administrator',
       },
       role: role,
       departmentId: role == AppRole.department ? dept : null,
       departmentName: role == AppRole.department ? deptById(dept).name : null,
     );
+  }
+
+  /// Everything this device has changed, for saving between launches.
+  Map<String, dynamic> toJson() => {
+        'store': store.toJson(),
+        'filed': {for (final e in _filed.entries) e.key: [e.value.$1, e.value.$2]},
+      };
+
+  /// Restores saved data; unreadable data leaves the fresh sample set in place.
+  void loadJson(Map<String, dynamic> j) {
+    final saved = j['store'];
+    if (saved is! Map || !store.loadJson(Map<String, dynamic>.from(saved), notify: false)) return;
+    _filed.clear();
+    final filed = j['filed'];
+    if (filed is Map) {
+      for (final e in filed.entries) {
+        final v = e.value;
+        if (v is List && v.length == 2) _filed[e.key.toString()] = (v[0].toString(), v[1].toString());
+      }
+    }
+  }
+
+  /// Back to the original sample data.
+  void resetData() {
+    _filed.clear();
+    store.reset();
   }
 
   WorkItem _work(String id) => store.work(id);
@@ -110,14 +136,14 @@ class DemoRepository implements SamanvayRepository {
       activity: _filed[w.id]?.$2 ??
           workActivities.where((a) => a.$2.toLowerCase() == w.workType.toLowerCase()).map((a) => a.$1).firstOrNull,
       road: w.road,
-      city: 'LPU Phagwara (demo)',
+      city: 'LPU Phagwara',
       location: campusToGeo(mid),
       radiusM: math.max(5, w.lengthM / 2),
       start: w.start,
       end: w.end,
-      requesterId: _filed[w.id]?.$1 ?? 'demo-department',
+      requesterId: _filed[w.id]?.$1 ?? 'local-department',
       description: '${w.description}\n${w.workType} · contractor: ${w.contractor}',
-      isDemo: true,
+      isDemo: !_filed.containsKey(w.id),
     );
   }
 
@@ -206,7 +232,7 @@ class DemoRepository implements SamanvayRepository {
     if (error != null) throw StateError(error);
   }
 
-  static String _records(int n) => '$n demonstration ${n == 1 ? 'record' : 'records'}';
+  static String _records(int n) => '$n sample ${n == 1 ? 'record' : 'records'}';
 
   SpatialResult _screen(String caseId) {
     final s = store.screen(_work(caseId));
@@ -278,7 +304,8 @@ class DemoRepository implements SamanvayRepository {
 
   @override
   Future<List<NoticeItem>> publicNotices() async => [
-        for (final w in store.works.where((w) => w.isPublicActive && w.status != WorkStatus.completed))
+        // A request becomes public once departments have started reviewing it.
+        for (final w in store.works.where((w) => w.isPublicActive && !const {WorkStatus.submitted, WorkStatus.clarificationRequired, WorkStatus.completed}.contains(w.status)))
           NoticeItem(
             title: w.title,
             area: w.road,
@@ -298,7 +325,7 @@ class DemoRepository implements SamanvayRepository {
             // Demo grievances carry a human title; show it where the live app shows the report type.
             type: reportTypes.where((t) => t.$2 == g.title).map((t) => t.$1).firstOrNull ?? g.title,
             area: g.location,
-            city: 'LPU Phagwara (demo)',
+            city: 'LPU Phagwara',
             details: g.description,
             status: g.status.name,
             createdAt: g.submitted,

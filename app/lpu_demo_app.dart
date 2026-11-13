@@ -1444,7 +1444,7 @@ class _MapTabState extends State<LpuDemoMapTab> {
               borderRadius: BorderRadius.circular(SvRadius.full),
             ),
             child: Text(
-              'DEMO SCHEMATIC · NOT FOR EXCAVATION',
+              'SAMPLE RECORDS · NOT FOR EXCAVATION',
               style: SvType.eyebrow(p.isDark ? SvColors.goldPale : SvColors.goldDeep).copyWith(fontSize: 10),
             ),
           ),

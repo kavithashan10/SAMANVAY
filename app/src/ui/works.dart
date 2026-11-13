@@ -1,14 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:maplibre_gl/maplibre_gl.dart' show LatLng;
 
 import '../../department_checklists.dart';
 import '../../lpu_demo_map.dart' show LpuCampusMap;
-import '../../main.dart' show MapPage, CaseWorkspacePage;
 import '../../samanvay_design.dart';
 import '../core/geo.dart';
 import '../core/models.dart';
 import '../core/repository.dart';
-import '../data/demo_repository.dart';
+import '../data/local_repository.dart';
 import 'common.dart';
 import 'new_case.dart';
 import 'session.dart';
@@ -103,7 +101,7 @@ class CaseDetailScreen extends StatelessWidget {
             const Gap(14),
             Wrap(spacing: 8, runSpacing: 8, children: [
               StatusTag(c.status, solid: true),
-              if (c.isDemo) const SvTag('Demonstration record', color: SvColors.goldDeep, icon: Icons.science_outlined),
+              if (c.isDemo) const SvTag('Sample record', color: SvColors.goldDeep, icon: Icons.science_outlined),
             ]),
             const Gap(22),
             _Stepper(status: c.status),
@@ -146,17 +144,6 @@ class CaseDetailScreen extends StatelessWidget {
             ],
             const Gap(24),
             ScreeningCard(c: c),
-            if (!repo.isDemo) ...[
-              const Gap(24),
-              SvPillButton(
-                label: 'Discussion, evidence & inspections',
-                icon: Icons.forum_outlined,
-                expand: true,
-                onPressed: () => Navigator.of(context).push(MaterialPageRoute(
-                  builder: (_) => CaseWorkspacePage(requestId: c.id, requestTitle: c.title),
-                )),
-              ),
-            ],
           ]);
         },
       ),
@@ -290,7 +277,6 @@ class _LocationCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final p = SvPalette.of(context);
     final loc = c.location;
-    final repo = context.repo;
     return SvCard(
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Row(children: [
@@ -312,7 +298,7 @@ class _LocationCard extends StatelessWidget {
           const Gap(4),
           Text(
             'Work area radius ${c.radiusM == null ? 'not set' : formatDistance(c.radiusM!)} · ${GeoCrs.wgs84}'
-            '${repo.isDemo ? ' · demonstration position, not surveyed' : ''}',
+            '${c.isDemo ? ' · sample position, not surveyed' : ''}',
             style: SvType.caption(p.muted),
           ),
         ],
@@ -321,20 +307,13 @@ class _LocationCard extends StatelessWidget {
   }
 
   void _openMap(BuildContext context, CaseSummary c) {
-    final repo = context.repo;
-    if (repo is DemoRepository) {
-      Navigator.of(context).push(MaterialPageRoute(
-        builder: (_) => Scaffold(
-          appBar: AppBar(title: Text(c.number)),
-          body: LpuCampusMap(store: repo.store, focusWork: repo.store.work(c.id)),
-        ),
-      ));
-    } else {
-      final l = c.location!;
-      Navigator.of(context).push(MaterialPageRoute(
-        builder: (_) => MapPage(initialCenter: LatLng(l.lat, l.lon), initialZoom: 17, contextLabel: c.number),
-      ));
-    }
+    final repo = context.repo as LocalRepository;
+    Navigator.of(context).push(MaterialPageRoute(
+      builder: (_) => Scaffold(
+        appBar: AppBar(title: Text(c.number)),
+        body: LpuCampusMap(store: repo.store, focusWork: repo.store.work(c.id)),
+      ),
+    ));
   }
 }
 
@@ -487,7 +466,7 @@ class _ScreeningCardState extends State<ScreeningCard> {
     };
     final conf = switch (s?.status) {
       'completed' => context.repo.isDemo
-          ? 'All records here are demonstration data; dashed lines on the map are estimated or unverified and need field checks.'
+          ? 'Utility records here are sample data; dashed lines on the map are estimated or unverified and need field checks.'
           : 'Only owner-verified records are screened. Imported, estimated or unverified records are excluded and need field verification.',
       'unavailable' => 'No verified records exist for this area yet — request owner data or a field survey.',
       null => 'Run the utility check to see what it can vouch for.',

@@ -53,12 +53,16 @@ Future<void> main() async {
     runApp(const LpuDemoApp());
     return;
   }
-  _samanvayBootFuture = _initialiseSamanvayServices();
   if (samanvayStartMode == 'classic') {
+    // Legacy portal: needs the Supabase backend configured at build time.
+    _samanvayBootFuture = _initialiseSamanvayServices();
     runApp(const SamanvayApp());
     return;
   }
-  runApp(SamanvayV2App(backendBoot: _samanvayBootFuture));
+  // SAMANVAY app: runs entirely on the device — no account, no server.
+  final preferences = await SharedPreferences.getInstance();
+  samanvayThemeMode.value = preferences.getBool('samanvay_light_mode') != false ? ThemeMode.light : ThemeMode.dark;
+  runApp(const SamanvayV2App());
 }
 
 Future<void> _initialiseSamanvayServices() async {

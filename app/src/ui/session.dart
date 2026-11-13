@@ -1,28 +1,34 @@
+import 'dart:async';
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../core/models.dart';
 import '../core/repository.dart';
-import '../data/demo_repository.dart';
-import '../data/live_repository.dart';
+import '../data/local_repository.dart';
 
-/// Who is signed in, and which data source the screens use.
+/// Holds the person's chosen role and the app's data. Everything runs on the
+/// device: no account and no server. Changes are saved automatically.
 class AppSession extends ChangeNotifier {
-  AppSession(Future<void> backendBoot) {
-    backendBoot.then((_) async {
-      backendReady = true;
-      await _restore();
-    }).catchError((Object e) {
-      backendError = 'Live sign-in is not configured in this build. The LPU demonstration works offline.';
-      restoring = false;
-      notifyListeners();
-    });
+  AppSession() {
+    _init();
   }
 
-  bool backendReady = false;
-  String? backendError;
+  static const _dataKey = 'samanvay_local_data_v1';
+  static const _roleKey = 'samanvay_role';
+  static const _deptKey = 'samanvay_department';
+
+  final LocalRepository _local = LocalRepository();
+  SharedPreferences? _prefs;
+  Timer? _saveTimer;
+  bool _roleChosen = false;
+
+  /// True until saved data and the remembered role are loaded.
   bool restoring = true;
-  SamanvayRepository? repo;
+
+  /// The data source, once the person has said who they are.
+  SamanvayRepository? get repo => _roleChosen ? _local : null;
 
   /// Bumped after every change so screens reload their data.
   int revision = 0;
@@ -31,102 +37,66 @@ class AppSession extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> _restore() async {
+  Future<void> _init() async {
     try {
-      if (Supabase.instance.client.auth.currentSession != null) {
-        final user = await LiveRepository.loadCurrentUser();
-        if (user != null) repo = LiveRepository(user);
+      final prefs = _prefs = await SharedPreferences.getInstance();
+      final raw = prefs.getString(_dataKey);
+      if (raw != null) {
+        final decoded = jsonDecode(raw);
+        if (decoded is Map) _local.loadJson(Map<String, dynamic>.from(decoded));
+      }
+      final role = AppRole.values.where((r) => r.name == prefs.getString(_roleKey)).firstOrNull;
+      if (role != null) {
+        _local.switchRole(role, departmentId: prefs.getString(_deptKey) ?? 'power');
+        _roleChosen = true;
       }
     } catch (_) {
-      // A stale session simply returns the user to the welcome screen.
+      // Unreadable saved data: start from the sample set.
     }
+    _local.store.addListener(_changed);
     restoring = false;
     notifyListeners();
   }
 
-  Future<String?> signIn(String email, String password) async {
-    if (!backendReady) return backendError ?? 'Live sign-in is still starting. Try again in a moment.';
+  void _changed() {
+    touch();
+    _saveTimer?.cancel();
+    _saveTimer = Timer(const Duration(milliseconds: 400), save);
+  }
+
+  /// Writes the current data to the device.
+  Future<void> save() async {
+    _saveTimer?.cancel();
+    final prefs = _prefs ??= await SharedPreferences.getInstance();
     try {
-      await Supabase.instance.client.auth.signInWithPassword(email: email.trim(), password: password);
-      final user = await LiveRepository.loadCurrentUser();
-      if (user == null) return 'Signed in, but the profile could not be loaded.';
-      repo = LiveRepository(user);
-      touch();
-      return null;
-    } on AuthException catch (e) {
-      return e.message.toLowerCase().contains('email not confirmed')
-          ? 'Confirm your email first — check your inbox, then sign in.'
-          : e.message.toLowerCase().contains('invalid')
-              ? 'That email and password do not match an account.'
-              : e.message;
-    } catch (e) {
-      return friendlyError(e);
+      await prefs.setString(_dataKey, jsonEncode(_local.toJson()));
+    } catch (_) {
+      // Storage full or unavailable: the data stays in memory for this run.
     }
   }
 
-  /// Returns (success, message).
-  Future<(bool, String)> signUp(String name, String email, String password) async {
-    if (!backendReady) return (false, backendError ?? 'Live sign-up is not available yet.');
-    try {
-      final res = await Supabase.instance.client.auth.signUp(
-        email: email.trim(),
-        password: password,
-        emailRedirectTo: 'in.samanvay://login-callback/',
-        data: {'display_name': name.trim()},
-      );
-      if (res.session != null) {
-        final user = await LiveRepository.loadCurrentUser();
-        if (user != null) {
-          repo = LiveRepository(user);
-          touch();
-        }
-        return (true, 'Welcome to SAMANVAY.');
-      }
-      return (true, 'Almost there — open the confirmation email we sent, then sign in.');
-    } on AuthException catch (e) {
-      return (false, e.message);
-    } catch (e) {
-      return (false, friendlyError(e));
-    }
-  }
-
-  Future<String> resendConfirmation(String email) async {
-    try {
-      await Supabase.instance.client.auth.resend(type: OtpType.signup, email: email.trim(), emailRedirectTo: 'in.samanvay://login-callback/');
-      return 'Confirmation email sent again. Check inbox and spam.';
-    } on AuthException catch (e) {
-      return e.message;
-    } catch (e) {
-      return friendlyError(e);
-    }
-  }
-
-  void enterDemo(AppRole role, {String departmentId = 'power'}) {
-    final demo = DemoRepository(role: role, departmentId: departmentId);
-    demo.store.addListener(touch);
-    repo = demo;
+  /// Sets who is using the app, and remembers it for next time.
+  void chooseRole(AppRole role, {String? departmentId}) {
+    final dept = departmentId ?? _local.user.departmentId ?? 'power';
+    _local.switchRole(role, departmentId: dept);
+    _roleChosen = true;
+    _prefs?.setString(_roleKey, role.name);
+    _prefs?.setString(_deptKey, dept);
     touch();
   }
 
-  void switchDemoRole(AppRole role, {String? departmentId}) {
-    final r = repo;
-    if (r is DemoRepository) {
-      r.switchRole(role, departmentId: departmentId);
-      touch();
-    }
+  /// Puts the original sample works and reports back.
+  Future<void> resetData() async {
+    _local.resetData();
+    await save();
+    touch();
   }
 
-  Future<void> signOut() async {
-    final r = repo;
-    if (r is DemoRepository) {
-      r.store.removeListener(touch);
-    } else if (backendReady) {
-      try {
-        await Supabase.instance.client.auth.signOut();
-      } catch (_) {}
-    }
-    repo = null;
-    touch();
+  @override
+  void dispose() {
+    _saveTimer?.cancel();
+    _local.store.removeListener(_changed);
+    super.dispose();
   }
 }
 

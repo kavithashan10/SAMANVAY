@@ -1,14 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
-import 'package:maplibre_gl/maplibre_gl.dart' show LatLng;
 
-import '../../lpu_demo_data.dart' show campusPlaces;
-import '../../main.dart' show MapLocationPickerPage;
+import '../../lpu_demo_data.dart' show campusPlaces, campusRoads, campusSize, distanceToSegment;
+import '../../lpu_demo_map.dart' show LpuCampusMap, LpuCampusMapState;
 import '../../samanvay_design.dart';
 import '../core/geo.dart';
 import '../core/models.dart';
 import '../core/repository.dart';
-import '../data/demo_repository.dart';
+import '../data/local_repository.dart';
 import 'common.dart';
 import 'session.dart';
 import 'works.dart';
@@ -120,28 +119,14 @@ class _NewCaseFlowState extends State<NewCaseFlow> {
   }
 
   Future<void> _pickOnMap() async {
-    final repo = context.repo;
-    if (repo is DemoRepository) {
-      final chosen = await showModalBottomSheet<(String, Offset)>(
-        context: context,
-        builder: (sheet) => SafeArea(
-          child: ListView(shrinkWrap: true, padding: const EdgeInsets.fromLTRB(16, 0, 16, 16), children: [
-            const Padding(padding: EdgeInsets.all(8), child: SvEyebrow('Pick a campus location (demo)')),
-            for (final pl in campusPlaces)
-              ListTile(leading: const Icon(Icons.place_outlined), title: Text(pl.$1), onTap: () => Navigator.pop(sheet, pl)),
-          ]),
-        ),
-      );
-      if (chosen == null) return;
-      _road.text = chosen.$1.split(' · ').first;
-      _setPoint(campusToGeo(chosen.$2), 'place');
-      return;
-    }
-    final start = d.location;
-    final picked = await Navigator.of(context).push<LatLng>(MaterialPageRoute(
-      builder: (_) => MapLocationPickerPage(initialPoint: start == null ? null : LatLng(start.lat, start.lon)),
+    final repo = context.repo as LocalRepository;
+    final picked = await Navigator.of(context).push<(Offset, String?)>(MaterialPageRoute(
+      builder: (_) => CampusPointPicker(repo: repo),
     ));
-    if (picked != null) _setPoint(GeoPoint(picked.latitude, picked.longitude), 'map');
+    if (picked == null) return;
+    final (point, label) = picked;
+    if (label != null) _road.text = label.split(' · ').first;
+    _setPoint(campusToGeo(point), 'map');
   }
 
   void _applyManual() {
@@ -280,8 +265,8 @@ class _NewCaseFlowState extends State<NewCaseFlow> {
             Text('Coordinates are WGS84 latitude/longitude. The work radius is the area that will be opened.', style: SvType.bodySm(p.inkSoft)),
             const Gap(18),
             Wrap(spacing: 8, runSpacing: 8, children: [
-              if (!context.repo.isDemo) SvPillButton(label: 'Use my GPS', icon: Icons.my_location, compact: true, onPressed: _useGps),
-              SvPillButton(label: context.repo.isDemo ? 'Pick a campus location' : 'Pick on the map', icon: Icons.map_outlined, compact: true, onPressed: _pickOnMap),
+              SvPillButton(label: 'Use my GPS', icon: Icons.my_location, compact: true, onPressed: _useGps),
+              SvPillButton(label: 'Pick on the map', icon: Icons.map_outlined, compact: true, onPressed: _pickOnMap),
             ]),
             const Gap(16),
             Row(children: [
@@ -301,7 +286,7 @@ class _NewCaseFlowState extends State<NewCaseFlow> {
                   ]),
                   const Gap(6),
                   Text(
-                    '${switch (d.locationSource) { 'gps' => 'From device GPS', 'map' => 'Picked on the map', 'place' => 'Campus location (demonstration)', _ => 'Entered by hand' }}'
+                    '${switch (d.locationSource) { 'gps' => 'From device GPS', 'map' => 'Picked on the map', 'place' => 'Campus location', _ => 'Entered by hand' }}'
                     ' · ${d.locationSource == 'gps' ? describeAccuracy(d.locationAccuracyM) : 'position accuracy as entered'} · ${GeoCrs.wgs84}',
                     style: SvType.caption(p.muted),
                   ),
@@ -427,6 +412,126 @@ class _Submitted extends StatelessWidget {
           ]),
         ),
       ),
+    );
+  }
+}
+
+
+/// Pick a work location on the campus map: pan and zoom until the crosshair
+/// sits on the spot, or jump to a named place. Returns the campus point and,
+/// for named places, the place name.
+class CampusPointPicker extends StatefulWidget {
+  const CampusPointPicker({super.key, required this.repo});
+  final LocalRepository repo;
+  @override
+  State<CampusPointPicker> createState() => _CampusPointPickerState();
+}
+
+class _CampusPointPickerState extends State<CampusPointPicker> {
+  final _map = GlobalKey<LpuCampusMapState>();
+  Offset? _centre;
+
+  void _refresh() {
+    final c = _map.currentState?.centreInCampus;
+    if (c != null && c != _centre) setState(() => _centre = c);
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _refresh());
+  }
+
+  /// Closest campus road centreline (local metres are ground metres).
+  static (String, double)? _nearestRoad(Offset c) {
+    (String, double)? best;
+    for (final road in campusRoads) {
+      final d = distanceToSegment(c, road.a, road.b);
+      if (best == null || d < best.$2) best = (road.name, d);
+    }
+    return best != null && best.$2 <= 60 ? best : null;
+  }
+
+  Future<void> _places() async {
+    final chosen = await showModalBottomSheet<(String, Offset)>(
+      context: context,
+      showDragHandle: true,
+      builder: (sheet) => SafeArea(
+        child: ListView(shrinkWrap: true, padding: const EdgeInsets.fromLTRB(16, 0, 16, 16), children: [
+          const Padding(padding: EdgeInsets.all(8), child: SvEyebrow('Named places')),
+          for (final pl in campusPlaces)
+            ListTile(leading: const Icon(Icons.place_outlined), title: Text(pl.$1), onTap: () => Navigator.pop(sheet, pl)),
+        ]),
+      ),
+    );
+    if (chosen != null && mounted) Navigator.of(context).pop((chosen.$2, chosen.$1));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final p = SvPalette.of(context);
+    final c = _centre;
+    final inside = c != null && c.dx >= 0 && c.dy >= 0 && c.dx <= campusSize.width && c.dy <= campusSize.height;
+    final geo = c == null ? null : campusToGeo(c);
+    final road = c == null || !inside ? null : _nearestRoad(c);
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Pick on the map'),
+        actions: [TextButton.icon(onPressed: _places, icon: const Icon(Icons.list), label: const Text('Places')), const SizedBox(width: 8)],
+      ),
+      body: Stack(children: [
+        Positioned.fill(
+          child: Listener(
+            onPointerUp: (_) => WidgetsBinding.instance.addPostFrameCallback((_) => _refresh()),
+            onPointerSignal: (_) => WidgetsBinding.instance.addPostFrameCallback((_) => _refresh()),
+            child: LpuCampusMap(key: _map, store: widget.repo.store, onViewChanged: _refresh),
+          ),
+        ),
+        // Crosshair at the exact centre of the map view.
+        IgnorePointer(
+          child: Center(
+            child: Stack(alignment: Alignment.center, children: [
+              Container(width: 2, height: 44, color: p.ink),
+              Container(width: 44, height: 2, color: p.ink),
+              Container(
+                width: 14,
+                height: 14,
+                decoration: BoxDecoration(shape: BoxShape.circle, color: SvColors.primary, border: Border.all(color: Colors.white, width: 2)),
+              ),
+            ]),
+          ),
+        ),
+        Positioned(
+          left: 16,
+          right: 16,
+          bottom: 16,
+          child: SafeArea(
+            child: SvCard(
+              child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, mainAxisSize: MainAxisSize.min, children: [
+                Text(geo == null ? 'Move the map to place the crosshair' : geo.format(), style: SvType.body(p.ink).copyWith(fontWeight: FontWeight.w600)),
+                if (road != null) ...[
+                  const Gap(2),
+                  Text('Nearest road: ${road.$1} · ${formatDistance(road.$2)} away', style: SvType.bodySm(p.inkSoft)),
+                ],
+                const Gap(4),
+                Text(
+                  inside
+                      ? 'Crosshair position · ${GeoCrs.wgs84} · from the campus schematic, not surveyed'
+                      : 'Outside the mapped campus — there are no utility records here, which does not mean nothing is buried.',
+                  style: SvType.caption(inside ? p.muted : SvColors.clay),
+                ),
+                const Gap(12),
+                SvPillButton(
+                  label: 'Use this point',
+                  kind: SvButtonKind.primary,
+                  expand: true,
+                  onPressed: c == null ? null : () => Navigator.of(context).pop((c, road?.$1)),
+                ),
+              ]),
+            ),
+          ),
+        ),
+      ]),
     );
   }
 }

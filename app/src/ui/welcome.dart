@@ -7,15 +7,16 @@ import 'brand.dart';
 import 'common.dart';
 import 'session.dart';
 
+/// First launch: what SAMANVAY is, then "who are you?". No account needed —
+/// the role is remembered on this device and can be changed from the profile.
 class WelcomeScreen extends StatelessWidget {
   const WelcomeScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
     final p = SvPalette.of(context);
-    final s = context.session;
     const steps = [
-      ('01', 'Request', 'Draw where and when you need to dig. Every request gets a reference number.'),
+      ('01', 'Request', 'Mark where and when you need to dig. Every request gets a reference number.'),
       ('02', 'Check', 'Each department ticks its own checklist; the map flags pipes, cables and other planned works nearby.'),
       ('03', 'Dig once', 'Combine works on the same road, record the restoration, and close with evidence.'),
     ];
@@ -33,27 +34,16 @@ class WelcomeScreen extends StatelessWidget {
             const Gap(26),
             Text('Know below.\nDig above.', style: SvType.display(p.ink)),
             const Gap(16),
-            Text('One shared map and one workflow for every department that digs the same road.',
-                style: SvType.lead(p.inkSoft)),
-            const Gap(32),
-            SvPillButton(
-              label: 'Sign in',
-              kind: SvButtonKind.primary,
-              expand: true,
-              onPressed: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const AuthScreen())),
-            ),
-            const Gap(12),
-            SvPillButton(
-              label: 'Explore the LPU demonstration',
-              icon: Icons.play_circle_outline,
-              expand: true,
-              onPressed: () => showDemoRolePicker(context),
-            ),
-            if (s.backendError != null) ...[
-              const Gap(12),
-              Text(s.backendError!, style: SvType.caption(p.muted)),
-            ],
-            const Gap(48),
+            Text('One shared map and one workflow for every department that digs the same road.', style: SvType.lead(p.inkSoft)),
+            const Gap(36),
+            const SvEyebrow('Get started'),
+            const Gap(8),
+            Text('Who is using SAMANVAY?', style: SvType.heading2(p.ink)),
+            const Gap(6),
+            Text('Pick your role. You can change it any time from your profile.', style: SvType.bodySm(p.inkSoft)),
+            const Gap(18),
+            const RoleChooser(),
+            const Gap(44),
             const SvEyebrow('How it works'),
             const Gap(8),
             Text('Three steps, every department', style: SvType.heading2(p.ink)),
@@ -97,198 +87,86 @@ class WelcomeScreen extends StatelessWidget {
   }
 }
 
-Future<void> showDemoRolePicker(BuildContext context) {
-  final session = context.session;
-  return showModalBottomSheet<void>(
-    context: context,
-    isScrollControlled: true,
-    builder: (sheet) {
-      var dept = 'power';
-      return StatefulBuilder(builder: (sheet, setSheet) {
-        final p = SvPalette.of(sheet);
-        void go(AppRole role) {
-          Navigator.of(sheet).pop();
-          session.enterDemo(role, departmentId: dept);
-        }
-
-        return SafeArea(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
-            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              const SvEyebrow('LPU Phagwara · demonstration'),
-              const Gap(6),
-              Text('Step in as…', style: SvType.heading2(p.ink)),
-              const Gap(6),
-              Text('Offline sample data for the five-minute walkthrough. You can switch role any time from the gold strip.',
-                  style: SvType.bodySm(p.inkSoft)),
-              const Gap(18),
-              for (final role in AppRole.values) ...[
-                SvCard(
-                  onTap: () => go(role),
-                  padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
-                  child: Row(children: [
-                    Icon(role.icon, color: p.inkSoft),
-                    const SizedBox(width: 14),
-                    Expanded(child: Text(role.label, style: SvType.body(p.ink).copyWith(fontWeight: FontWeight.w600))),
-                    Icon(Icons.arrow_forward, color: p.muted, size: 18),
-                  ]),
-                ),
-                if (role == AppRole.department) ...[
-                  const Gap(8),
-                  SvPillTabs<String>(
-                    options: [for (final d in demoDepartments) (d.id, d.short)],
-                    selected: dept,
-                    onChanged: (v) => setSheet(() => dept = v),
-                  ),
-                ],
-                const Gap(8),
-              ],
-            ]),
-          ),
-        );
-      });
-    },
-  );
+/// Role cards; the department officer card carries a department choice.
+class RoleChooser extends StatefulWidget {
+  const RoleChooser({super.key, this.onChosen});
+  final VoidCallback? onChosen;
+  @override
+  State<RoleChooser> createState() => _RoleChooserState();
 }
 
-class AuthScreen extends StatefulWidget {
-  const AuthScreen({super.key});
-  @override
-  State<AuthScreen> createState() => _AuthScreenState();
-}
+class _RoleChooserState extends State<RoleChooser> {
+  late String _dept = context.session.repo?.user.departmentId ?? 'power';
 
-class _AuthScreenState extends State<AuthScreen> {
-  bool _register = false;
-  bool _busy = false;
-  bool _hide = true;
-  String? _error;
-  String? _info;
-  final _name = TextEditingController();
-  final _email = TextEditingController();
-  final _password = TextEditingController();
-  final _form = GlobalKey<FormState>();
-
-  @override
-  void dispose() {
-    _name.dispose();
-    _email.dispose();
-    _password.dispose();
-    super.dispose();
-  }
-
-  Future<void> _submit() async {
-    if (!_form.currentState!.validate()) return;
-    setState(() {
-      _busy = true;
-      _error = null;
-      _info = null;
-    });
-    final s = context.session;
-    if (_register) {
-      final (ok, msg) = await s.signUp(_name.text, _email.text, _password.text);
-      if (!mounted) return;
-      setState(() {
-        _busy = false;
-        ok ? _info = msg : _error = msg;
-        if (ok && s.repo == null) _register = false;
-      });
-    } else {
-      final err = await s.signIn(_email.text, _password.text);
-      if (!mounted) return;
-      setState(() {
-        _busy = false;
-        _error = err;
-      });
-    }
-    if (mounted && s.repo != null) Navigator.of(context).popUntil((r) => r.isFirst);
-  }
+  static String _blurb(AppRole r) => switch (r) {
+        AppRole.citizen => 'See works near you, request work, report a problem.',
+        AppRole.department => 'Review works that touch your network and tick your checklist.',
+        AppRole.coordinator => 'See who has cleared what and move works forward.',
+        AppRole.admin => 'Everything a coordinator sees, across all departments.',
+      };
 
   @override
   Widget build(BuildContext context) {
     final p = SvPalette.of(context);
-    return Scaffold(
-      appBar: AppBar(),
-      body: Form(
-        key: _form,
-        child: ListView(padding: const EdgeInsets.fromLTRB(24, 8, 24, 40), children: [
-          const BrandMark(size: 56),
-          const Gap(20),
-          Text(_register ? 'Create your\naccount' : 'Welcome\nback', style: SvType.heading1(p.ink)),
+    final current = context.session.repo?.user;
+    return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+      for (final role in AppRole.values) ...[
+        SvCard(
+          onTap: () {
+            context.session.chooseRole(role, departmentId: _dept);
+            widget.onChosen?.call();
+          },
+          borderColor: current?.role == role ? p.ink : null,
+          padding: const EdgeInsets.fromLTRB(18, 14, 14, 14),
+          child: Row(children: [
+            Icon(role.icon, color: p.inkSoft),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Text(role.label, style: SvType.body(p.ink).copyWith(fontWeight: FontWeight.w600)),
+                const Gap(2),
+                Text(_blurb(role), style: SvType.caption(p.inkSoft)),
+              ]),
+            ),
+            Icon(Icons.arrow_forward, color: p.muted, size: 18),
+          ]),
+        ),
+        if (role == AppRole.department) ...[
           const Gap(8),
-          Text(
-            _register ? 'Citizens can request works and report problems. Officials get their role from an administrator.' : 'Sign in with your SAMANVAY email and password.',
-            style: SvType.bodySm(p.inkSoft),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 4),
+            child: Wrap(spacing: 6, runSpacing: 6, children: [
+              for (final d in demoDepartments)
+                ChoiceChip(label: Text(d.short), selected: _dept == d.id, onSelected: (_) => setState(() => _dept = d.id)),
+            ]),
           ),
-          const Gap(24),
-          SvPillTabs<bool>(
-            options: const [(false, 'Sign in'), (true, 'Create account')],
-            selected: _register,
-            onChanged: (v) => setState(() {
-              _register = v;
-              _error = null;
-              _info = null;
-            }),
-          ),
-          const Gap(20),
-          if (_register) ...[
-            TextFormField(
-              controller: _name,
-              textCapitalization: TextCapitalization.words,
-              decoration: const InputDecoration(labelText: 'Full name', prefixIcon: Icon(Icons.person_outline)),
-              validator: (v) => (v ?? '').trim().length < 2 ? 'Enter your name' : null,
-            ),
-            const Gap(12),
-          ],
-          TextFormField(
-            controller: _email,
-            keyboardType: TextInputType.emailAddress,
-            autocorrect: false,
-            decoration: const InputDecoration(labelText: 'Email', prefixIcon: Icon(Icons.mail_outline)),
-            validator: (v) => RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch((v ?? '').trim()) ? null : 'Enter a valid email address',
-          ),
-          const Gap(12),
-          TextFormField(
-            controller: _password,
-            obscureText: _hide,
-            decoration: InputDecoration(
-              labelText: 'Password',
-              prefixIcon: const Icon(Icons.lock_outline),
-              suffixIcon: IconButton(icon: Icon(_hide ? Icons.visibility : Icons.visibility_off), onPressed: () => setState(() => _hide = !_hide)),
-            ),
-            validator: (v) => (v ?? '').length < 8 ? 'At least 8 characters' : null,
-            onFieldSubmitted: (_) => _submit(),
-          ),
-          if (_error != null) ...[
-            const Gap(14),
-            SvCard(color: const Color(0xFFFBEAE6), borderColor: const Color(0xFFE7B8AC), padding: const EdgeInsets.all(14), child: Text(_error!, style: SvType.bodySm(const Color(0xFF8A2E1F)))),
-          ],
-          if (_info != null) ...[
-            const Gap(14),
-            SvCard(color: const Color(0xFFE8EFE4), borderColor: const Color(0xFFB9CDB0), padding: const EdgeInsets.all(14), child: Text(_info!, style: SvType.bodySm(SvColors.forest))),
-          ],
-          const Gap(22),
-          SvPillButton(
-            label: _busy ? 'Please wait…' : (_register ? 'Create account' : 'Sign in'),
-            kind: SvButtonKind.primary,
-            expand: true,
-            onPressed: _busy ? null : _submit,
-          ),
-          if (!_register) ...[
-            const Gap(8),
-            Center(
-              child: TextButton(
-                onPressed: _busy
-                    ? null
-                    : () async {
-                        final msg = await context.session.resendConfirmation(_email.text);
-                        if (mounted) setState(() => _info = msg);
-                      },
-                child: const Text('Resend confirmation email'),
-              ),
-            ),
-          ],
-        ]),
-      ),
-    );
+        ],
+        const Gap(8),
+      ],
+    ]);
   }
+}
+
+/// Bottom sheet for changing role later.
+Future<void> showRolePicker(BuildContext context) {
+  return showModalBottomSheet<void>(
+    context: context,
+    isScrollControlled: true,
+    showDragHandle: true,
+    builder: (sheet) {
+      final p = SvPalette.of(sheet);
+      return SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            const SvEyebrow('Change role'),
+            const Gap(6),
+            Text('Use SAMANVAY as…', style: SvType.heading2(p.ink)),
+            const Gap(18),
+            RoleChooser(onChosen: () => Navigator.of(sheet).pop()),
+          ]),
+        ),
+      );
+    },
+  );
 }

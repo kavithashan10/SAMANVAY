@@ -2,10 +2,9 @@ import 'package:flutter/material.dart';
 
 import '../../lpu_demo_app.dart' show LpuDemoMapTab, LpuDemoActions;
 import '../../lpu_demo_data.dart' show LpuDemoScope;
-import '../../main.dart' show MapPage;
 import '../../samanvay_design.dart';
 import '../core/geo.dart';
-import '../data/demo_repository.dart';
+import '../data/local_repository.dart';
 import 'common.dart';
 import 'session.dart';
 import 'shell.dart';
@@ -16,11 +15,7 @@ class MapTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final repo = context.repo;
-    if (repo is! DemoRepository) {
-      // Live GIS workspace: vector basemap, layers, search, GPS, 2D/3D.
-      return const MapPage();
-    }
+    final repo = context.repo as LocalRepository;
     return LpuDemoScope(
       store: repo.store,
       child: LpuDemoActions(
@@ -68,10 +63,10 @@ void showMapMetadata(BuildContext context) {
             Text('LPU campus utility schematic', style: SvType.heading2(p.ink)),
             const Gap(16),
             row('Reference', 'Local schematic grid in metres, anchored at ${lpuAnchor.format(decimals: 4)} (${GeoCrs.wgs84}). Distances in the app are geodesic.'),
-            row('Source', 'SAMANVAY demonstration dataset — synthetic records created for this prototype.'),
-            row('Date', 'Generated when the demonstration opens (${fmtDate(DateTime.now())}).'),
+            row('Source', 'SAMANVAY sample dataset for the LPU campus — synthetic records, not a survey.'),
+            row('Date', 'Generated on this device (${fmtDate(DateTime.now())}). Works and reports you add are saved on this device.'),
             row('Accuracy', 'Illustrative only. Positions are not surveyed and the campus layout is schematic.'),
-            row('Solid line', 'Demonstration record.'),
+            row('Solid line', 'Sample record.'),
             row('Dashed line', 'Estimated or pending verification — field-verify before digging.'),
             row('Empty area', 'No data recorded. It does not mean nothing is buried.'),
             const Gap(6),

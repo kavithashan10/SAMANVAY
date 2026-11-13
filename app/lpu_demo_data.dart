@@ -48,7 +48,7 @@ extension DataLabelText on DataLabel {
   String get label => switch (this) {
         DataLabel.verified => 'Verified',
         DataLabel.imported => 'Imported',
-        DataLabel.demonstration => 'Demonstration',
+        DataLabel.demonstration => 'Sample record',
         DataLabel.estimated => 'Estimated',
         DataLabel.pendingVerification => 'Pending verification',
       };
@@ -62,7 +62,7 @@ extension DataLabelText on DataLabel {
   String get meaning => switch (this) {
         DataLabel.verified => 'Supported by an authoritative source or field verification.',
         DataLabel.imported => 'Loaded from an external dataset; source and date recorded.',
-        DataLabel.demonstration => 'Created for this prototype demonstration.',
+        DataLabel.demonstration => 'Sample record for the LPU campus map — not surveyed.',
         DataLabel.estimated => 'Approximate; not suitable for excavation decisions.',
         DataLabel.pendingVerification => 'Submitted or collected but not yet checked.',
       };
@@ -571,7 +571,7 @@ extension WorkStatusText on WorkStatus {
         WorkStatus.underDepartmentReview => 'Under department review',
         WorkStatus.clarificationRequired => 'Clarification required',
         WorkStatus.coordinationPending => 'Coordination pending',
-        WorkStatus.approvedForDemonstration => 'Approved for demonstration',
+        WorkStatus.approvedForDemonstration => 'Approved',
         WorkStatus.scheduled => 'Scheduled',
         WorkStatus.inProgress => 'In progress',
         WorkStatus.restorationPending => 'Restoration pending',
@@ -809,16 +809,16 @@ class DemoPerson {
 }
 
 const demoPeople = <DemoPerson>[
-  DemoPerson('Demo citizen · Ananya', DemoRole.citizen, null),
-  DemoPerson('Demo citizen · Rohan', DemoRole.citizen, null),
-  DemoPerson('Water Supply officer (demo)', DemoRole.officer, 'water'),
-  DemoPerson('Sewage & Drainage officer (demo)', DemoRole.officer, 'sewer'),
-  DemoPerson('Electricity officer (demo)', DemoRole.officer, 'power'),
-  DemoPerson('Gas officer (demo)', DemoRole.officer, 'gas'),
-  DemoPerson('Telecom officer (demo)', DemoRole.officer, 'telecom'),
-  DemoPerson('Municipal engineer (demo)', DemoRole.officer, 'municipal'),
-  DemoPerson('Campus works coordinator (demo)', DemoRole.coordinator, null),
-  DemoPerson('Platform administrator (demo)', DemoRole.admin, null),
+  DemoPerson('Citizen · Ananya', DemoRole.citizen, null),
+  DemoPerson('Citizen · Rohan', DemoRole.citizen, null),
+  DemoPerson('Water Supply officer', DemoRole.officer, 'water'),
+  DemoPerson('Sewage & Drainage officer', DemoRole.officer, 'sewer'),
+  DemoPerson('Electricity officer', DemoRole.officer, 'power'),
+  DemoPerson('Gas officer', DemoRole.officer, 'gas'),
+  DemoPerson('Telecom officer', DemoRole.officer, 'telecom'),
+  DemoPerson('Municipal engineer', DemoRole.officer, 'municipal'),
+  DemoPerson('Campus works coordinator', DemoRole.coordinator, null),
+  DemoPerson('Platform administrator', DemoRole.admin, null),
 ];
 
 // ---------------------------------------------------------------------------
@@ -852,10 +852,10 @@ class LpuDemoStore extends ChangeNotifier {
   bool showGrievances = true;
 
   String get actorName => switch (role) {
-        DemoRole.citizen => 'Demo citizen · Ananya',
-        DemoRole.officer => '${deptById(officerDept).name} officer (demo)',
-        DemoRole.coordinator => 'Campus works coordinator (demo)',
-        DemoRole.admin => 'Platform administrator (demo)',
+        DemoRole.citizen => 'Citizen · Ananya',
+        DemoRole.officer => '${deptById(officerDept).name} officer',
+        DemoRole.coordinator => 'Campus works coordinator',
+        DemoRole.admin => 'Platform administrator',
       };
 
   void reset({bool notify = true}) {
@@ -905,6 +905,181 @@ class LpuDemoStore extends ChangeNotifier {
   WorkItem work(String id) => works.firstWhere((w) => w.id == id);
 
   int countFor(UtilityKind k) => assets.where((a) => a.kind == k && !a.isPoint).length;
+
+  // ---------------------------------------------------------------------------
+  // On-device persistence. Utility assets are regenerated (they are fixed
+  // sample data); everything people change — works, reviews, reports and the
+  // activity log — round-trips through JSON.
+  // ---------------------------------------------------------------------------
+
+  static const _icons = <IconData>[
+    Icons.circle_outlined,
+    Icons.account_balance_outlined,
+    Icons.add_circle_outline,
+    Icons.add_road_outlined,
+    Icons.bolt_outlined,
+    Icons.campaign_outlined,
+    Icons.cell_tower_outlined,
+    Icons.check_box_outlined,
+    Icons.dataset_outlined,
+    Icons.fact_check_outlined,
+    Icons.flag_outlined,
+    Icons.local_fire_department_outlined,
+    Icons.merge_type_outlined,
+    Icons.water_drop_outlined,
+    Icons.water_outlined,
+  ];
+
+  static int _iconIndex(IconData icon) => math.max(0, _icons.indexWhere((i) => i.codePoint == icon.codePoint));
+
+  static List<double> _pt(Offset o) => [o.dx, o.dy];
+  static Offset _offset(Object? v) {
+    final l = (v as List).cast<num>();
+    return Offset(l[0].toDouble(), l[1].toDouble());
+  }
+
+  static T _enum<T extends Enum>(List<T> values, Object? name, T fallback) =>
+      values.where((v) => v.name == name).firstOrNull ?? fallback;
+
+  Map<String, dynamic> toJson() => {
+        'version': 1,
+        'workSeq': _workSeq,
+        'grievanceSeq': _grievanceSeq,
+        'works': [
+          for (final w in works)
+            {
+              'id': w.id,
+              'title': w.title,
+              'road': w.road,
+              'applicantDept': w.applicantDept,
+              'contractor': w.contractor,
+              'workType': w.workType,
+              'description': w.description,
+              'route': [for (final p in w.route) _pt(p)],
+              'start': w.start.toIso8601String(),
+              'end': w.end.toIso8601String(),
+              'status': w.status.name,
+              'corridorHalfWidth': w.corridorHalfWidth,
+              'jointWith': w.jointWith,
+              'history': [for (final h in w.history) h.name],
+              'reviews': [
+                for (final r in w.reviews)
+                  {'deptId': r.deptId, 'checks': r.checks, 'status': r.status.name, 'note': r.note, 'isApplicant': r.isApplicant},
+              ],
+              'restoration': {
+                'method': w.restoration.method,
+                'lengthM': w.restoration.lengthM,
+                'widthM': w.restoration.widthM,
+                'stage': w.restoration.stage.name,
+                'photos': w.restoration.photos,
+              },
+            },
+        ],
+        'grievances': [
+          for (final g in grievances)
+            {
+              'id': g.id,
+              'category': g.category,
+              'title': g.title,
+              'location': g.location,
+              'description': g.description,
+              'status': g.status.name,
+              'submitted': g.submitted.toIso8601String(),
+              'linkedWork': g.linkedWork,
+              'photos': g.photos,
+              'mine': g.mine,
+              'routedTo': g.routedTo,
+              'trail': [for (final (t, text) in g.trail) [t.toIso8601String(), text]],
+            },
+        ],
+        'activity': [
+          for (final a in activity)
+            {'time': a.time.toIso8601String(), 'actor': a.actor, 'text': a.text, 'ref': a.ref, 'public': a.public, 'icon': _iconIndex(a.icon)},
+        ],
+      };
+
+  /// Restores saved state. Returns false (and keeps the fresh sample data)
+  /// when the saved data cannot be read.
+  bool loadJson(Map<String, dynamic> j, {bool notify = true}) {
+    try {
+      final loadedWorks = <WorkItem>[
+        for (final m in (j['works'] as List).cast<Map>())
+          WorkItem(
+            id: m['id'] as String,
+            title: m['title'] as String,
+            road: m['road'] as String,
+            applicantDept: m['applicantDept'] as String,
+            contractor: m['contractor'] as String,
+            workType: m['workType'] as String,
+            description: m['description'] as String,
+            route: [for (final p in m['route'] as List) _offset(p)],
+            start: DateTime.parse(m['start'] as String),
+            end: DateTime.parse(m['end'] as String),
+            status: _enum(WorkStatus.values, m['status'], WorkStatus.submitted),
+            corridorHalfWidth: (m['corridorHalfWidth'] as num?)?.toDouble() ?? 1.5,
+            reviews: [
+              for (final r in (m['reviews'] as List).cast<Map>())
+                DepartmentReview(
+                  deptId: r['deptId'] as String,
+                  checks: (r['checks'] as List).cast<bool>(),
+                  status: _enum(ReviewStatus.values, r['status'], ReviewStatus.awaiting),
+                  note: (r['note'] as String?) ?? '',
+                  isApplicant: r['isApplicant'] == true,
+                ),
+            ],
+            restoration: Restoration(
+              method: (m['restoration'] as Map)['method'] as String,
+              lengthM: ((m['restoration'] as Map)['lengthM'] as num).toDouble(),
+              widthM: ((m['restoration'] as Map)['widthM'] as num).toDouble(),
+              stage: _enum(RestorationStage.values, (m['restoration'] as Map)['stage'], RestorationStage.notStarted),
+              photos: ((m['restoration'] as Map)['photos'] as num?)?.toInt() ?? 0,
+            ),
+          )
+            ..jointWith = m['jointWith'] as String?
+            ..history.addAll([for (final h in (m['history'] as List? ?? const [])) _enum(WorkStatus.values, h, WorkStatus.submitted)]),
+      ];
+      final loadedGrievances = <Grievance>[
+        for (final m in (j['grievances'] as List).cast<Map>())
+          Grievance(
+            id: m['id'] as String,
+            category: m['category'] as String,
+            title: m['title'] as String,
+            location: m['location'] as String,
+            description: m['description'] as String,
+            status: _enum(GrievanceStatus.values, m['status'], GrievanceStatus.submitted),
+            submitted: DateTime.parse(m['submitted'] as String),
+            linkedWork: m['linkedWork'] as String?,
+            photos: (m['photos'] as num?)?.toInt() ?? 0,
+            mine: m['mine'] == true,
+          )
+            ..routedTo = (m['routedTo'] as String?) ?? 'municipal'
+            ..trail.addAll([
+              for (final t in (m['trail'] as List? ?? const []))
+                (DateTime.parse((t as List)[0] as String), t[1] as String),
+            ]),
+      ];
+      final loadedActivity = <ActivityEntry>[
+        for (final m in (j['activity'] as List).cast<Map>())
+          ActivityEntry(
+            DateTime.parse(m['time'] as String),
+            m['actor'] as String,
+            m['text'] as String,
+            ref: m['ref'] as String?,
+            public: m['public'] == true,
+            icon: _icons[((m['icon'] as num?)?.toInt() ?? 0).clamp(0, _icons.length - 1)],
+          ),
+      ];
+      works = loadedWorks;
+      grievances = loadedGrievances;
+      activity = loadedActivity;
+      _workSeq = (j['workSeq'] as num?)?.toInt() ?? _workSeq;
+      _grievanceSeq = (j['grievanceSeq'] as num?)?.toInt() ?? _grievanceSeq;
+      if (notify) notifyListeners();
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
 
   void _log(String text, {String? ref, bool public = false, IconData icon = Icons.circle_outlined}) {
     activity.insert(0, ActivityEntry(DateTime.now(), actorName, text, ref: ref, public: public, icon: icon));
@@ -991,7 +1166,7 @@ class LpuDemoStore extends ChangeNotifier {
     final municipalOfficer = role == DemoRole.officer && officerDept == 'municipal';
     return switch (w.status) {
       WorkStatus.clarificationRequired when coord => ('Return to department review', WorkStatus.underDepartmentReview),
-      WorkStatus.coordinationPending when coord => ('Approve for demonstration', WorkStatus.approvedForDemonstration),
+      WorkStatus.coordinationPending when coord => ('Approve the work', WorkStatus.approvedForDemonstration),
       WorkStatus.approvedForDemonstration when coord => ('Schedule the work window', WorkStatus.scheduled),
       WorkStatus.scheduled when coord || applicantOfficer => ('Mark work started', WorkStatus.inProgress),
       WorkStatus.inProgress when coord || applicantOfficer => ('Trench backfilled · restoration pending', WorkStatus.restorationPending),
@@ -1137,7 +1312,7 @@ class LpuDemoStore extends ChangeNotifier {
         title: 'Optical fibre laying',
         road: 'Avenue 3 · east of Central Avenue',
         applicantDept: 'telecom',
-        contractor: 'FibreLink Contractors (demo)',
+        contractor: 'FibreLink Contractors',
         workType: 'Open trench · 0.45 m wide · 1.65 m deep',
         description: 'Lay 2 × 40 mm HDPE ducts with 48F optical fibre between Central Avenue and the East Ring Road.',
         route: const [Offset(512, 286), Offset(868, 286)],
@@ -1152,14 +1327,14 @@ class LpuDemoStore extends ChangeNotifier {
           rv('gas', 4, ReviewStatus.cleared),
           rv('municipal', 3, ReviewStatus.inReview),
         ],
-        restoration: Restoration(method: 'Bituminous reinstatement (demo spec)', lengthM: 356, widthM: .45),
+        restoration: Restoration(method: 'Bituminous reinstatement', lengthM: 356, widthM: .45),
       ),
       WorkItem(
         id: 'SR-2026-004',
         title: 'Water main replacement',
         road: 'Central Avenue · Avenue 1 to Avenue 2',
         applicantDept: 'water',
-        contractor: 'Doaba Pipeline Works (demo)',
+        contractor: 'Doaba Pipeline Works',
         workType: 'Open trench · 0.9 m wide · 1.5 m deep',
         description: 'Replace 140 m of ageing 200 mm main with 250 mm ductile iron and reconnect two service lines.',
         route: const [Offset(494, 548), Offset(494, 432)],
@@ -1173,14 +1348,14 @@ class LpuDemoStore extends ChangeNotifier {
           rv('gas', 0, ReviewStatus.awaiting),
           rv('municipal', 1, ReviewStatus.inReview),
         ],
-        restoration: Restoration(method: 'Concrete panel reinstatement (demo spec)', lengthM: 116, widthM: .9),
+        restoration: Restoration(method: 'Concrete panel reinstatement', lengthM: 116, widthM: .9),
       ),
       WorkItem(
         id: 'SR-2026-005',
         title: 'Storm drain desilting & culvert rebuild',
         road: 'Avenue 3 · east of Central Avenue',
         applicantDept: 'sewer',
-        contractor: 'Municipal drainage crew (demo)',
+        contractor: 'Municipal drainage crew',
         workType: 'Open trench · 1.2 m wide · 1.0 m deep',
         description: 'Desilt the Avenue 3 storm drain and rebuild one cross culvert before the monsoon.',
         route: const [Offset(560, 291), Offset(840, 291)],
@@ -1193,14 +1368,14 @@ class LpuDemoStore extends ChangeNotifier {
           rv('telecom', 4, ReviewStatus.cleared),
           rv('municipal', 5, ReviewStatus.cleared),
         ],
-        restoration: Restoration(method: 'Bituminous reinstatement (demo spec)', lengthM: 280, widthM: 1.2),
+        restoration: Restoration(method: 'Bituminous reinstatement', lengthM: 280, widthM: 1.2),
       ),
       WorkItem(
         id: 'SR-2026-001',
         title: 'LT cable replacement',
         road: 'Avenue 2 · west of Central Avenue',
         applicantDept: 'power',
-        contractor: 'Punjab Power Services (demo)',
+        contractor: 'Punjab Power Services',
         workType: 'Open trench · 0.6 m wide · 1.0 m deep',
         description: 'Replace a faulted 415 V cable run feeding the library and laboratories.',
         route: const [Offset(140, 410), Offset(482, 410)],
@@ -1213,14 +1388,14 @@ class LpuDemoStore extends ChangeNotifier {
           rv('telecom', 4, ReviewStatus.cleared),
           rv('municipal', 5, ReviewStatus.clearedWithConditions, note: 'Full-width resurfacing if more than 30% of the lane is cut.'),
         ],
-        restoration: Restoration(method: 'Bituminous patch (demo spec)', lengthM: 342, widthM: .6, stage: RestorationStage.restored, photos: 3),
+        restoration: Restoration(method: 'Bituminous patch', lengthM: 342, widthM: .6, stage: RestorationStage.restored, photos: 3),
       ),
       WorkItem(
         id: 'SR-2026-002',
         title: 'Gas service connection',
         road: 'Avenue 1 · east of Central Avenue',
         applicantDept: 'gas',
-        contractor: 'City gas crew (demo)',
+        contractor: 'City gas crew',
         workType: 'Narrow trench · 0.3 m wide · 1.0 m deep',
         description: 'New 32 mm MDPE service connection to the academic blocks east kitchen.',
         route: const [Offset(610, 556), Offset(700, 556)],
@@ -1232,7 +1407,7 @@ class LpuDemoStore extends ChangeNotifier {
           rv('water', 5, ReviewStatus.cleared),
           rv('municipal', 5, ReviewStatus.cleared),
         ],
-        restoration: Restoration(method: 'Bituminous patch (demo spec)', lengthM: 90, widthM: .3, stage: RestorationStage.inspectionPassed, photos: 4),
+        restoration: Restoration(method: 'Bituminous patch', lengthM: 90, widthM: .3, stage: RestorationStage.inspectionPassed, photos: 4),
       ),
     ];
   }
@@ -1286,14 +1461,14 @@ class LpuDemoStore extends ChangeNotifier {
     final d = today;
     final unverified = assets.firstWhere((a) => a.label == DataLabel.pendingVerification).id;
     return [
-      ActivityEntry(d.subtract(const Duration(minutes: 40)), 'Municipal engineer (demo)', 'Dig-once flag: SR-2026-005 drainage work on the same segment within 90 days', ref: 'SR-2026-003', icon: Icons.merge_type_outlined),
-      ActivityEntry(d.subtract(const Duration(hours: 2)), 'Electricity officer (demo)', 'Field verification requested: LT service record $unverified is unverified', ref: 'SR-2026-003', icon: Icons.fact_check_outlined),
-      ActivityEntry(d.subtract(const Duration(hours: 3)), 'Water Supply officer (demo)', 'Water Supply: cleared with conditions — hand-dig near service connections', ref: 'SR-2026-003', icon: Icons.fact_check_outlined),
-      ActivityEntry(d.subtract(const Duration(hours: 5)), 'Demo citizen · Rohan', 'Report submitted: Waterlogging outside the hostels after rain', ref: 'GR-2026-013', public: true, icon: Icons.campaign_outlined),
-      ActivityEntry(d.subtract(const Duration(hours: 20)), 'Municipal engineer (demo)', 'GR-2026-012 acknowledged and linked to SR-2026-001 restoration', ref: 'GR-2026-012', public: true, icon: Icons.campaign_outlined),
-      ActivityEntry(d.subtract(const Duration(days: 1)), 'Campus works coordinator (demo)', 'Status → Coordination pending', ref: 'SR-2026-003', public: true, icon: Icons.flag_outlined),
-      ActivityEntry(d.subtract(const Duration(days: 3)), 'Electricity officer (demo)', 'Status → Restoration pending', ref: 'SR-2026-001', public: true, icon: Icons.flag_outlined),
-      ActivityEntry(d.subtract(const Duration(days: 6)), 'Platform administrator (demo)', 'Demo dataset loaded: ${assets.length} synthetic records across 7 utility layers', icon: Icons.dataset_outlined),
+      ActivityEntry(d.subtract(const Duration(minutes: 40)), 'Municipal engineer', 'Dig-once flag: SR-2026-005 drainage work on the same segment within 90 days', ref: 'SR-2026-003', icon: Icons.merge_type_outlined),
+      ActivityEntry(d.subtract(const Duration(hours: 2)), 'Electricity officer', 'Field verification requested: LT service record $unverified is unverified', ref: 'SR-2026-003', icon: Icons.fact_check_outlined),
+      ActivityEntry(d.subtract(const Duration(hours: 3)), 'Water Supply officer', 'Water Supply: cleared with conditions — hand-dig near service connections', ref: 'SR-2026-003', icon: Icons.fact_check_outlined),
+      ActivityEntry(d.subtract(const Duration(hours: 5)), 'Citizen · Rohan', 'Report submitted: Waterlogging outside the hostels after rain', ref: 'GR-2026-013', public: true, icon: Icons.campaign_outlined),
+      ActivityEntry(d.subtract(const Duration(hours: 20)), 'Municipal engineer', 'GR-2026-012 acknowledged and linked to SR-2026-001 restoration', ref: 'GR-2026-012', public: true, icon: Icons.campaign_outlined),
+      ActivityEntry(d.subtract(const Duration(days: 1)), 'Campus works coordinator', 'Status → Coordination pending', ref: 'SR-2026-003', public: true, icon: Icons.flag_outlined),
+      ActivityEntry(d.subtract(const Duration(days: 3)), 'Electricity officer', 'Status → Restoration pending', ref: 'SR-2026-001', public: true, icon: Icons.flag_outlined),
+      ActivityEntry(d.subtract(const Duration(days: 6)), 'Platform administrator', 'Sample dataset loaded: ${assets.length} synthetic records across 7 utility layers', icon: Icons.dataset_outlined),
     ];
   }
 }

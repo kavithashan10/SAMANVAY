@@ -342,74 +342,22 @@ jobs:
           print("PASS: release signing configured from repository secrets.")
           PY2
 
-      # 7. Build APK
+      # 7. Build one universal APK. The app runs entirely on the device, so no
+      # backend secrets are needed.
       - name: Build release APK
         env:
-          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          SUPABASE_PUBLISHABLE_KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
-          MAPTILER_API_KEY: ${{ secrets.MAPTILER_API_KEY }}
-          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
-          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
-          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
-        run: |
-          flutter build apk --release --split-per-abi \
-            --dart-define=SUPABASE_URL="$SUPABASE_URL" \
-            --dart-define=SUPABASE_PUBLISHABLE_KEY="$SUPABASE_PUBLISHABLE_KEY" \
-            --dart-define=MAPTILER_API_KEY="$MAPTILER_API_KEY"
-
-      # 8. Prepare smaller ABI-specific APKs for Android devices
-      - name: Prepare downloadable APKs
-        run: |
-          set -euo pipefail
-          mkdir -p dist
-
-          for ABI in arm64-v8a armeabi-v7a x86_64; do
-            SOURCE="build/app/outputs/flutter-apk/app-${ABI}-release.apk"
-            DEST="dist/SAMANVAY-Alpha-0.3-${ABI}.apk"
-
-            if [ ! -s "$SOURCE" ]; then
-              echo "ERROR: Expected APK not found: $SOURCE"
-              exit 1
-            fi
-
-            cp "$SOURCE" "$DEST"
-          done
-
-          echo "Prepared ABI-specific APKs:"
-          ls -lh dist/*.apk
-          sha256sum dist/*.apk
-
-      # 8b. Offline LPU demonstration build for presentations. It opens straight
-      # into the demo (no backend or secrets needed) and uses its own package ID
-      # and launcher name so it installs alongside the main app.
-      - name: Build LPU demo APK
-        env:
           ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
           ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
           ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
         run: |
           set -euo pipefail
-          python3 - <<'PY'
-          from pathlib import Path
-          gradle = Path("android/app/build.gradle.kts")
-          content = gradle.read_text()
-          old_id = 'applicationId = "org.samanvay.samanvay"'
-          if content.count(old_id) != 1:
-              raise SystemExit("ERROR: applicationId line not found; demo package ID not applied.")
-          gradle.write_text(content.replace(old_id, 'applicationId = "org.samanvay.samanvay.lpudemo"'))
-          manifest = Path("android/app/src/main/AndroidManifest.xml")
-          text = manifest.read_text()
-          if 'android:label="SAMANVAY"' not in text:
-              raise SystemExit("ERROR: launcher label not found; demo label not applied.")
-          manifest.write_text(text.replace('android:label="SAMANVAY"', 'android:label="SAMANVAY Demo"', 1))
-          print("PASS: demo package org.samanvay.samanvay.lpudemo, label 'SAMANVAY Demo'.")
-          PY
-          flutter build apk --release --dart-define=SAMANVAY_START=lpu-demo
+          flutter build apk --release
           SOURCE="build/app/outputs/flutter-apk/app-release.apk"
-          test -s "$SOURCE" || { echo "ERROR: LPU demo APK was not generated."; exit 1; }
-          cp "$SOURCE" dist/SAMANVAY-LPU-Demo-universal.apk
-          ls -lh dist/SAMANVAY-LPU-Demo-universal.apk
-          sha256sum dist/SAMANVAY-LPU-Demo-universal.apk
+          test -s "$SOURCE" || { echo "ERROR: APK was not generated."; exit 1; }
+          mkdir -p dist
+          cp "$SOURCE" dist/SAMANVAY.apk
+          ls -lh dist/SAMANVAY.apk
+          sha256sum dist/SAMANVAY.apk
 
       # 9. APK checks are required; failures fail the build
       - name: Verify APK package, signature and alignment
@@ -430,7 +378,6 @@ jobs:
             "$BUILD_TOOLS/aapt" dump badging "$APK"
             PACKAGE_NAME="$("$BUILD_TOOLS/aapt" dump badging "$APK" | sed -n "s/^package: name='\([^']*\)'.*/\1/p")"
             EXPECTED_PACKAGE="org.samanvay.samanvay"
-            case "$APK" in *LPU-Demo*) EXPECTED_PACKAGE="org.samanvay.samanvay.lpudemo" ;; esac
             if [ "$PACKAGE_NAME" != "$EXPECTED_PACKAGE" ]; then
               echo "ERROR: Unexpected APK package name: $PACKAGE_NAME"
               exit 1
@@ -460,24 +407,33 @@ jobs:
             done
           done
 
-      # 10. Upload all ABI-specific APKs
-      - name: Upload APK downloads
+      # 10. Upload the APK
+      - name: Upload APK download
         if: always() && hashFiles('dist/*.apk') != ''
         uses: actions/upload-artifact@v4
         with:
-          name: SAMANVAY-Alpha-0.3-APK
-          path: dist/SAMANVAY-Alpha-0.3-*.apk
+          name: SAMANVAY-APK
+          path: dist/SAMANVAY.apk
           if-no-files-found: error
           retention-days: 30
 
-      - name: Upload LPU demo APK
-        if: always() && hashFiles('dist/SAMANVAY-LPU-Demo-*.apk') != ''
-        uses: actions/upload-artifact@v4
+      # 10b. Direct download: attach the APK itself (not a zip) to a release
+      # so it can be downloaded and installed straight from a phone.
+      - name: Publish direct APK download
+        if: hashFiles('dist/SAMANVAY.apk') != '' && startsWith(github.ref, 'refs/heads/claude/')
+        uses: softprops/action-gh-release@v2
         with:
-          name: SAMANVAY-LPU-Demo-APK
-          path: dist/SAMANVAY-LPU-Demo-*.apk
-          if-no-files-found: error
-          retention-days: 30
+          tag_name: samanvay-app-latest
+          name: SAMANVAY app (latest build)
+          target_commitish: ${{ github.sha }}
+          body: |
+            Download SAMANVAY.apk below and open it on your Android phone to install.
+            The app runs entirely on the device: no account, no server.
+            Built from commit ${{ github.sha }}.
+          prerelease: true
+          make_latest: false
+          overwrite_files: true
+          files: dist/SAMANVAY.apk
 
       # 11. Publish/update the Alpha 0.3 prerelease on successful builds
       # Branch builds (e.g. claude/**) only upload artifacts; they never overwrite the release.
@@ -496,16 +452,14 @@ jobs:
             Version: Alpha 0.3
 
             Includes:
-            - ABI-specific Flutter release APKs (ARM64, ARMv7, x86_64)
-            - Coimbatore 2024 Public Domain ward-boundary reference layer (OpenCity.in)
-            - 21 Coimbatore district groundwater telemetry station points from NWDP 2026–2030 snapshot
-            - Verified department-owned GIS asset map layer (when owner data is registered and verified)
-            - Device GPS coordinate display and OpenStreetMap place search fallback
-            - Supabase integration foundation
-            - Required APK integrity, signature and alignment checks
-            - SAMANVAY-LPU-Demo-universal.apk: offline LPU campus demonstration (all four roles, synthetic data); installs alongside the main app
+            - One universal Android APK (SAMANVAY.apk)
+            - Runs entirely on the device: no account, no server
+            - Roles: citizen, department officer, coordinator, administrator
+            - Department checklists, three-part screening (spatial, data confidence, dig-once)
+            - LPU campus utility map with sample records, scale bar, north arrow and map metadata
+            - Works, decisions and reports are saved on the device
 
-            Note: The ward boundary layer is a 2024 public reference and is not a statutory boundary certification or an underground utility dataset.
+            Note: utility records on the map are sample data for the LPU campus, not a survey.
 
           prerelease: true
           make_latest: false
