@@ -27,6 +27,7 @@ import 'public_transparency_dashboard_page.dart';
 import 'lpu_demo_app.dart';
 import 'samanvay_design.dart';
 import 'department_checklists.dart';
+import 'case_screening.dart';
 
 const String supabaseUrl =
     String.fromEnvironment('SUPABASE_URL');
@@ -3196,6 +3197,12 @@ class _OperationalPortalState extends State<_OperationalPortal> {
                 label: const Text('Department checklists'),
               ),
             ],
+            const SizedBox(height: 8),
+            OutlinedButton.icon(
+              onPressed: () => showCaseScreeningSheet(context, requestId: requestId, requestLabel: number),
+              icon: const Icon(Icons.radar_outlined, size: 18),
+              label: const Text('Screening'),
+            ),
             if (widget.isDepartment && ownReview != null) ...[
               const SizedBox(height: 10),
               statusLabel(
@@ -6756,6 +6763,7 @@ class _DashboardPageState extends State<DashboardPage>
               action('3D GIS map', Icons.layers_outlined, const Color(0xFFCFC7BB), const MapPage()),
               action('Notifications', Icons.notifications_none_rounded, const Color(0xFFDDCCC9), const NotificationsPage()),
               action('LPU underground map', Icons.school_outlined, const Color(0xFF62AB6E), const LpuCampusModelPage()),
+              action('LPU utility schematic (demo data)', Icons.layers_outlined, const Color(0xFFAF751B), const LpuDemoRoot(startOnMap: true)),
             ]);
           }),
           const SizedBox(height: 19),
@@ -17222,6 +17230,11 @@ class _MapPageState extends State<MapPage> {
         ),
         actions: [
           IconButton(
+            tooltip: 'LPU campus utility schematic (demonstration data)',
+            onPressed: () => openLpuDemo(context, map: true),
+            icon: const Icon(Icons.layers_outlined),
+          ),
+          IconButton(
             tooltip: widget.contextLabel == 'LPU CAMPUS · PHAGWARA'
                 ? 'LPU official public infrastructure references'
                 : 'Open LPU campus in the live GIS map',
@@ -19659,62 +19672,6 @@ class _CaseWorkspacePageState extends State<CaseWorkspacePage> {
     }
   }
 
-  Future<void> _runCoordinationCheck() async {
-    try {
-      final raw = await supabase.rpc(
-        'run_request_coordination_check',
-        params: {'p_request_id': widget.requestId},
-      );
-      final result = Map<String, dynamic>.from(raw as Map);
-      final possibleOverlap = result['possible_overlap'] == true;
-      final status = (result['assessment_status'] ?? '').toString();
-      final advisory = (result['advisory'] ?? 'No assessment details returned.').toString();
-
-      if (!mounted) return;
-      await showDialog<void>(
-        context: context,
-        builder: (dialogContext) => AlertDialog(
-          icon: Icon(
-            possibleOverlap ? Icons.warning_amber_rounded : Icons.info_outline,
-            color: possibleOverlap ? Color(0xFFA54130) : teal,
-            size: 34,
-          ),
-          title: Text(
-            possibleOverlap
-                ? 'Possible recorded utility proximity'
-                : status == 'completed'
-                    ? 'No recorded overlap detected'
-                    : 'Coordination check incomplete',
-          ),
-          content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(advisory),
-                const SizedBox(height: 12),
-                 Text(
-                  'This check uses only the records currently available to SAMANVAY. It is not a utility-location certificate, permit, site clearance or guarantee of safety. Obtain clearance from utility owners and complete required field verification before work.',
-                  style: TextStyle(fontSize: 12, color: mutedInk),
-                ),
-              ],
-            ),
-          ),
-          actions: [
-            FilledButton(
-              onPressed: () => Navigator.pop(dialogContext),
-              child: const Text('Understood'),
-            ),
-          ],
-        ),
-      );
-    } on PostgrestException catch (e) {
-      _toast('Coordination check unavailable: ${e.message}');
-    } catch (_) {
-      _toast('Unable to run the coordination check. Confirm the case location, work radius and access permissions.');
-    }
-  }
-
   Future<void> _viewCoordinationChecks() async {
     try {
       final raw = await supabase.from('case_coordination_checks')
@@ -19935,12 +19892,17 @@ class _CaseWorkspacePageState extends State<CaseWorkspacePage> {
       appBar: AppBar(
         title: Text(widget.requestTitle, maxLines: 1, overflow: TextOverflow.ellipsis),
         actions: [
+          IconButton(
+            tooltip: 'Screening: utility, data confidence and dig-once',
+            onPressed: () => showCaseScreeningSheet(context, requestId: widget.requestId, requestLabel: widget.requestTitle),
+            icon: const Icon(Icons.radar_outlined),
+          ),
           IconButton(tooltip: 'View evidence', onPressed: _viewEvidence, icon: const Icon(Icons.attach_file)),
           PopupMenuButton<String>(
             onSelected: (v) {
               if (v == 'upload') _upload();
               if (v == 'view') _viewEvidence();
-              if (v == 'run_check') _runCoordinationCheck();
+              if (v == 'run_check') showCaseScreeningSheet(context, requestId: widget.requestId, requestLabel: widget.requestTitle);
               if (v == 'check_history') _viewCoordinationChecks();
               if (v == 'inspection') _addInspection();
               if (v == 'inspections') _viewInspections();
@@ -19952,7 +19914,7 @@ class _CaseWorkspacePageState extends State<CaseWorkspacePage> {
             itemBuilder: (_) => [
               const PopupMenuItem(value: 'upload', child: Text('Upload evidence')),
               const PopupMenuItem(value: 'view', child: Text('View evidence')),
-              const PopupMenuItem(value: 'run_check', child: Text('Run utility coordination check')),
+              const PopupMenuItem(value: 'run_check', child: Text('Screening: utility & dig-once checks')),
               const PopupMenuItem(value: 'check_history', child: Text('View coordination-check history')),
               const PopupMenuItem(value: 'inspections', child: Text('View inspections')),
               const PopupMenuItem(value: 'timeline', child: Text('Case activity history')),

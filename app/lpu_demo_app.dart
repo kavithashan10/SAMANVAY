@@ -25,16 +25,20 @@ class LpuDemoApp extends StatelessWidget {
       );
 }
 
-/// Opens the demo on top of the main application.
-Future<void> openLpuDemo(BuildContext context) => Navigator.of(context).push(
-      MaterialPageRoute(builder: (_) => LpuDemoRoot(onExit: () => Navigator.of(context).pop())),
+/// Opens the demo on top of the main application. With [map] it opens
+/// straight on the LPU campus utility schematic.
+Future<void> openLpuDemo(BuildContext context, {bool map = false}) => Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => LpuDemoRoot(onExit: () => Navigator.of(context).pop(), startOnMap: map)),
     );
 
 /// Owns the demo store, theme and a nested navigator so every demo screen
 /// shares the field-journal theme regardless of the host app's theme.
 class LpuDemoRoot extends StatefulWidget {
-  const LpuDemoRoot({super.key, this.onExit});
+  const LpuDemoRoot({super.key, this.onExit, this.startOnMap = false});
   final VoidCallback? onExit;
+
+  /// Skip the welcome screen and open the shell on its Map tab.
+  final bool startOnMap;
   @override
   State<LpuDemoRoot> createState() => _LpuDemoRootState();
 }
@@ -62,7 +66,11 @@ class _LpuDemoRootState extends State<LpuDemoRoot> {
               onPopWithResult: (_) => _navKey.currentState?.maybePop(),
               child: Navigator(
                 key: _navKey,
-                onGenerateRoute: (_) => MaterialPageRoute(builder: (_) => LpuDemoWelcome(onExit: widget.onExit)),
+                onGenerateRoute: (_) => MaterialPageRoute(
+                  builder: (_) => widget.startOnMap
+                      ? const LpuDemoShell(initialTab: 1)
+                      : LpuDemoWelcome(onExit: widget.onExit),
+                ),
               ),
             ),
           ),
@@ -241,13 +249,14 @@ class _InkStat extends StatelessWidget {
 // =============================================================================
 
 class LpuDemoShell extends StatefulWidget {
-  const LpuDemoShell({super.key});
+  const LpuDemoShell({super.key, this.initialTab = 0});
+  final int initialTab;
   @override
   State<LpuDemoShell> createState() => _LpuDemoShellState();
 }
 
 class _LpuDemoShellState extends State<LpuDemoShell> {
-  int _tab = 0;
+  late int _tab = widget.initialTab;
 
   void goTo(int tab) => setState(() => _tab = tab);
 
