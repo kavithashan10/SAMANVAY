@@ -261,3 +261,35 @@ class NewCaseDraft {
   DateTime? start;
   DateTime? end;
 }
+
+/// One utility layer in the network inventory.
+class LayerStat {
+  LayerStat({required this.label, required this.color, required this.lengthM, required this.lines});
+  final String label;
+  final Color color;
+  final double lengthM;
+  final int lines;
+}
+
+/// How far the mapped records can be trusted, by data label.
+class ConfidenceStat {
+  ConfidenceStat({required this.label, required this.color, required this.count, required this.meaning});
+  final String label;
+  final Color color;
+  final int count;
+  final String meaning;
+}
+
+/// What the utility map holds: lengths per layer and data confidence.
+class NetworkStats {
+  NetworkStats({required this.layers, required this.confidence, required this.structures});
+  final List<LayerStat> layers;
+  final List<ConfidenceStat> confidence;
+
+  /// Manholes, valves and chambers.
+  final int structures;
+
+  double get totalM => layers.fold(0, (a, l) => a + l.lengthM);
+  int get records => confidence.fold(0, (a, c) => a + c.count);
+}
+

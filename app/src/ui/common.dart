@@ -183,3 +183,22 @@ class Gap extends StatelessWidget {
   Widget build(BuildContext context) => SizedBox(height: h);
 }
 
+/// A number that counts up when it first appears or changes.
+class CountUp extends StatelessWidget {
+  const CountUp(this.value, {super.key, required this.style, this.duration = const Duration(milliseconds: 1200), this.suffix = ''});
+  final num value;
+  final TextStyle style;
+  final Duration duration;
+  final String suffix;
+
+  @override
+  Widget build(BuildContext context) {
+    if (MediaQuery.of(context).disableAnimations) return Text('${value.round()}$suffix', style: style);
+    return TweenAnimationBuilder<double>(
+      tween: Tween(begin: 0, end: value.toDouble()),
+      duration: duration,
+      curve: Curves.easeOutCubic,
+      builder: (context, v, _) => Text('${v.round()}$suffix', style: style),
+    );
+  }
+}

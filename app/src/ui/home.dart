@@ -4,6 +4,7 @@ import '../../samanvay_design.dart';
 import '../core/models.dart';
 import '../core/repository.dart';
 import 'common.dart';
+import 'insights.dart';
 import 'new_case.dart';
 import 'more.dart';
 import 'session.dart';
@@ -29,12 +30,12 @@ class HomeScreen extends StatelessWidget {
 
 class _BandStat extends StatelessWidget {
   const _BandStat(this.value, this.label);
-  final String value;
+  final int value;
   final String label;
   @override
   Widget build(BuildContext context) => Expanded(
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text(value, style: SvType.heading1(SvColors.canvas).copyWith(fontSize: 38)),
+          CountUp(value, style: SvType.heading1(SvColors.canvas).copyWith(fontSize: 38)),
           Text(label, style: SvType.caption(SvColors.canvas.withValues(alpha: .82))),
         ]),
       );
@@ -59,9 +60,9 @@ class _CitizenHome extends StatelessWidget {
           return SvBand(
             color: SvColors.clay,
             child: Row(children: [
-              _BandStat('${notices.length}', 'public works\nannounced'),
-              _BandStat('$mine', 'of your requests\nin progress'),
-              _BandStat('$open', 'of your reports\nstill open'),
+              _BandStat(notices.length, 'public works\nannounced'),
+              _BandStat(mine, 'of your requests\nin progress'),
+              _BandStat(open, 'of your reports\nstill open'),
             ]),
           );
         },
@@ -187,9 +188,9 @@ class _CoordinatorHome extends StatelessWidget {
           final conflicts = cases.where((c) => c.status == 'conflict_detected' || c.status == 'clarification_required').length;
           return Column(children: [
             Row(mainAxisAlignment: MainAxisAlignment.spaceAround, children: [
-              SvStatBadge(value: '${open.length}', label: 'open works', size: 82),
-              SvStatBadge(value: '$waiting', label: 'ready for your decision', size: 82, accent: SvColors.gold),
-              SvStatBadge(value: '$conflicts', label: 'conflicts or questions', size: 82, accent: SvColors.clay),
+              _CountBadge(open.length, 'open works'),
+              _CountBadge(waiting, 'ready for your decision', accent: SvColors.gold),
+              _CountBadge(conflicts, 'conflicts or questions', accent: SvColors.clay),
             ]),
             const Gap(32),
             sectionHeader(context, 'Department checklists', 'Who has cleared what',
@@ -206,10 +207,30 @@ class _CoordinatorHome extends StatelessWidget {
                 CaseCard(c: c, onTap: () => openCase(context, c.id)),
                 const Gap(10),
               ],
+            const Gap(32),
+            const NetworkDashboard(),
           ]);
         },
       ),
     ]);
+  }
+}
+
+/// Stat badge whose number counts up.
+class _CountBadge extends StatelessWidget {
+  const _CountBadge(this.value, this.label, {this.accent});
+  final int value;
+  final String label;
+  final Color? accent;
+  @override
+  Widget build(BuildContext context) {
+    if (MediaQuery.of(context).disableAnimations) return SvStatBadge(value: '$value', label: label, size: 82, accent: accent);
+    return TweenAnimationBuilder<double>(
+      tween: Tween(begin: 0, end: value.toDouble()),
+      duration: const Duration(milliseconds: 1100),
+      curve: Curves.easeOutCubic,
+      builder: (context, v, _) => SvStatBadge(value: '${v.round()}', label: label, size: 82, accent: accent),
+    );
   }
 }
 

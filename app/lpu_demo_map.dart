@@ -198,8 +198,11 @@ class LpuCampusMapState extends State<LpuCampusMap> {
 /// on the ground, so the bar is rescaled from the current zoom and always
 /// shows a round distance.
 class MapFurniture extends StatelessWidget {
-  const MapFurniture({super.key, required this.scale});
+  const MapFurniture({super.key, required this.scale, this.note});
   final double scale;
+
+  /// Optional one-line source/accuracy note under the scale bar.
+  final String? note;
 
   static const _steps = [2, 5, 10, 20, 25, 50, 100, 200, 250, 500, 1000];
 
@@ -232,6 +235,10 @@ class MapFurniture extends StatelessWidget {
           SizedBox(width: width, height: 6, child: CustomPaint(painter: _ScaleBarPainter(p.ink))),
           const SizedBox(height: 3),
           Text(label, style: GoogleFonts.inter(fontSize: 10, fontWeight: FontWeight.w600, color: p.inkSoft, height: 1)),
+          if (note != null) ...[
+            const SizedBox(height: 4),
+            Text(note!, style: GoogleFonts.inter(fontSize: 9, fontWeight: FontWeight.w600, letterSpacing: .6, color: SvColors.goldDeep, height: 1)),
+          ],
         ]),
       ]),
     );
@@ -258,13 +265,30 @@ class _ScaleBarPainter extends CustomPainter {
 }
 
 class CampusMapPainter extends CustomPainter {
-  CampusMapPainter({required this.store, required this.palette, required this.selected, required this.scale, this.focusWork});
+  CampusMapPainter({
+    required this.store,
+    required this.palette,
+    required this.selected,
+    required this.scale,
+    this.focusWork,
+    this.layerOpacity,
+    this.workOpacity,
+  });
 
   final LpuDemoStore store;
   final SvPalette palette;
   final MapSelection? selected;
   final WorkItem? focusWork;
   final double scale;
+
+  /// Animated per-layer opacity (0–1). When null, layers are simply on or off.
+  final Map<UtilityKind, double>? layerOpacity;
+
+  /// Opacity for each work corridor, e.g. to ghost works outside a timeline
+  /// date. Works at 0 are not drawn; labels are drawn only above 0.5.
+  final double Function(WorkItem w)? workOpacity;
+
+  double _layer(UtilityKind k) => layerOpacity?[k] ?? ((store.layerOn[k] ?? true) ? 1.0 : 0.0);
 
   bool get dark => palette.isDark;
 
@@ -343,9 +367,11 @@ class CampusMapPainter extends CustomPainter {
 
     // Utility network.
     for (final a in store.assets) {
-      if (a.isPoint || !(store.layerOn[a.kind] ?? true)) continue;
+      if (a.isPoint) continue;
+      final lo = _layer(a.kind);
+      if (lo <= .01) continue;
       final paint = Paint()
-        ..color = a.kind.color.withValues(alpha: dark ? .95 : .9)
+        ..color = a.kind.color.withValues(alpha: (dark ? .95 : .9) * lo)
         ..strokeWidth = math.max(1.6, 2.4 * k * 1.4)
         ..strokeCap = StrokeCap.round;
       if (a.label == DataLabel.pendingVerification || a.label == DataLabel.estimated) {
@@ -371,7 +397,9 @@ class CampusMapPainter extends CustomPainter {
     // Point assets.
     if (store.showManholes) {
       for (final a in store.assets) {
-        if (!a.isPoint || !(store.layerOn[a.kind] ?? true)) continue;
+        if (!a.isPoint) continue;
+        final lo = _layer(a.kind);
+        if (lo <= .01) continue;
         final c = a.points.first;
         final r = math.max(2.6, 3.4 * k * 1.3);
         if (a.pointType == 'valve') {
@@ -381,17 +409,17 @@ class CampusMapPainter extends CustomPainter {
             ..lineTo(c.dx, c.dy + r)
             ..lineTo(c.dx - r, c.dy)
             ..close();
-          canvas.drawPath(path, Paint()..color = a.kind.color);
+          canvas.drawPath(path, Paint()..color = a.kind.color.withValues(alpha: lo));
           canvas.drawPath(path, Paint()
             ..style = PaintingStyle.stroke
             ..strokeWidth = 1
-            ..color = paper);
+            ..color = paper.withValues(alpha: lo));
         } else {
-          canvas.drawCircle(c, r, Paint()..color = paper);
+          canvas.drawCircle(c, r, Paint()..color = paper.withValues(alpha: lo));
           canvas.drawCircle(c, r, Paint()
             ..style = PaintingStyle.stroke
             ..strokeWidth = 1.6
-            ..color = a.kind.color);
+            ..color = a.kind.color.withValues(alpha: lo));
         }
       }
     }
@@ -400,19 +428,22 @@ class CampusMapPainter extends CustomPainter {
     if (store.showWorks) {
       final placed = <Rect>[];
       for (final w in store.works) {
+        final wo = workOpacity?.call(w) ?? 1.0;
+        if (wo <= .01) continue;
         final focus = focusWork?.id == w.id;
         final isSel = selected is WorkSelection && (selected as WorkSelection).work.id == w.id;
         final c = w.status.color;
         final band = Paint()
-          ..color = c.withValues(alpha: isSel || focus ? .38 : .22)
+          ..color = c.withValues(alpha: (isSel || focus ? .38 : .22) * wo)
           ..strokeWidth = math.max(9, 11 * k)
           ..strokeCap = StrokeCap.butt;
         for (var i = 1; i < w.route.length; i++) {
           canvas.drawLine(w.route[i - 1], w.route[i], band);
           _dashed(canvas, w.route[i - 1], w.route[i], Paint()
-            ..color = c
+            ..color = c.withValues(alpha: wo)
             ..strokeWidth = math.max(1.6, 2 * k), dash: 9, gap: 5);
         }
+        if (wo < .5) continue;
         final anchor = w.route.first;
         final tp = _text(w.id, GoogleFonts.inter(fontSize: math.max(9, 10 * k), fontWeight: FontWeight.w700, color: SvColors.canvas));
         final lift = 16 * math.max(1, k * .8);
@@ -649,10 +680,13 @@ class CrossSectionLine {
 }
 
 class UndergroundCrossSection extends StatelessWidget {
-  const UndergroundCrossSection({super.key, required this.store, required this.work, this.height = 230});
+  const UndergroundCrossSection({super.key, required this.store, required this.work, this.height = 230, this.animate = true});
   final LpuDemoStore store;
   final WorkItem work;
   final double height;
+
+  /// Digs the trench and reveals the buried lines one by one.
+  final bool animate;
 
   @override
   Widget build(BuildContext context) {
@@ -666,8 +700,13 @@ class UndergroundCrossSection extends StatelessWidget {
         child: SizedBox(
           height: height,
           width: double.infinity,
-          child: CustomPaint(
-            painter: _CrossSectionPainter(lines: lines, trenchDepth: trenchDepth, trenchWidth: trenchWidth, palette: p),
+          child: TweenAnimationBuilder<double>(
+            tween: Tween(begin: animate && !MediaQuery.of(context).disableAnimations ? 0 : 1, end: 1),
+            duration: const Duration(milliseconds: 1600),
+            curve: Curves.easeOutCubic,
+            builder: (context, t, _) => CustomPaint(
+              painter: _CrossSectionPainter(lines: lines, trenchDepth: trenchDepth, trenchWidth: trenchWidth, palette: p, progress: t),
+            ),
           ),
         ),
       ),
@@ -683,11 +722,14 @@ class UndergroundCrossSection extends StatelessWidget {
 }
 
 class _CrossSectionPainter extends CustomPainter {
-  _CrossSectionPainter({required this.lines, required this.trenchDepth, required this.trenchWidth, required this.palette});
+  _CrossSectionPainter({required this.lines, required this.trenchDepth, required this.trenchWidth, required this.palette, this.progress = 1});
   final List<CrossSectionLine> lines;
   final double trenchDepth;
   final double trenchWidth;
   final SvPalette palette;
+
+  /// 0 → 1: the trench is dug over the first half, lines appear after.
+  final double progress;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -710,14 +752,15 @@ class _CrossSectionPainter extends CustomPainter {
     // Road crust.
     canvas.drawRect(Rect.fromLTRB(xOf(-12), top - 5, xOf(12), top + 4), Paint()..color = palette.isDark ? const Color(0xFF4A4741) : const Color(0xFF6E6A63));
     // Trench.
-    final trench = Rect.fromLTRB(xOf(-trenchWidth / 2), top - 5, xOf(trenchWidth / 2), yOf(trenchDepth));
+    final dig = (progress / .5).clamp(0.0, 1.0);
+    final trench = Rect.fromLTRB(xOf(-trenchWidth / 2), top - 5, xOf(trenchWidth / 2), yOf(trenchDepth * dig));
     canvas.drawRect(trench, Paint()..color = SvColors.primary.withValues(alpha: .12));
     final dash = Paint()
       ..color = SvColors.primary
       ..strokeWidth = 1.4
       ..style = PaintingStyle.stroke;
     canvas.drawRect(trench, dash);
-    _label(canvas, 'Trench · ${trenchDepth.toStringAsFixed(2)} m deep', Offset(trench.right + 6, trench.bottom + 3), SvColors.primary);
+    if (dig > .98) _label(canvas, 'Trench · ${trenchDepth.toStringAsFixed(2)} m deep', Offset(trench.right + 6, trench.bottom + 3), SvColors.primary);
 
     // Depth ruler.
     final ruler = Paint()
@@ -731,7 +774,15 @@ class _CrossSectionPainter extends CustomPainter {
     // Utility lines (end-on circles).
     final sorted = [...lines]..sort((a, b) => a.lateral.compareTo(b.lateral));
     var labelRow = 0;
+    final outward = [...sorted]..sort((a, b) => a.lateral.abs().compareTo(b.lateral.abs()));
     for (final l in sorted) {
+      // Lines surface in order from the trench outwards once digging ends.
+      final i = outward.indexOf(l);
+      final reveal = ((progress - .45 - .4 * i / math.max(1, sorted.length)) / .15).clamp(0.0, 1.0);
+      if (reveal <= 0) {
+        labelRow++;
+        continue;
+      }
       final c = Offset(xOf(l.lateral), yOf(l.asset.depthM));
       final r = switch (l.asset.kind) {
         UtilityKind.storm => 9.0,
@@ -739,8 +790,8 @@ class _CrossSectionPainter extends CustomPainter {
         UtilityKind.water => 6.0,
         _ => 4.5,
       };
-      final paint = Paint()..color = l.asset.kind.color;
-      canvas.drawCircle(c, r, paint);
+      final paint = Paint()..color = l.asset.kind.color.withValues(alpha: reveal);
+      canvas.drawCircle(c, r * (.6 + .4 * reveal), paint);
       if (l.asset.label != DataLabel.demonstration) {
         canvas.drawCircle(c, r + 3, Paint()
           ..style = PaintingStyle.stroke

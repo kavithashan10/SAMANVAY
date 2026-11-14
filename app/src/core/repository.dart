@@ -32,6 +32,9 @@ abstract class SamanvayRepository {
   Future<void> submitReport({required String type, required String city, required String area, required String details});
 
   Future<List<InboxItem>> inbox();
+
+  /// Inventory of the utility map and how far its records can be trusted.
+  Future<NetworkStats> networkStats();
   Future<void> markRead(String id);
 }
 

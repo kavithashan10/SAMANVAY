@@ -317,6 +317,27 @@ class LocalRepository implements SamanvayRepository {
       ];
 
   @override
+  Future<NetworkStats> networkStats() async {
+    final lines = store.assets.where((a) => !a.isPoint).toList();
+    return NetworkStats(
+      layers: [
+        for (final k in UtilityKind.values)
+          LayerStat(
+            label: k.label,
+            color: k.color,
+            lengthM: lines.where((a) => a.kind == k).fold(0.0, (t, a) => t + a.lengthM),
+            lines: lines.where((a) => a.kind == k).length,
+          ),
+      ]..sort((a, b) => b.lengthM.compareTo(a.lengthM)),
+      confidence: [
+        for (final l in DataLabel.values)
+          ConfidenceStat(label: l.label, color: l.color, count: store.assets.where((a) => a.label == l).length, meaning: l.meaning),
+      ],
+      structures: store.assets.where((a) => a.isPoint).length,
+    );
+  }
+
+  @override
   Future<List<CitizenReport>> myReports() async => [
         for (final g in store.grievances.where((g) => g.mine))
           CitizenReport(

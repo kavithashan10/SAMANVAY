@@ -1,16 +1,15 @@
 import 'package:flutter/material.dart';
 
 import '../../department_checklists.dart';
-import '../../lpu_demo_map.dart' show LpuCampusMap;
 import '../../samanvay_design.dart';
 import '../core/geo.dart';
 import '../core/models.dart';
 import '../core/repository.dart';
-import '../data/local_repository.dart';
 import 'common.dart';
 import 'new_case.dart';
 import 'session.dart';
 import 'shell.dart';
+import 'works_timeline.dart';
 
 void openCase(BuildContext context, String id) =>
     Navigator.of(context).push(MaterialPageRoute(builder: (_) => CaseDetailScreen(caseId: id)));
@@ -24,6 +23,7 @@ class WorksScreen extends StatefulWidget {
 class _WorksScreenState extends State<WorksScreen> {
   String _filter = 'open';
   String _query = '';
+  bool _timeline = false;
 
   @override
   Widget build(BuildContext context) {
@@ -49,7 +49,18 @@ class _WorksScreenState extends State<WorksScreen> {
       body: PageList(children: [
         const SvEyebrow('Works & excavation'),
         const Gap(10),
-        Text('Every trench,\none record', style: SvType.heading1(p.ink)),
+        Row(crossAxisAlignment: CrossAxisAlignment.end, children: [
+          Expanded(child: Text('Every trench,\none record', style: SvType.heading1(p.ink))),
+          SegmentedButton<bool>(
+            showSelectedIcon: false,
+            segments: const [
+              ButtonSegment(value: false, icon: Icon(Icons.view_agenda_outlined, size: 18), tooltip: 'List'),
+              ButtonSegment(value: true, icon: Icon(Icons.view_timeline_outlined, size: 18), tooltip: 'Timeline'),
+            ],
+            selected: {_timeline},
+            onSelectionChanged: (v) => setState(() => _timeline = v.first),
+          ),
+        ]),
         const Gap(18),
         TextField(
           decoration: const InputDecoration(hintText: 'Search by reference, title or road', prefixIcon: Icon(Icons.search)),
@@ -69,7 +80,12 @@ class _WorksScreenState extends State<WorksScreen> {
             if (list.isEmpty) {
               return const SvEmptyState(title: 'Nothing here', message: 'No works match this filter.', icon: Icons.search_off);
             }
-            return Column(children: [for (final c in list) ...[CaseCard(c: c, onTap: () => openCase(context, c.id)), const Gap(10)]]);
+            return AnimatedSwitcher(
+              duration: const Duration(milliseconds: 260),
+              child: _timeline
+                  ? WorksTimeline(key: const ValueKey('timeline'), cases: list)
+                  : Column(key: const ValueKey('list'), children: [for (final c in list) ...[CaseCard(c: c, onTap: () => openCase(context, c.id)), const Gap(10)]]),
+            );
           },
         ),
         const Gap(60),
@@ -306,14 +322,11 @@ class _LocationCard extends StatelessWidget {
     );
   }
 
+  /// Back to the shell's Map tab, which flies to this work and screens it.
   void _openMap(BuildContext context, CaseSummary c) {
-    final repo = context.repo as LocalRepository;
-    Navigator.of(context).push(MaterialPageRoute(
-      builder: (_) => Scaffold(
-        appBar: AppBar(title: Text(c.number)),
-        body: LpuCampusMap(store: repo.store, focusWork: repo.store.work(c.id)),
-      ),
-    ));
+    final session = context.session;
+    Navigator.of(context).popUntil((r) => r.isFirst);
+    session.mapFocus.value = c.id;
   }
 }
 

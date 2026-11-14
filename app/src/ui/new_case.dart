@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 
 import '../../lpu_demo_data.dart' show campusPlaces, campusRoads, campusSize, distanceToSegment;
-import '../../lpu_demo_map.dart' show LpuCampusMap, LpuCampusMapState;
+import 'map/map_view.dart';
 import '../../samanvay_design.dart';
 import '../core/geo.dart';
 import '../core/models.dart';
@@ -428,7 +428,7 @@ class CampusPointPicker extends StatefulWidget {
 }
 
 class _CampusPointPickerState extends State<CampusPointPicker> {
-  final _map = GlobalKey<LpuCampusMapState>();
+  final _map = GlobalKey<CampusMapViewState>();
   Offset? _centre;
 
   void _refresh() {
@@ -484,7 +484,7 @@ class _CampusPointPickerState extends State<CampusPointPicker> {
           child: Listener(
             onPointerUp: (_) => WidgetsBinding.instance.addPostFrameCallback((_) => _refresh()),
             onPointerSignal: (_) => WidgetsBinding.instance.addPostFrameCallback((_) => _refresh()),
-            child: LpuCampusMap(key: _map, store: widget.repo.store, onViewChanged: _refresh),
+            child: CampusMapView(key: _map, store: widget.repo.store, onViewChanged: _refresh, showFlow: false),
           ),
         ),
         // Crosshair at the exact centre of the map view.

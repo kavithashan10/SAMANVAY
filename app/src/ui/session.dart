@@ -24,6 +24,10 @@ class AppSession extends ChangeNotifier {
   Timer? _saveTimer;
   bool _roleChosen = false;
 
+  /// Set to a work's id to show it on the Map tab (the shell switches tab,
+  /// the map flies to it). Cleared once handled.
+  final mapFocus = ValueNotifier<String?>(null);
+
   /// True until saved data and the remembered role are loaded.
   bool restoring = true;
 
@@ -96,6 +100,7 @@ class AppSession extends ChangeNotifier {
   void dispose() {
     _saveTimer?.cancel();
     _local.store.removeListener(_changed);
+    mapFocus.dispose();
     super.dispose();
   }
 }

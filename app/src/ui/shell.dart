@@ -31,6 +31,27 @@ class AppShell extends StatefulWidget {
 
 class _AppShellState extends State<AppShell> {
   ShellTab _tab = ShellTab.home;
+  ValueNotifier<String?>? _focus;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final f = context.session.mapFocus;
+    if (!identical(f, _focus)) {
+      _focus?.removeListener(_toMap);
+      _focus = f..addListener(_toMap);
+    }
+  }
+
+  @override
+  void dispose() {
+    _focus?.removeListener(_toMap);
+    super.dispose();
+  }
+
+  void _toMap() {
+    if (_focus?.value != null && mounted) setState(() => _tab = ShellTab.map);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -68,7 +89,7 @@ class _AppShellState extends State<AppShell> {
         ),
         body: IndexedStack(
           index: _tab.index,
-          children: const [HomeScreen(), MapTab(), WorksScreen(), ReportsScreen(), InboxScreen()],
+          children: [const HomeScreen(), MapTab(active: _tab == ShellTab.map), const WorksScreen(), const ReportsScreen(), const InboxScreen()],
         ),
         bottomNavigationBar: NavigationBar(
           selectedIndex: _tab.index,
