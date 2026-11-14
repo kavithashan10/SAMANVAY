@@ -4,6 +4,7 @@ import '../../main.dart' show samanvayThemeMode;
 import '../../samanvay_design.dart';
 import 'session.dart';
 import 'shell.dart';
+import 'splash.dart';
 import 'welcome.dart';
 
 /// SAMANVAY application root: one flow for every role, running on the device.
@@ -41,23 +42,32 @@ class _SamanvayV2AppState extends State<SamanvayV2App> {
   }
 }
 
-class _Gate extends StatelessWidget {
+class _Gate extends StatefulWidget {
   const _Gate();
+  @override
+  State<_Gate> createState() => _GateState();
+}
+
+class _GateState extends State<_Gate> {
+  bool _splashDone = false;
+
   @override
   Widget build(BuildContext context) {
     final s = context.session;
     final repo = s.repo;
-    final Widget child = s.restoring
-        ? const _Splash()
+    final Widget child = s.restoring || !_splashDone
+        ? SamanvaySplash(key: const ValueKey('splash'), onDone: () => setState(() => _splashDone = true))
         : repo == null
             ? const WelcomeScreen()
             : AppShell(key: ValueKey(repo.user.id));
-    return AnimatedSwitcher(duration: const Duration(milliseconds: 350), child: child);
+    return AnimatedSwitcher(
+      duration: const Duration(milliseconds: 450),
+      switchInCurve: Curves.easeOutCubic,
+      transitionBuilder: (child, anim) => FadeTransition(
+        opacity: anim,
+        child: ScaleTransition(scale: Tween(begin: .97, end: 1.0).animate(anim), child: child),
+      ),
+      child: child,
+    );
   }
-}
-
-class _Splash extends StatelessWidget {
-  const _Splash();
-  @override
-  Widget build(BuildContext context) => const Scaffold(body: Center(child: CircularProgressIndicator(strokeWidth: 2)));
 }

@@ -129,52 +129,87 @@ jobs:
           fi
           echo "PASS: Android namespace and applicationId verified."
 
-          # Use the uploaded SAMANVAY mark for the Android launcher icon.
-          python3 -m pip install --quiet pillow cairosvg
+          # Launcher icon and native launch screen from the SAMANVAY logo.
+          python3 -m pip install --quiet pillow
           python3 - <<'PY'
           from pathlib import Path
-          from PIL import Image
-          import cairosvg
-          import xml.etree.ElementTree as ET
+          from PIL import Image, ImageDraw, ImageFilter
 
-          logo_svg = Path('app/assets/brand/samanvay_logo.svg')
-          if not logo_svg.is_file() or '<svg' not in logo_svg.read_text():
-              raise SystemExit('ERROR: SAMANVAY vector logo is missing or malformed.')
-          rendered_logo = Path('/tmp/samanvay_logo_launcher.png')
-          cairosvg.svg2png(url=str(logo_svg), write_to=str(rendered_logo), output_width=768, output_height=768)
-          with Image.open(rendered_logo) as check:
-              if check.format != 'PNG' or check.size != (768, 768):
-                  raise SystemExit('ERROR: SAMANVAY launcher logo did not render at 768x768.')
-              check.verify()
-          source = Image.open(rendered_logo).convert('RGBA')
+          logo_path = Path('app/assets/brand/samanvay_logo.png')
+          if not logo_path.is_file():
+              raise SystemExit('ERROR: SAMANVAY logo PNG is missing.')
+          logo = Image.open(logo_path).convert('RGBA')
+          if logo.width != logo.height or logo.width < 512:
+              raise SystemExit(f'ERROR: SAMANVAY logo must be square and at least 512 px, got {logo.size}.')
+          # The artwork without the rounded frame, for the adaptive icon.
+          inset = round(logo.width * .058)
+          art = logo.crop((inset, inset, logo.width - inset, logo.height - inset)).convert('RGB')
+          navy = (8, 22, 76, 255)
           res = Path('android/app/src/main/res')
-          sizes = {'mdpi':48, 'hdpi':72, 'xhdpi':96, 'xxhdpi':144, 'xxxhdpi':192}
-          for density, pixels in sizes.items():
+
+          # Legacy icons: the full rounded logo.
+          for density, px in {'mdpi': 48, 'hdpi': 72, 'xhdpi': 96, 'xxhdpi': 144, 'xxxhdpi': 192}.items():
               folder = res / f'mipmap-{density}'
               folder.mkdir(parents=True, exist_ok=True)
-              icon = Image.new('RGBA', (pixels, pixels), (4, 17, 36, 255))
-              mark = source.copy()
-              mark.thumbnail((int(pixels*.88), int(pixels*.88)), Image.Resampling.LANCZOS)
-              icon.alpha_composite(mark, ((pixels-mark.width)//2, (pixels-mark.height)//2))
+              icon = logo.resize((px, px), Image.Resampling.LANCZOS)
               icon.save(folder / 'ic_launcher.png')
               icon.save(folder / 'ic_launcher_round.png')
+
+          # Adaptive icon (Android 8+): the artwork fills the 72dp visible area of a 108dp canvas.
           drawable = res / 'drawable'
           drawable.mkdir(parents=True, exist_ok=True)
-          foreground = Image.new('RGBA', (432, 432), (0,0,0,0))
-          mark = source.copy()
-          mark.thumbnail((286,286), Image.Resampling.LANCZOS)
-          foreground.alpha_composite(mark, ((432-mark.width)//2, (432-mark.height)//2))
-          foreground.save(drawable / 'ic_launcher_foreground.png')
+          # Background: the artwork itself, blurred, so there is no seam.
+          art.resize((432, 432), Image.Resampling.LANCZOS).filter(ImageFilter.GaussianBlur(28)).save(drawable / 'ic_launcher_backdrop.png')
+          # Foreground: the artwork with feathered edges.
+          size = 312
+          feather = Image.new('L', (size, size), 0)
+          ImageDraw.Draw(feather).rounded_rectangle((10, 10, size - 11, size - 11), radius=60, fill=255)
+          feather = feather.filter(ImageFilter.GaussianBlur(9))
+          piece = art.resize((size, size), Image.Resampling.LANCZOS).convert('RGBA')
+          piece.putalpha(feather)
+          fg = Image.new('RGBA', (432, 432), (0, 0, 0, 0))
+          fg.alpha_composite(piece, ((432 - size) // 2, (432 - size) // 2))
+          fg.save(drawable / 'ic_launcher_foreground.png')
           values = res / 'values'
           values.mkdir(parents=True, exist_ok=True)
-          (values / 'ic_launcher_background.xml').write_text('<resources><color name="ic_launcher_background">#041124</color></resources>')
-          adaptive = '<adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android"><background android:drawable="@color/ic_launcher_background"/><foreground android:drawable="@drawable/ic_launcher_foreground"/></adaptive-icon>'
-          mipmap = res / 'mipmap-anydpi-v26'
-          mipmap.mkdir(parents=True, exist_ok=True)
-          (mipmap / 'ic_launcher.xml').write_text(adaptive)
-          (mipmap / 'ic_launcher_round.xml').write_text(adaptive)
+          (values / 'ic_launcher_background.xml').write_text('<resources><color name="ic_launcher_background">#08164C</color><color name="samanvay_splash">#030B24</color></resources>')
+          adaptive = '<adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android"><background android:drawable="@drawable/ic_launcher_backdrop"/><foreground android:drawable="@drawable/ic_launcher_foreground"/></adaptive-icon>'
+          anydpi = res / 'mipmap-anydpi-v26'
+          anydpi.mkdir(parents=True, exist_ok=True)
+          (anydpi / 'ic_launcher.xml').write_text(adaptive)
+          (anydpi / 'ic_launcher_round.xml').write_text(adaptive)
+
+          # Native launch screen: night blue with the logo, so the app opens
+          # straight into the animated splash without a white flash.
+          nodpi = res / 'drawable-nodpi'
+          nodpi.mkdir(parents=True, exist_ok=True)
+          logo.resize((288, 288), Image.Resampling.LANCZOS).save(nodpi / 'splash_logo.png')
+          launch = ('<?xml version="1.0" encoding="utf-8"?>'
+                    '<layer-list xmlns:android="http://schemas.android.com/apk/res/android">'
+                    '<item android:drawable="@color/samanvay_splash"/>'
+                    '<item android:width="144dp" android:height="144dp" android:gravity="center" android:drawable="@drawable/splash_logo"/>'
+                    '</layer-list>')
+          for folder in ('drawable', 'drawable-v21'):
+              (res / folder).mkdir(parents=True, exist_ok=True)
+              (res / folder / 'launch_background.xml').write_text(launch)
+          # Android 12+ system splash: same colour, the app icon in the middle.
+          v31 = res / 'values-v31'
+          v31.mkdir(parents=True, exist_ok=True)
+          splash_items = ('<item name="android:windowSplashScreenBackground">@color/samanvay_splash</item>'
+                          '<item name="android:windowSplashScreenIconBackgroundColor">@color/samanvay_splash</item>')
+          (v31 / 'styles.xml').write_text(
+              '<?xml version="1.0" encoding="utf-8"?><resources>'
+              '<style name="LaunchTheme" parent="@android:style/Theme.Black.NoTitleBar">'
+              '<item name="android:windowBackground">@drawable/launch_background</item>' + splash_items + '</style>'
+              '<style name="NormalTheme" parent="@android:style/Theme.Black.NoTitleBar">'
+              '<item name="android:windowBackground">@color/samanvay_splash</item></style>'
+              '</resources>')
+          night31 = res / 'values-night-v31'
+          if night31.exists():
+              (night31 / 'styles.xml').write_text((v31 / 'styles.xml').read_text())
           manifest = Path('android/app/src/main/AndroidManifest.xml')
-          manifest.write_text(manifest.read_text().replace('android:label="samanvay"','android:label="SAMANVAY"'))
+          manifest.write_text(manifest.read_text().replace('android:label="samanvay"', 'android:label="SAMANVAY"'))
+          print('PASS: launcher icon, adaptive icon and launch screen generated from the SAMANVAY logo.')
           PY
 
           cp /tmp/samanvay_scaffold/pubspec.yaml .
@@ -188,20 +223,7 @@ jobs:
           fi
           cp -R app/assets/reference/. assets/reference/
           cp -R app/assets/brand/. assets/brand/
-          test -s assets/brand/samanvay_logo.svg
-          python3 - <<'PY'
-          from PIL import Image
-          import cairosvg
-
-          logo_svg = 'assets/brand/samanvay_logo.svg'
-          rendered = '/tmp/samanvay_logo_asset_check.png'
-          cairosvg.svg2png(url=logo_svg, write_to=rendered, output_width=768, output_height=768)
-          with Image.open(rendered) as logo:
-              if logo.size != (768, 768):
-                  raise SystemExit('ERROR: packaged logo failed its 768x768 render check.')
-              logo.verify()
-          print('PASS: packaged SAMANVAY vector logo parsed and decoded at 768x768.')
-          PY
+          test -s assets/brand/samanvay_logo.png
           # Copy every app module so new pages are never left out of the build.
           cp app/*.dart lib/
           mkdir -p lib/src && cp -R app/src/. lib/src/
@@ -266,6 +288,7 @@ jobs:
           groundwater_entry = "    - assets/reference/coimbatore/groundwater_telemetry_2026_2030.geojson"
           brand_entries = [
               "    - assets/brand/samanvay_logo.jpg",
+              "    - assets/brand/samanvay_logo.png",
               "    - assets/brand/home_city_banner.jpg",
               "    - assets/brand/profile_avatar.jpg",
               "    - assets/brand/profile_footer.jpg",
@@ -390,6 +413,7 @@ jobs:
               "assets/flutter_assets/assets/reference/coimbatore/coimbatore_wards_2024_public_domain.geojson" \
               "assets/flutter_assets/assets/reference/coimbatore/groundwater_telemetry_2026_2030.geojson" \
               "assets/flutter_assets/assets/brand/samanvay_logo.jpg" \
+              "assets/flutter_assets/assets/brand/samanvay_logo.png" \
               "assets/flutter_assets/assets/brand/home_city_banner.jpg" \
               "assets/flutter_assets/assets/brand/profile_avatar.jpg" \
               "assets/flutter_assets/assets/brand/profile_footer.jpg" \

@@ -9,14 +9,19 @@ import '../common.dart';
 import '../session.dart';
 import '../shell.dart';
 import '../works.dart' show openCase;
+import '../atlas/atlas_panels.dart';
+import '../atlas/india_map.dart';
 import 'map_analysis.dart';
 import 'map_panels.dart';
 import 'map_view.dart';
 
 enum MapTool { none, timeline, measure }
 
-/// The Map tab: the animated campus map with search, layers, timeline
-/// playback, measurement and screening, one tool at a time.
+enum MapScope { india, campus }
+
+/// The Map tab: the dotted India atlas (touch any place for its GIS mapping)
+/// and the animated LPU campus map with search, layers, timeline playback,
+/// measurement and screening, one tool at a time.
 class MapTab extends StatefulWidget {
   const MapTab({super.key, this.active = true});
 
@@ -37,6 +42,9 @@ class _MapTabState extends State<MapTab> {
   Timer? _player;
   final List<Offset> _measure = [];
   ValueNotifier<String?>? _focus;
+  final _atlas = GlobalKey<IndiaAtlasViewState>();
+  MapScope _scope = MapScope.india;
+  AtlasPick? _pick;
 
   LpuDemoStore get _store => (context.repo as LocalRepository).store;
 
@@ -85,6 +93,7 @@ class _MapTabState extends State<MapTab> {
       _focus?.value = null;
       final w = _store.works.where((w) => w.id == id).firstOrNull;
       if (w == null) return;
+      setState(() => _scope = MapScope.campus);
       _setTool(MapTool.none);
       _map.currentState?.flyToWork(w, padding: _withSelectionPanel);
     });
@@ -122,6 +131,40 @@ class _MapTabState extends State<MapTab> {
     if (_playing && mounted) setState(() => _playing = false);
   }
 
+  /// India → campus: dive into the campus on the atlas, then cross-fade.
+  void _openCampus() {
+    _atlas.currentState?.flyToPoint(lpuAnchor, km: 3);
+    Future.delayed(Duration(milliseconds: MediaQuery.of(context).disableAnimations ? 0 : 650), () {
+      if (!mounted) return;
+      setState(() => _scope = MapScope.campus);
+      _map.currentState?.recenter();
+    });
+  }
+
+  void _setScope(MapScope s) {
+    if (s == _scope) return;
+    _stop();
+    if (s == MapScope.campus) return _openCampus();
+    setState(() => _scope = s);
+  }
+
+  void _openPlace(AtlasPick pick) {
+    Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => PlaceGisScreen(pick: pick, onCampus: _openCampus)));
+  }
+
+  Future<void> _searchIndia() async {
+    final pick = await showAtlasSearch(context);
+    if (pick == null || !mounted) return;
+    setState(() => _pick = pick);
+    final atlas = _atlas.currentState;
+    final r = pick.region;
+    if (pick.city != null || pick.isCampus || r == null) {
+      atlas?.flyToPoint(pick.point, km: pick.isCampus ? 40 : 160);
+    } else {
+      atlas?.flyToRect(r.bounds.inflate(r.bounds.shortestSide * .15 + 6));
+    }
+  }
+
   Future<void> _search() async {
     final t = await showMapSearch(context, _store);
     if (t == null || !mounted) return;
@@ -153,15 +196,136 @@ class _MapTabState extends State<MapTab> {
 
   @override
   Widget build(BuildContext context) {
-    final p = SvPalette.of(context);
     final store = _store;
     final mapState = _map.currentState;
+    final india = _scope == MapScope.india;
+    final still = MediaQuery.of(context).disableAnimations;
+    Widget layer({required bool visible, required double hiddenScale, required Widget child}) => IgnorePointer(
+          ignoring: !visible,
+          child: AnimatedOpacity(
+            opacity: visible ? 1 : 0,
+            duration: Duration(milliseconds: still ? 0 : 420),
+            curve: Curves.easeOutCubic,
+            child: AnimatedScale(
+              scale: visible ? 1 : hiddenScale,
+              duration: Duration(milliseconds: still ? 0 : 520),
+              curve: Curves.easeOutCubic,
+              child: child,
+            ),
+          ),
+        );
+    return Stack(children: [
+      Positioned.fill(
+        child: layer(
+          visible: india,
+          hiddenScale: 1.6,
+          child: IndiaAtlasView(
+            key: _atlas,
+            active: widget.active && india,
+            pick: _pick,
+            onPick: (p) => setState(() => _pick = p),
+            viewPadding: EdgeInsets.fromLTRB(16, 80, 16, _pick == null ? 90 : 210),
+          ),
+        ),
+      ),
+      if (india) ..._indiaChrome(context),
+      Positioned.fill(
+        child: layer(
+          visible: !india,
+          hiddenScale: .82,
+          child: _campus(context, store, mapState),
+        ),
+      ),
+      Positioned(left: 12, right: 12, top: 12, child: _topBar(context)),
+    ]);
+  }
+
+  Widget _topBar(BuildContext context) {
+    final p = SvPalette.of(context);
+    final india = _scope == MapScope.india;
+    return Row(children: [
+      Container(
+        decoration: BoxDecoration(color: p.surface, borderRadius: BorderRadius.circular(SvRadius.full), border: Border.all(color: p.hairline)),
+        padding: const EdgeInsets.all(3),
+        child: Row(children: [
+          _ScopeChip(label: 'India', icon: Icons.public, selected: india, onTap: () => _setScope(MapScope.india)),
+          _ScopeChip(label: 'Campus', icon: Icons.school_outlined, selected: !india, onTap: () => _setScope(MapScope.campus)),
+        ]),
+      ),
+      const SizedBox(width: 8),
+      Expanded(
+        child: Material(
+          color: p.surface,
+          shape: StadiumBorder(side: BorderSide(color: p.hairline)),
+          child: InkWell(
+            customBorder: const StadiumBorder(),
+            onTap: india ? _searchIndia : _search,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
+              child: Row(children: [
+                Icon(Icons.search, color: p.inkSoft, size: 20),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(india ? 'Search places' : 'Roads, places, works',
+                      maxLines: 1, overflow: TextOverflow.ellipsis, style: SvType.bodySm(p.muted)),
+                ),
+              ]),
+            ),
+          ),
+        ),
+      ),
+    ]);
+  }
+
+  List<Widget> _indiaChrome(BuildContext context) {
+    final pick = _pick;
+    return [
+      Positioned(
+        right: 12,
+        top: 72,
+        child: Column(children: [
+          MapToolButton(icon: Icons.center_focus_strong_outlined, tooltip: 'Whole of India', onPressed: () => _atlas.currentState?.showAll()),
+          const Gap(10),
+          MapToolButton(icon: Icons.school_outlined, tooltip: 'LPU campus', onPressed: () => _atlas.currentState?.flyToPoint(lpuAnchor, km: 40)),
+          const Gap(10),
+          MapToolButton(icon: Icons.language, tooltip: 'India as a 3D globe (Globestudio)', onPressed: () => openExternal(context, kGlobestudioIndiaUrl)),
+          const Gap(10),
+          MapToolButton(icon: Icons.info_outline, tooltip: 'About this map', onPressed: () => showAtlasMetadata(context)),
+        ]),
+      ),
+      Positioned(
+        left: 12,
+        right: 12,
+        bottom: 12,
+        child: AnimatedSwitcher(
+          duration: const Duration(milliseconds: 300),
+          switchInCurve: Curves.easeOutCubic,
+          switchOutCurve: Curves.easeInCubic,
+          transitionBuilder: (child, anim) => FadeTransition(
+            opacity: anim,
+            child: SlideTransition(position: Tween(begin: const Offset(0, .2), end: Offset.zero).animate(anim), child: child),
+          ),
+          child: pick == null
+              ? const AtlasHint(key: ValueKey('hint'))
+              : PlacePanel(
+                  key: ValueKey('${pick.point.lat},${pick.point.lon}'),
+                  pick: pick,
+                  onClose: () => setState(() => _pick = null),
+                  onDetails: () => _openPlace(pick),
+                  onCampus: _openCampus,
+                ),
+        ),
+      ),
+    ];
+  }
+
+  Widget _campus(BuildContext context, LpuDemoStore store, CampusMapViewState? mapState) {
     return Stack(children: [
       Positioned.fill(
         child: CampusMapView(
           key: _map,
           store: store,
-          ambient: widget.active,
+          ambient: widget.active && _scope == MapScope.campus,
           showFlow: _flow.value,
           timelineDate: _tool == MapTool.timeline ? _day : null,
           measurePoints: List.unmodifiable(_measure),
@@ -174,31 +338,6 @@ class _MapTabState extends State<MapTab> {
           furnitureTop: 72,
           furnitureNote: 'SAMPLE RECORDS · NOT FOR EXCAVATION',
           viewPadding: EdgeInsets.fromLTRB(16, 130, 72, _panelHeight + 16),
-        ),
-      ),
-
-      // Search.
-      Positioned(
-        left: 12,
-        right: 12,
-        top: 12,
-        child: Material(
-          color: p.surface,
-          elevation: 0,
-          shape: StadiumBorder(side: BorderSide(color: p.hairline)),
-          child: InkWell(
-            customBorder: const StadiumBorder(),
-            onTap: _search,
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
-              child: Row(children: [
-                Icon(Icons.search, color: p.inkSoft, size: 20),
-                const SizedBox(width: 10),
-                Expanded(child: Text('Search roads, places, works', style: SvType.bodySm(p.muted))),
-                Icon(Icons.travel_explore, color: p.muted, size: 18),
-              ]),
-            ),
-          ),
         ),
       ),
 
@@ -278,5 +417,39 @@ class _MapTabState extends State<MapTab> {
           onOpenReports: () => ShellController.of(context).go(ShellTab.reports),
         );
     }
+  }
+}
+
+class _ScopeChip extends StatelessWidget {
+  const _ScopeChip({required this.label, required this.icon, required this.selected, required this.onTap});
+  final String label;
+  final IconData icon;
+  final bool selected;
+  final VoidCallback onTap;
+  @override
+  Widget build(BuildContext context) {
+    final p = SvPalette.of(context);
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 240),
+        curve: Curves.easeOutCubic,
+        padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 9),
+        decoration: BoxDecoration(color: selected ? p.ink : Colors.transparent, borderRadius: BorderRadius.circular(SvRadius.full)),
+        child: Row(children: [
+          Icon(icon, size: 16, color: selected ? p.canvas : p.inkSoft),
+          AnimatedSize(
+            duration: const Duration(milliseconds: 240),
+            curve: Curves.easeOutCubic,
+            child: selected
+                ? Padding(
+                    padding: const EdgeInsets.only(left: 6),
+                    child: Text(label, style: SvType.ui(p.canvas).copyWith(fontWeight: FontWeight.w700, fontSize: 13)),
+                  )
+                : const SizedBox.shrink(),
+          ),
+        ]),
+      ),
+    );
   }
 }

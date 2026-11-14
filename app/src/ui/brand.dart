@@ -1,17 +1,23 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 
 import '../../samanvay_design.dart';
 
 /// The one place the SAMANVAY logo is referenced. To change the logo, replace
-/// app/assets/brand/samanvay_logo.svg (same name) or point this at a new asset.
-const kBrandLogoAsset = 'assets/brand/samanvay_logo.svg';
+/// app/assets/brand/samanvay_logo.png (same name, square, transparent corners).
+const kBrandLogoAsset = 'assets/brand/samanvay_logo.png';
 
 class BrandMark extends StatelessWidget {
   const BrandMark({super.key, this.size = 32});
   final double size;
   @override
-  Widget build(BuildContext context) => SvgPicture.asset(kBrandLogoAsset, width: size, height: size, semanticsLabel: 'SAMANVAY');
+  Widget build(BuildContext context) => Image.asset(
+        kBrandLogoAsset,
+        width: size,
+        height: size,
+        semanticLabel: 'SAMANVAY',
+        filterQuality: FilterQuality.medium,
+        gaplessPlayback: true,
+      );
 }
 
 class BrandTitle extends StatelessWidget {

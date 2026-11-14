@@ -71,6 +71,26 @@ jobs:
           p.write_text(html)
           PY
 
+          # Browser tab and install icons from the SAMANVAY logo.
+          python3 -m pip install --quiet pillow
+          python3 - <<'PY'
+          from pathlib import Path
+          from PIL import Image
+          logo = Image.open('app/assets/brand/samanvay_logo.png').convert('RGBA')
+          logo.resize((64, 64), Image.Resampling.LANCZOS).save('web/favicon.png')
+          for path in Path('web/icons').glob('*.png'):
+              with Image.open(path) as old:
+                  size = old.size
+              if 'maskable' in path.name:
+                  canvas = Image.new('RGBA', size, (8, 22, 76, 255))
+                  inner = logo.resize((int(size[0] * .8), int(size[1] * .8)), Image.Resampling.LANCZOS)
+                  canvas.alpha_composite(inner, ((size[0] - inner.width) // 2, (size[1] - inner.height) // 2))
+                  canvas.save(path)
+              else:
+                  logo.resize(size, Image.Resampling.LANCZOS).save(path)
+          print('PASS: web icons generated from the SAMANVAY logo.')
+          PY
+
       - name: Install Flutter dependencies
         run: |
           flutter pub add supabase_flutter:2.18.3
@@ -95,6 +115,7 @@ jobs:
               "    - assets/reference/coimbatore/coimbatore_wards_2024_public_domain.geojson",
               "    - assets/reference/coimbatore/groundwater_telemetry_2026_2030.geojson",
               "    - assets/brand/samanvay_logo.jpg",
+              "    - assets/brand/samanvay_logo.png",
               "    - assets/brand/home_city_banner.jpg",
               "    - assets/brand/profile_avatar.jpg",
               "    - assets/brand/profile_footer.jpg",
@@ -140,6 +161,7 @@ jobs:
             build/web/assets/assets/reference/coimbatore/coimbatore_wards_2024_public_domain.geojson \
             build/web/assets/assets/reference/coimbatore/groundwater_telemetry_2026_2030.geojson \
             build/web/assets/assets/brand/samanvay_logo.jpg \
+            build/web/assets/assets/brand/samanvay_logo.png \
             build/web/assets/assets/brand/home_city_banner.jpg \
             build/web/assets/assets/brand/profile_avatar.jpg \
             build/web/assets/assets/brand/profile_footer.jpg \

@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 
 import 'lpu_demo_data.dart';
 import 'lpu_demo_map.dart';
@@ -103,11 +102,11 @@ class _SamanvayMark extends StatelessWidget {
   const _SamanvayMark({this.size = 34});
   final double size;
   @override
-  Widget build(BuildContext context) => SvgPicture.asset(
-        'assets/brand/samanvay_logo.svg',
+  Widget build(BuildContext context) => Image.asset(
+        'assets/brand/samanvay_logo.png',
         width: size,
         height: size,
-        semanticsLabel: 'SAMANVAY logo',
+        semanticLabel: 'SAMANVAY logo',
       );
 }
 

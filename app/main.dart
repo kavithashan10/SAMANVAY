@@ -348,16 +348,11 @@ class _SamanvayBrandLogo extends StatelessWidget {
   @override
   Widget build(BuildContext context) => ClipRRect(
         borderRadius: BorderRadius.circular(radius),
-        child: SvgPicture.asset(
-          'assets/brand/samanvay_logo.svg',
+        child: Image.asset(
+          'assets/brand/samanvay_logo.png',
           width: size,
           height: size,
           fit: BoxFit.contain,
-          placeholderBuilder: (_) => SizedBox(
-            width: size,
-            height: size,
-            child: const Center(child: CircularProgressIndicator()),
-          ),
         ),
       );
 }
