@@ -14,6 +14,7 @@ import '../atlas/india_map.dart';
 import 'map_analysis.dart';
 import 'map_panels.dart';
 import 'map_view.dart';
+import 'underground_3d.dart';
 
 enum MapTool { none, timeline, measure }
 
@@ -82,6 +83,30 @@ class _MapTabState extends State<MapTab> {
   }
 
   void _rebuild() => setState(() {});
+
+  bool _in3d = false;
+
+  /// Zoomed far in on the bus stand: open the 3D underground view.
+  void _checkZoom() {
+    final m = _map.currentState;
+    if (m == null || _in3d || !underground3dAuto.value || _scope != MapScope.stand || _tool != MapTool.none) return;
+    if (m.scale >= kUnderground3dScale) _open3d(m.centreInStand);
+  }
+
+  Future<void> _open3d(Offset? centre) async {
+    final m = _map.currentState;
+    final c = centre ?? m?.centreInStand ?? const Offset(500, 300);
+    _in3d = true;
+    final openId = await openUnderground3D(context, _store, c);
+    if (!mounted) return;
+    // Step back below the trigger zoom so the map does not reopen 3D at once.
+    _map.currentState?.flyTo(c, kUnderground3dReturnScale);
+    await Future<void>.delayed(const Duration(milliseconds: 900));
+    _in3d = false;
+    if (!mounted || openId == null) return;
+    final a = _store.assets.where((a) => a.id == openId).firstOrNull;
+    if (a != null) _map.currentState?.select(AssetSelection(a));
+  }
 
   /// "View on map" from elsewhere in the app: fly to the work and screen it.
   void _handleFocus() {
@@ -335,6 +360,7 @@ class _MapTabState extends State<MapTab> {
             // Keep a tapped work clear of the panel that is about to open.
             if (s is WorkSelection) _map.currentState?.flyToWork(s.work, select: false, padding: _withSelectionPanel);
           },
+          onViewChanged: _checkZoom,
           furnitureTop: 72,
           furnitureNote: 'SAMPLE RECORDS · NOT FOR EXCAVATION',
           viewPadding: EdgeInsets.fromLTRB(16, 130, 72, _panelHeight + 16),
@@ -351,6 +377,8 @@ class _MapTabState extends State<MapTab> {
           MapToolButton(icon: Icons.history_toggle_off, tooltip: 'Timeline playback', active: _tool == MapTool.timeline, onPressed: () => _setTool(MapTool.timeline)),
           const Gap(10),
           MapToolButton(icon: Icons.straighten, tooltip: 'Measure', active: _tool == MapTool.measure, onPressed: () => _setTool(MapTool.measure)),
+          const Gap(10),
+          MapToolButton(icon: Icons.view_in_ar_outlined, tooltip: 'Underground in 3D', onPressed: () => _open3d(null)),
           const Gap(10),
           MapToolButton(icon: Icons.center_focus_strong_outlined, tooltip: 'Whole bus stand', onPressed: () => mapState?.recenter()),
           const Gap(10),

@@ -8,6 +8,7 @@ import '../../../samanvay_design.dart';
 import '../../core/geo.dart';
 import '../../data/local_repository.dart' show busStandAnchor;
 import '../common.dart';
+import 'underground_3d.dart';
 import 'map_analysis.dart';
 import 'map_view.dart';
 
@@ -443,7 +444,7 @@ Future<void> showLayerSheet(BuildContext context, {required BusStandDemoStore st
     builder: (sheet) => FractionallySizedBox(
       heightFactor: .82,
       child: ListenableBuilder(
-        listenable: Listenable.merge([store, flow]),
+        listenable: Listenable.merge([store, flow, underground3dAuto]),
         builder: (sheet, _) {
           final p = SvPalette.of(sheet);
           Widget row({required Widget swatch, required String label, required int count, required bool on, required VoidCallback onTap}) => InkWell(
@@ -476,6 +477,13 @@ Future<void> showLayerSheet(BuildContext context, {required BusStandDemoStore st
               onChanged: (v) => flow.value = v,
               title: Text('Animate flow', style: SvType.body(p.ink)),
               subtitle: Text('Water away from the treatment plant; sewage and storm water towards the outfall. Assumed direction.', style: SvType.caption(p.muted)),
+            ),
+            SwitchListTile(
+              contentPadding: EdgeInsets.zero,
+              value: underground3dAuto.value,
+              onChanged: (v) => underground3dAuto.value = v,
+              title: Text('3D underground view when zoomed in', style: SvType.body(p.ink)),
+              subtitle: Text('Zoom far into a road to open it in 3D. The cube button opens it any time.', style: SvType.caption(p.muted)),
             ),
             const SvHairline(),
             for (final k in UtilityKind.values)

@@ -87,6 +87,9 @@ class StandMapViewState extends State<StandMapView> with TickerProviderStateMixi
   double _fromS = 1, _toS = 1, _dip = 0;
 
   double get _scale => _controller.value.getMaxScaleOnAxis();
+
+  /// Current zoom (1 = one schematic metre per logical pixel).
+  double get scale => _scale;
   bool get _still => MediaQuery.maybeOf(context)?.disableAnimations ?? false;
 
   /// The bus stand point (local metres) under the centre of the view.

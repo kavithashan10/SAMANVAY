@@ -223,6 +223,9 @@ jobs:
           fi
           cp -R app/assets/reference/. assets/reference/
           cp -R app/assets/brand/. assets/brand/
+          mkdir -p assets/cutaway && cp -R app/assets/cutaway/. assets/cutaway/
+          test -s assets/cutaway/three.min.js
+          test -s assets/cutaway/index.html
           test -s assets/brand/samanvay_logo.png
           # Copy every app module so new pages are never left out of the build.
           cp app/*.dart lib/
@@ -268,6 +271,7 @@ jobs:
           flutter pub add http
           flutter pub add crypto:3.0.8
           flutter pub add shared_preferences
+          flutter pub add webview_flutter
           python3 - <<'PY'
           from pathlib import Path
           path = Path("pubspec.yaml")
@@ -298,6 +302,7 @@ jobs:
               "    - assets/brand/samanvay_profile_footer.svg",
               "    - assets/brand/samanvay_logo.svg",
               "    - assets/brand/samanvay_profile_avatar.svg",
+              "    - assets/cutaway/",
           ]
           if groundwater_entry not in content:
               if asset_entry not in content:
@@ -316,6 +321,7 @@ jobs:
           echo "Verifying Flutter asset declarations before build..."
           grep -F "assets/reference/coimbatore/coimbatore_wards_2024_public_domain.geojson" pubspec.yaml
           grep -F "assets/reference/coimbatore/groundwater_telemetry_2026_2030.geojson" pubspec.yaml
+          grep -F "assets/cutaway/" pubspec.yaml
           test -s assets/reference/coimbatore/coimbatore_wards_2024_public_domain.geojson
           test -s assets/reference/coimbatore/groundwater_telemetry_2026_2030.geojson
           flutter pub get
