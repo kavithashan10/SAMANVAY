@@ -11,7 +11,7 @@ import '../core/repository.dart';
 /// It is placed on the real campus location so that every distance in the app
 /// is a geodesic distance between WGS84 points: campus (500, 370) sits at the
 /// demo anchor below. Positions remain illustrative — not surveyed.
-const lpuAnchor = GeoPoint(31.2559, 75.7050);
+const lpuAnchor = GeoPoint(10.6064, 78.4203);
 const _anchorLocal = Offset(500, 370);
 
 GeoPoint campusToGeo(Offset p) => lpuAnchor.offsetMetres(northM: _anchorLocal.dy - p.dy, eastM: p.dx - _anchorLocal.dx);

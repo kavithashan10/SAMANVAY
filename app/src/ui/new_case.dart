@@ -136,7 +136,7 @@ class _NewCaseFlowState extends State<NewCaseFlow> {
     if (p == null) {
       setState(() => error = (lat != null && lon != null && lat.abs() > 90 && lon.abs() <= 90)
           ? 'Latitude must be between −90 and 90. It looks like latitude and longitude are swapped.'
-          : 'Enter decimal degrees, e.g. 31.25590 and 75.70500.');
+          : 'Enter decimal degrees, e.g. 10.60640 and 78.42030.');
       return;
     }
     _setPoint(p, 'manual');

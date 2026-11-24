@@ -13108,7 +13108,7 @@ class _MapLocationPickerPageState
 class LpuCampusModelPage extends StatelessWidget {
   const LpuCampusModelPage({super.key});
 
-  static const LatLng _campusCentre = LatLng(31.2559, 75.7050);
+  static const LatLng _campusCentre = LatLng(10.6064, 78.4203);
 
   @override
   Widget build(BuildContext context) => const MapPage(
