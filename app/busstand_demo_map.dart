@@ -56,6 +56,9 @@ class BusStandMapState extends State<BusStandMap> {
 
   double get _scale => _controller.value.getMaxScaleOnAxis();
 
+  /// Current zoom (1 = one schematic metre per logical pixel).
+  double get scale => _scale;
+
   /// The bus stand point (local metres) under the centre of the view.
   Offset? get centreInStand {
     final v = _viewport;
@@ -98,6 +101,17 @@ class BusStandMapState extends State<BusStandMap> {
     _controller.value = Matrix4.identity()
       ..translateByDouble(dx, dy, 0, 1)
       ..scaleByDouble(s, s, 1, 1);
+  }
+
+  /// Jumps to [centre] at [zoom].
+  void showAt(Offset centre, double zoom) {
+    final v = _viewport;
+    if (v == null) return;
+    setState(() {
+      _controller.value = Matrix4.identity()
+        ..translateByDouble(v.width / 2 - centre.dx * zoom, v.height / 2 - centre.dy * zoom, 0, 1)
+        ..scaleByDouble(zoom, zoom, 1, 1);
+    });
   }
 
   void recenter() {

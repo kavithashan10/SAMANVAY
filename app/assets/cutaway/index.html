@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>SAMANVAY underground view</title>
+<style>
+  :root { --ink: #1C1B1A; --paper: #F7F1E8; --chip: rgba(28, 33, 39, .92); --accent: #2A72DE; --gold: #AF751B; }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; height: 100%; overflow: hidden; background: #DCE4E2; font-family: Roboto, "Segoe UI", system-ui, sans-serif; color: var(--ink); }
+  #gl { position: fixed; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; }
+  #lines { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+  #labels { position: fixed; inset: 0; pointer-events: none; }
+  .tag { position: absolute; padding: 5px 9px 6px; background: var(--chip); color: #fff; border: 1.5px solid rgba(255,255,255,.9);
+         font-size: 12.5px; line-height: 1.25; white-space: nowrap; pointer-events: auto; box-shadow: 0 3px 10px rgba(0,0,0,.3); }
+  .tag b { display: block; font-size: 11.5px; font-weight: 700; letter-spacing: .03em; }
+  .tag span { color: #C9D3DB; font-size: 10.5px; }
+  .tag.sel { border-color: #FFD25A; box-shadow: 0 0 0 3px rgba(255,210,90,.45), 0 3px 10px rgba(0,0,0,.3); }
+  .tag.place { font-weight: 700; font-size: 11.5px; letter-spacing: .04em; padding: 5px 9px; }
+  .tag.work { background: var(--gold); border: none; border-radius: 99px; font-weight: 700; padding: 6px 12px; }
+  .tag.twin { background: none; border: none; box-shadow: none; font-weight: 700; letter-spacing: .18em; font-size: 11px; opacity: .9; text-shadow: 0 1px 3px rgba(0,0,0,.55); pointer-events: none; }
+  #top { position: fixed; left: 12px; right: 12px; top: calc(env(safe-area-inset-top, 0px) + 10px); display: flex; gap: 10px; align-items: flex-start; pointer-events: none; }
+  #title { flex: 1; background: rgba(255,255,255,.94); border-radius: 16px; padding: 10px 14px; box-shadow: 0 4px 14px rgba(0,0,0,.18); pointer-events: auto; min-width: 0; }
+  #title h1 { margin: 0; font-size: 16px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  #title p { margin: 3px 0 0; font-size: 12px; color: #684D07; }
+  .seg { display: flex; background: #fff; border-radius: 99px; padding: 4px; box-shadow: 0 4px 14px rgba(0,0,0,.18); pointer-events: auto; }
+  .seg button { border: 0; background: none; font: 700 15px Roboto, system-ui, sans-serif; padding: 10px 16px; border-radius: 99px; color: #3A3733; }
+  .seg button.on { background: var(--accent); color: #fff; }
+  .seg button:focus-visible, #card button:focus-visible { outline: 3px solid #FFD25A; outline-offset: 2px; }
+  #card { position: fixed; left: 12px; right: 12px; bottom: calc(env(safe-area-inset-bottom, 0px) + 12px); background: #fff; border-radius: 22px; padding: 16px 18px 14px;
+          box-shadow: 0 8px 26px rgba(0,0,0,.28); transform: translateY(140%); transition: transform .32s cubic-bezier(.2,.8,.2,1); }
+  #card.open { transform: none; }
+  #card .k { font-size: 11.5px; font-weight: 700; letter-spacing: .08em; color: #7A7672; }
+  #card h2 { margin: 4px 0 8px; font: 400 22px/1.15 Georgia, "Noto Serif", serif; }
+  #card dl { display: grid; grid-template-columns: auto 1fr; gap: 4px 14px; margin: 0; font-size: 13.5px; }
+  #card dt { color: #7A7672; } #card dd { margin: 0; }
+  #card .row { display: flex; gap: 8px; margin-top: 12px; }
+  #card button { border: 1.5px solid #CFC8BC; background: #fff; border-radius: 99px; padding: 9px 16px; font: 600 14px Roboto, system-ui, sans-serif; color: var(--ink); }
+  #card button.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+  #hint { position: fixed; left: 50%; bottom: calc(env(safe-area-inset-bottom, 0px) + 16px); transform: translateX(-50%); background: rgba(28,33,39,.85); color: #fff;
+          padding: 9px 14px; border-radius: 99px; font-size: 12.5px; white-space: nowrap; transition: opacity .4s; pointer-events: none; }
+  #loading { position: fixed; inset: 0; display: grid; place-items: center; background: #DCE4E2; font-size: 14px; color: #5C5853; transition: opacity .5s; }
+  @media (prefers-reduced-motion: reduce) { #card { transition: none; } }
+</style>
+</head>
+<body>
+<canvas id="gl" aria-label="3D underground view of the road and the utilities beneath it"></canvas>
+<svg id="lines"></svg>
+<div id="labels"></div>
+<div id="top">
+  <div id="title"><h1 id="t1">Underground view</h1><p id="t2">Sample records · not for excavation</p></div>
+  <div class="seg" role="group" aria-label="View"><button id="b2d" aria-pressed="false">2D</button><button id="b3d" class="on" aria-pressed="true">3D</button></div>
+</div>
+<div id="hint">Drag to turn · pinch to zoom · tap a pipe</div>
+<div id="card" role="dialog" aria-live="polite">
+  <div class="k" id="ck"></div>
+  <h2 id="ch"></h2>
+  <dl id="cd"></dl>
+  <div class="row"><button class="primary" id="copen">Open record</button><button id="cclose">Close</button></div>
+</div>
+<div id="loading">Building the underground view…</div>
+<script src="three.min.js"></script>
+<script src="cutaway.js"></script>
+</body>
+</html>

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'busstand_demo_data.dart';
 import 'busstand_demo_map.dart';
 import 'samanvay_design.dart';
+import 'src/ui/map/underground_3d.dart';
 
 // =============================================================================
 // SAMANVAY · Manaparai Bus Stand demonstration
@@ -1419,6 +1420,28 @@ class BusStandDemoMapTab extends StatefulWidget {
 }
 
 class _MapTabState extends State<BusStandDemoMapTab> {
+  bool _in3d = false;
+
+  /// Zoomed far in: open the 3D underground view of the road in the middle.
+  void _checkZoom() {
+    final m = _mapKey.currentState;
+    if (m == null || _in3d || !underground3dAuto.value) return;
+    if (m.scale >= kUnderground3dScale) _open3d(m.centreInStand);
+  }
+
+  Future<void> _open3d(Offset? centre) async {
+    final store = BusStandDemoScope.of(context);
+    final c = centre ?? _mapKey.currentState?.centreInStand ?? const Offset(500, 300);
+    _in3d = true;
+    final openId = await openUnderground3D(context, store, c);
+    if (!mounted) return;
+    _mapKey.currentState?.showAt(c, kUnderground3dReturnScale);
+    _in3d = false;
+    if (openId == null) return;
+    final a = store.assets.where((a) => a.id == openId).firstOrNull;
+    if (a != null) setState(() => _selection = AssetSelection(a));
+  }
+
   final _mapKey = GlobalKey<BusStandMapState>();
   MapSelection? _selection;
 
@@ -1428,7 +1451,7 @@ class _MapTabState extends State<BusStandDemoMapTab> {
     final store = BusStandDemoScope.of(context);
     return Stack(children: [
       Positioned.fill(
-        child: BusStandMap(key: _mapKey, store: store, onSelect: (s) => setState(() => _selection = s)),
+        child: BusStandMap(key: _mapKey, store: store, onSelect: (s) => setState(() => _selection = s), onViewChanged: _checkZoom),
       ),
       Positioned(
         left: 16,
@@ -1465,6 +1488,8 @@ class _MapTabState extends State<BusStandDemoMapTab> {
           ),
           const SizedBox(height: 10),
           SvIconCircle(icon: Icons.center_focus_strong_outlined, filled: true, tooltip: 'Fit bus stand', onPressed: () => _mapKey.currentState?.recenter()),
+          const SizedBox(height: 10),
+          SvIconCircle(icon: Icons.view_in_ar_outlined, filled: true, tooltip: 'Underground in 3D', onPressed: () => _open3d(null)),
         ]),
       ),
       Positioned(
