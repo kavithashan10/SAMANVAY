@@ -11,7 +11,10 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:samanvay/main.dart' show samanvayThemeMode;
+import 'dart:convert';
 import 'package:samanvay/busstand_demo_app.dart';
+import 'package:samanvay/busstand_demo_data.dart';
+import 'package:samanvay/src/ui/map/underground_3d.dart';
 import 'package:samanvay/src/core/models.dart';
 import 'package:samanvay/src/ui/app.dart';
 import 'package:samanvay/src/ui/session.dart';
@@ -133,6 +136,15 @@ void main() {
       t.view.reset();
     }
   }
+
+  test('3D payloads', () {
+    final store = BusStandDemoStore();
+    for (final (name, c) in [('departure', const Offset(640, 286)), ('main_road', const Offset(500, 350)), ('concourse', const Offset(300, 560))]) {
+      File('preview/payload_$name.json')
+        ..parent.createSync(recursive: true)
+        ..writeAsStringSync(const JsonEncoder.withIndent(' ').convert(undergroundPayload(store, c)));
+    }
+  });
 
   testWidgets('main app screens', timeout: const Timeout(Duration(minutes: 5)), (t) async {
     await run(t, () async {

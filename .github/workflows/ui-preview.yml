@@ -23,7 +23,7 @@ jobs:
           cp -R app/src/. lib/src/
           cp -R app/assets/. assets/
           cp tools/ui_preview/ui_preview_test.dart test/
-          flutter pub add supabase_flutter:2.18.3 maplibre_gl:0.27.1 latlong2 google_fonts flutter_svg url_launcher file_picker geolocator image_picker csv permission_handler:12.0.3 http crypto:3.0.8 shared_preferences
+          flutter pub add supabase_flutter:2.18.3 maplibre_gl:0.27.1 latlong2 google_fonts flutter_svg url_launcher file_picker geolocator image_picker csv permission_handler:12.0.3 http crypto:3.0.8 shared_preferences webview_flutter
           python3 - <<'PY'
           from pathlib import Path
           import os
