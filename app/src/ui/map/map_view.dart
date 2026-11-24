@@ -211,12 +211,24 @@ class StandMapViewState extends State<StandMapView> with TickerProviderStateMixi
       _apply(c, s);
       return;
     }
+    final (c, s) = _opening(viewport);
+    _apply(c, s);
+  }
+
+  /// A readable first view: on a phone, the middle of the bus stand around
+  /// the main road; on a wide screen, all of it.
+  (Offset, double) _opening(Size viewport) {
     final fitAll = math.min(viewport.width / standSize.width, viewport.height / standSize.height);
-    if (viewport.width < 700) {
-      _apply(const Offset(600, 360), math.max(fitAll, math.min(.95, viewport.height / 560)));
-    } else {
-      _apply(standSize.center(Offset.zero), fitAll);
-    }
+    if (viewport.width < 700) return (const Offset(520, 390), math.max(fitAll, math.min(.8, viewport.height / 700)));
+    return (standSize.center(Offset.zero), fitAll);
+  }
+
+  /// Glides to the opening view, e.g. when arriving from the India map.
+  void showOpening() {
+    final v = _viewport;
+    if (v == null) return;
+    final (c, s) = _opening(v);
+    flyTo(c, s);
   }
 
   /// Centre and scale that fit [scene] into the part of the view not covered

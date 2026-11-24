@@ -153,7 +153,7 @@ void main() {
       await t.tap(find.byIcon(Icons.directions_bus_outlined).last, warnIfMissed: false);
       await _settle(t, ms: 3000);
       await _snap(t, 'map_busstand');
-      await t.tapAt(const Offset(206, 400));
+      await t.tapAt(const Offset(349, 361));
       await _settle(t, ms: 1500);
       await _snap(t, 'map_busstand_tap');
       await _tab(t, 'Works');
@@ -175,7 +175,7 @@ void main() {
       await _tab(t, 'Map');
       await _settle(t, ms: 2000);
       await _snap(t, 'map_busstand_dark');
-      await t.tapAt(const Offset(150, 300));
+      await t.tapAt(const Offset(349, 361));
       await _snap(t, 'map_busstand_dark_tap');
       await _tab(t, 'Home');
       await _snap(t, 'home_dark');

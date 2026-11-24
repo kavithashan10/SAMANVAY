@@ -238,7 +238,7 @@ class MapFurniture extends StatelessWidget {
           Text(label, style: GoogleFonts.inter(fontSize: 10, fontWeight: FontWeight.w600, color: p.inkSoft, height: 1)),
           if (note != null) ...[
             const SizedBox(height: 4),
-            Text(note!, style: GoogleFonts.inter(fontSize: 9, fontWeight: FontWeight.w600, letterSpacing: .6, color: SvColors.goldDeep, height: 1)),
+            Text(note!, style: GoogleFonts.inter(fontSize: 9, fontWeight: FontWeight.w600, letterSpacing: .6, color: p.isDark ? SvColors.goldSoft : SvColors.goldDeep, height: 1)),
           ],
         ]),
       ]),
@@ -381,8 +381,10 @@ class StandMapPainter extends CustomPainter {
     _groundAndTrees(canvas, size, th);
     _highway(canvas, th);
     _compound(canvas, th);
+    // Work labels are placed first so area signs can step out of their way.
+    final chips = store.showWorks ? _workChips(k) : const <String, (Rect, TextPainter)>{};
     for (final z in standZones) {
-      _zone(canvas, z, th);
+      _zone(canvas, z, th, chips.values.map((c) => c.$1).toList());
     }
     _roads(canvas, th);
 
@@ -440,7 +442,6 @@ class StandMapPainter extends CustomPainter {
 
     // Work corridors. Labels that would collide are moved below the line.
     if (store.showWorks) {
-      final placed = <Rect>[];
       for (final w in store.works) {
         final wo = workOpacity?.call(w) ?? 1.0;
         if (wo <= .01) continue;
@@ -458,14 +459,9 @@ class StandMapPainter extends CustomPainter {
             ..strokeWidth = math.max(1.6, 2 * k), dash: 9, gap: 5);
         }
         if (wo < .5) continue;
-        final anchor = w.route.first;
-        final tp = _text(w.id, GoogleFonts.inter(fontSize: math.max(9, 10 * k), fontWeight: FontWeight.w700, color: SvColors.canvas));
-        final lift = 16 * math.max(1, k * .8);
-        var rect = Rect.fromLTWH(anchor.dx - 2, anchor.dy - tp.height - lift, tp.width + 14, tp.height + 7);
-        if (placed.any((r) => r.overlaps(rect.inflate(2)))) {
-          rect = Rect.fromLTWH(anchor.dx + 40, anchor.dy + lift * .55, tp.width + 14, tp.height + 7);
-        }
-        placed.add(rect);
+        final placedChip = chips[w.id];
+        if (placedChip == null) continue;
+        final (rect, tp) = placedChip;
         final chip = RRect.fromRectAndRadius(rect, const Radius.circular(40));
         canvas.drawRRect(chip.shift(const Offset(0, 1.5)), Paint()..color = th.shadow);
         canvas.drawRRect(chip, Paint()..color = c);
@@ -613,7 +609,25 @@ class StandMapPainter extends CustomPainter {
   // Areas inside the bus stand
   // ---------------------------------------------------------------------------
 
-  void _zone(Canvas canvas, StandZone z, _StandTheme th) {
+  /// Where each work's reference label goes. Labels that would collide are
+  /// moved below the line.
+  Map<String, (Rect, TextPainter)> _workChips(double k) {
+    final out = <String, (Rect, TextPainter)>{};
+    for (final w in store.works) {
+      if ((workOpacity?.call(w) ?? 1.0) < .5) continue;
+      final anchor = w.route.first;
+      final tp = _text(w.id, GoogleFonts.inter(fontSize: math.max(9, 10 * k), fontWeight: FontWeight.w700, color: SvColors.canvas));
+      final lift = 16 * math.max(1, k * .8);
+      var rect = Rect.fromLTWH(anchor.dx - 2, anchor.dy - tp.height - lift, tp.width + 14, tp.height + 7);
+      if (out.values.any((c) => c.$1.overlaps(rect.inflate(2)))) {
+        rect = Rect.fromLTWH(anchor.dx + 40, anchor.dy + lift * .55, tp.width + 14, tp.height + 7);
+      }
+      out[w.id] = (rect, tp);
+    }
+    return out;
+  }
+
+  void _zone(Canvas canvas, StandZone z, _StandTheme th, List<Rect> avoid) {
     final r = z.rect;
     final rr = RRect.fromRectAndRadius(r, const Radius.circular(5));
     canvas.drawRRect(rr.shift(const Offset(2.5, 3.5)), Paint()..color = th.shadow);
@@ -644,7 +658,7 @@ class StandMapPainter extends CustomPainter {
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1
       ..color = th.wall.withValues(alpha: .55));
-    _zoneSign(canvas, z, th, _k);
+    _zoneSign(canvas, z, th, _k, avoid);
   }
 
   IconData _zoneIcon(StandZone z) => switch (z.kind) {
@@ -660,14 +674,16 @@ class StandMapPainter extends CustomPainter {
       };
 
   /// Transit-style sign board naming the area.
-  void _zoneSign(Canvas canvas, StandZone z, _StandTheme th, double k) {
+  void _zoneSign(Canvas canvas, StandZone z, _StandTheme th, double k, List<Rect> avoid) {
     final grow = (k * .8).clamp(1.0, 1.7);
-    final tp = _sign(z.name, 8.6 * grow, Colors.white, weight: FontWeight.w600, spacing: .1);
+    final tp = _sign(z.name, 10 * grow, Colors.white, weight: FontWeight.w600, spacing: .1);
     final h = tp.height + 7;
     final strip = z.rect.height < 50;
     final w = tp.width + 16 * grow + 12;
     final left = z.rect.left + 6;
-    final top = strip ? z.rect.center.dy - h / 2 : z.rect.top + 5;
+    var top = strip ? z.rect.center.dy - h / 2 : z.rect.top + 5;
+    // Step down to the bottom corner when a work label sits on the sign.
+    if (!strip && avoid.any((r) => r.overlaps(Rect.fromLTWH(left, top, w, h).inflate(2)))) top = z.rect.bottom - h - 5;
     final rr = RRect.fromRectAndRadius(Rect.fromLTWH(left, top, w, h), const Radius.circular(4));
     canvas.drawRRect(rr.shift(const Offset(0, 1.2)), Paint()..color = th.shadow);
     canvas.drawRRect(rr, Paint()..color = th.signDark.withValues(alpha: .9));
@@ -1039,7 +1055,7 @@ class StandMapPainter extends CustomPainter {
       }
       final c = (lo + hi) / 2;
       final mid = r.horizontal ? Offset(c, r.a.dy) : Offset(r.a.dx, c);
-      final tp = _sign(r.name, 8.4 * math.max(1, k * .9), Colors.white, weight: FontWeight.w600, spacing: .2);
+      final tp = _sign(r.name, 9.4 * math.max(1, k * .9), Colors.white, weight: FontWeight.w600, spacing: .2);
       canvas.save();
       canvas.translate(mid.dx, mid.dy);
       if (!r.horizontal) canvas.rotate(-math.pi / 2);
