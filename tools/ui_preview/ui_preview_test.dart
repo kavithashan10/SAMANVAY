@@ -98,6 +98,22 @@ void main() {
   });
 
   Future<void> run(WidgetTester t, Future<void> Function() body) async {
+    await t.runAsync(() async {
+      const weights = [FontWeight.w300, FontWeight.w400, FontWeight.w500, FontWeight.w600, FontWeight.w700, FontWeight.w800];
+      for (final w in weights) {
+        for (final st in [FontStyle.normal, FontStyle.italic]) {
+          GoogleFonts.inter(fontWeight: w, fontStyle: st);
+          GoogleFonts.fraunces(fontWeight: w, fontStyle: st);
+          GoogleFonts.spaceGrotesk(fontWeight: w);
+          GoogleFonts.robotoMono(fontWeight: w);
+        }
+      }
+      try {
+        await GoogleFonts.pendingFonts().timeout(const Duration(seconds: 60));
+      } catch (e) {
+        print('font prefetch: $e');
+      }
+    });
     t.view.physicalSize = const Size(1080, 2340);
     t.view.devicePixelRatio = 2.625;
     final previous = FlutterError.onError;
@@ -134,11 +150,22 @@ void main() {
       await _tab(t, 'Map');
       await _settle(t, ms: 3000);
       await _snap(t, 'map_india');
-      await _tapText(t, 'Bus stand');
+      await t.tap(find.byIcon(Icons.directions_bus_outlined).first, warnIfMissed: false);
       await _settle(t, ms: 3000);
       await _snap(t, 'map_busstand');
+      await t.tapAt(const Offset(206, 400));
+      await _settle(t, ms: 1500);
+      await _snap(t, 'map_busstand_tap');
       await _tab(t, 'Works');
       await _snap(t, 'works');
+      if (await _tapText(t, 'Optical fibre laying')) {
+        await _snap(t, 'work_detail');
+        await _scrollDown(t);
+        await _snap(t, 'work_detail_scrolled');
+        final nav = t.state<NavigatorState>(find.byType(Navigator).last);
+        nav.maybePop();
+        await _settle(t, ms: 900);
+      }
       await _tab(t, 'Reports');
       await _snap(t, 'reports');
       await _tab(t, 'Inbox');
@@ -165,6 +192,16 @@ void main() {
       await _snap(t, 'demo_welcome');
       await _scrollDown(t);
       await _snap(t, 'demo_welcome_scrolled');
+      await _tapText(t, 'Enter the demo');
+      await _settle(t, ms: 2000);
+      await _snap(t, 'demo_home');
+      final dests = find.byType(NavigationDestination);
+      final n = dests.evaluate().length;
+      for (var i = 1; i < n; i++) {
+        await t.tap(find.byType(NavigationDestination).at(i), warnIfMissed: false);
+        await _settle(t, ms: 1500);
+        await _snap(t, 'demo_tab_$i');
+      }
     });
   });
 }
