@@ -168,7 +168,7 @@ class BusStandDemoWelcome extends StatelessWidget {
             ),
             if (onExit != null) ...[
               const SizedBox(height: 12),
-              SvPillButton(label: 'Back to SAMANVAY sign-in', kind: SvButtonKind.outline, expand: true, onPressed: onExit),
+              SvPillButton(label: 'Back to SAMANVAY', kind: SvButtonKind.outline, expand: true, onPressed: onExit),
             ],
             const SizedBox(height: 48),
             const SvEyebrow('Step in as'),

@@ -171,7 +171,7 @@ class CaseDetailScreen extends StatelessWidget {
         'approved' => 'Approve',
         'rejected' => 'Reject',
         'conflict_detected' => 'Flag a conflict',
-        'completed' => 'Close as completed',
+        'completed' => 'Restoration inspected · close the work',
         'scheduled' => 'Schedule the work window',
         'in_progress' => 'Mark work started',
         'restoration_pending' => 'Trench backfilled · restoration pending',

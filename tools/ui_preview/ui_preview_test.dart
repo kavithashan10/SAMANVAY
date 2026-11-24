@@ -150,7 +150,7 @@ void main() {
       await _tab(t, 'Map');
       await _settle(t, ms: 3000);
       await _snap(t, 'map_india');
-      await t.tap(find.byIcon(Icons.directions_bus_outlined).first, warnIfMissed: false);
+      await t.tap(find.byIcon(Icons.directions_bus_outlined).last, warnIfMissed: false);
       await _settle(t, ms: 3000);
       await _snap(t, 'map_busstand');
       await t.tapAt(const Offset(206, 400));
@@ -175,10 +175,12 @@ void main() {
       await _tab(t, 'Map');
       await _settle(t, ms: 2000);
       await _snap(t, 'map_busstand_dark');
+      await t.tapAt(const Offset(150, 300));
+      await _snap(t, 'map_busstand_dark_tap');
       await _tab(t, 'Home');
       await _snap(t, 'home_dark');
       samanvayThemeMode.value = ThemeMode.light;
-      ctx.session.chooseRole(AppRole.citizen);
+      t.element(find.byType(NavigationBar)).session.chooseRole(AppRole.citizen);
       await _settle(t, ms: 1500);
       await _tab(t, 'Home');
       await _snap(t, 'home_citizen');
@@ -192,7 +194,10 @@ void main() {
       await _snap(t, 'demo_welcome');
       await _scrollDown(t);
       await _snap(t, 'demo_welcome_scrolled');
-      await _tapText(t, 'Enter the demo');
+      final card = find.text('Coordinator').first;
+      await t.ensureVisible(card);
+      await _settle(t, ms: 400);
+      await t.tap(card, warnIfMissed: false);
       await _settle(t, ms: 2000);
       await _snap(t, 'demo_home');
       final dests = find.byType(NavigationDestination);
