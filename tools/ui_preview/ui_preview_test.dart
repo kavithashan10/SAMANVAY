@@ -38,11 +38,12 @@ Future<void> _snap(WidgetTester t, String name) async {
   await _settle(t);
   await t.runAsync(() async {
     try {
-      await GoogleFonts.pendingFonts();
+      await GoogleFonts.pendingFonts().timeout(const Duration(seconds: 8));
     } catch (_) {}
   });
   await t.pump(const Duration(milliseconds: 50));
   final boundary = _key.currentContext!.findRenderObject()! as RenderRepaintBoundary;
+  print('snap $name');
   await t.runAsync(() async {
     final img = await boundary.toImage(pixelRatio: 1.6);
     final png = await img.toByteData(format: ui.ImageByteFormat.png);
@@ -52,6 +53,7 @@ Future<void> _snap(WidgetTester t, String name) async {
     file.writeAsBytesSync(png!.buffer.asUint8List());
   });
   _errors.add('--- after screenshot $name ---');
+  File('preview/errors.txt').writeAsStringSync(_errors.join('\n\n'));
 }
 
 Future<bool> _tapText(WidgetTester t, String text, {bool last = false}) async {
@@ -116,7 +118,7 @@ void main() {
     }
   }
 
-  testWidgets('main app screens', (t) async {
+  testWidgets('main app screens', timeout: const Timeout(Duration(minutes: 5)), (t) async {
     await run(t, () async {
       await t.pumpWidget(RepaintBoundary(key: _key, child: const SamanvayV2App()));
       await _settle(t, ms: 7000);
@@ -156,7 +158,7 @@ void main() {
     });
   });
 
-  testWidgets('bus stand demo app', (t) async {
+  testWidgets('bus stand demo app', timeout: const Timeout(Duration(minutes: 3)), (t) async {
     await run(t, () async {
       await t.pumpWidget(RepaintBoundary(key: _key, child: const BusStandDemoApp()));
       await _settle(t, ms: 2000);
