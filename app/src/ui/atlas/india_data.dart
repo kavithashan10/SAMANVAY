@@ -99,6 +99,8 @@ const kIndiaCities = <IndiaCity>[
   IndiaCity('Vijayawada', 16.506, 80.648),
   IndiaCity('Coimbatore', 11.017, 76.956),
   IndiaCity('Madurai', 9.925, 78.12),
+  IndiaCity('Tiruchirappalli', 10.805, 78.686),
+  IndiaCity('Dindigul', 10.365, 77.98),
   IndiaCity('Kochi', 9.931, 76.267, major: true),
   IndiaCity('Thiruvananthapuram', 8.524, 76.937),
   IndiaCity('Mangaluru', 12.914, 74.856),

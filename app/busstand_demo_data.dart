@@ -285,13 +285,13 @@ final standRoads = <StandRoad>[
 
 const standZones = <StandZone>[
   StandZone('Bus depot & workshop', Rect.fromLTRB(140, 90, 480, 120), kind: 'depot'),
-  StandZone('Utility yard · sump & transformer', Rect.fromLTRB(520, 90, 860, 120), kind: 'utility'),
-  StandZone('Halting bays · night parking', Rect.fromLTRB(140, 160, 480, 260), kind: 'bays'),
+  StandZone('Utility yard', Rect.fromLTRB(520, 90, 860, 120), kind: 'utility'),
+  StandZone('Halting bays', Rect.fromLTRB(140, 160, 480, 260), kind: 'bays'),
   StandZone('Town bus platforms', Rect.fromLTRB(520, 160, 860, 260), kind: 'platform'),
-  StandZone('Mofussil platforms · bays 1–8', Rect.fromLTRB(140, 300, 480, 400), kind: 'platform'),
+  StandZone('Mofussil platforms', Rect.fromLTRB(140, 300, 480, 400), kind: 'platform'),
   StandZone('Shops & food stalls', Rect.fromLTRB(520, 300, 860, 400), kind: 'commons'),
   StandZone('Passenger waiting hall', Rect.fromLTRB(140, 440, 480, 540), kind: 'concourse'),
-  StandZone('Ticket counter · enquiry · toilets', Rect.fromLTRB(520, 440, 860, 540), kind: 'admin'),
+  StandZone('Ticket counter and toilets', Rect.fromLTRB(520, 440, 860, 540), kind: 'admin'),
   StandZone('Auto & taxi stand', Rect.fromLTRB(140, 580, 480, 640), kind: 'parking'),
   StandZone('Two-wheeler parking', Rect.fromLTRB(520, 580, 860, 640), kind: 'parking'),
 ];
@@ -1166,11 +1166,12 @@ class BusStandDemoStore extends ChangeNotifier {
     final municipalOfficer = role == DemoRole.officer && officerDept == 'municipal';
     return switch (w.status) {
       WorkStatus.clarificationRequired when coord => ('Return to department review', WorkStatus.underDepartmentReview),
-      WorkStatus.coordinationPending when coord => ('Approve the work', WorkStatus.approvedForDemonstration),
+      WorkStatus.coordinationPending when coord && w.allCleared => ('Approve the work', WorkStatus.approvedForDemonstration),
       WorkStatus.approvedForDemonstration when coord => ('Schedule the work window', WorkStatus.scheduled),
       WorkStatus.scheduled when coord || applicantOfficer => ('Mark work started', WorkStatus.inProgress),
       WorkStatus.inProgress when coord || applicantOfficer => ('Trench backfilled · restoration pending', WorkStatus.restorationPending),
-      WorkStatus.restorationPending when coord || municipalOfficer => ('Close after restoration', WorkStatus.completed),
+      WorkStatus.restorationPending when (coord || municipalOfficer) && w.restoration.stage == RestorationStage.inspectionPassed =>
+        ('Close after restoration', WorkStatus.completed),
       _ => null,
     };
   }

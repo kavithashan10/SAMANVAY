@@ -238,7 +238,7 @@ class MapFurniture extends StatelessWidget {
           Text(label, style: GoogleFonts.inter(fontSize: 10, fontWeight: FontWeight.w600, color: p.inkSoft, height: 1)),
           if (note != null) ...[
             const SizedBox(height: 4),
-            Text(note!, style: GoogleFonts.inter(fontSize: 9, fontWeight: FontWeight.w600, letterSpacing: .6, color: SvColors.goldDeep, height: 1)),
+            Text(note!, style: GoogleFonts.inter(fontSize: 9, fontWeight: FontWeight.w600, letterSpacing: .6, color: p.isDark ? SvColors.goldSoft : SvColors.goldDeep, height: 1)),
           ],
         ]),
       ]),
@@ -327,6 +327,9 @@ class StandMapPainter extends CustomPainter {
   /// date. Works at 0 are not drawn; labels are drawn only above 0.5.
   final double Function(WorkItem w)? workOpacity;
 
+  /// Keeps strokes and labels readable when zoomed out.
+  double get _k => 1 / scale.clamp(.3, 8.0);
+
   double _layer(UtilityKind k) => layerOpacity?[k] ?? ((store.layerOn[k] ?? true) ? 1.0 : 0.0);
 
   bool get dark => palette.isDark;
@@ -340,7 +343,7 @@ class StandMapPainter extends CustomPainter {
   static final _signCache = <String, TextPainter>{};
 
   static TextPainter _sign(String s, double size, Color color, {FontWeight weight = FontWeight.w700, double spacing = .6}) {
-    final key = '$s|${size.toStringAsFixed(2)}|${color.hashCode}|${weight.index}|$spacing';
+    final key = '$s|${size.toStringAsFixed(2)}|${color.hashCode}|${weight.value}|$spacing';
     final hit = _signCache[key];
     if (hit != null) return hit;
     if (_signCache.length > 400) _signCache.clear();
@@ -372,14 +375,16 @@ class StandMapPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    final k = 1 / scale.clamp(.3, 8.0); // keeps strokes/labels readable when zoomed
+    final k = _k;
     final th = _StandTheme(dark);
 
     _groundAndTrees(canvas, size, th);
     _highway(canvas, th);
     _compound(canvas, th);
+    // Work labels are placed first so area signs can step out of their way.
+    final chips = store.showWorks ? _workChips(k) : const <String, (Rect, TextPainter)>{};
     for (final z in standZones) {
-      _zone(canvas, z, th);
+      _zone(canvas, z, th, chips.values.map((c) => c.$1).toList());
     }
     _roads(canvas, th);
 
@@ -437,7 +442,6 @@ class StandMapPainter extends CustomPainter {
 
     // Work corridors. Labels that would collide are moved below the line.
     if (store.showWorks) {
-      final placed = <Rect>[];
       for (final w in store.works) {
         final wo = workOpacity?.call(w) ?? 1.0;
         if (wo <= .01) continue;
@@ -455,14 +459,9 @@ class StandMapPainter extends CustomPainter {
             ..strokeWidth = math.max(1.6, 2 * k), dash: 9, gap: 5);
         }
         if (wo < .5) continue;
-        final anchor = w.route.first;
-        final tp = _text(w.id, GoogleFonts.inter(fontSize: math.max(9, 10 * k), fontWeight: FontWeight.w700, color: SvColors.canvas));
-        final lift = 16 * math.max(1, k * .8);
-        var rect = Rect.fromLTWH(anchor.dx - 2, anchor.dy - tp.height - lift, tp.width + 14, tp.height + 7);
-        if (placed.any((r) => r.overlaps(rect.inflate(2)))) {
-          rect = Rect.fromLTWH(anchor.dx + 40, anchor.dy + lift * .55, tp.width + 14, tp.height + 7);
-        }
-        placed.add(rect);
+        final placedChip = chips[w.id];
+        if (placedChip == null) continue;
+        final (rect, tp) = placedChip;
         final chip = RRect.fromRectAndRadius(rect, const Radius.circular(40));
         canvas.drawRRect(chip.shift(const Offset(0, 1.5)), Paint()..color = th.shadow);
         canvas.drawRRect(chip, Paint()..color = c);
@@ -551,7 +550,7 @@ class StandMapPainter extends CustomPainter {
 
     // Green state-highway sign.
     final tp = _sign('SH 71A', 9, Colors.white, spacing: 1);
-    final sub = _sign('STATE HIGHWAY', 7.5, Colors.white.withValues(alpha: .85), weight: FontWeight.w600, spacing: 1.4);
+    final sub = _sign('State highway', 8, Colors.white.withValues(alpha: .85), weight: FontWeight.w500, spacing: .2);
     final r = RRect.fromRectAndRadius(Rect.fromLTWH(34, 703, tp.width + sub.width + 26, 18), const Radius.circular(4));
     canvas.drawRRect(r, Paint()..color = th.signGreen);
     canvas.drawRRect(r.deflate(1.6), Paint()
@@ -610,7 +609,25 @@ class StandMapPainter extends CustomPainter {
   // Areas inside the bus stand
   // ---------------------------------------------------------------------------
 
-  void _zone(Canvas canvas, StandZone z, _StandTheme th) {
+  /// Where each work's reference label goes. Labels that would collide are
+  /// moved below the line.
+  Map<String, (Rect, TextPainter)> _workChips(double k) {
+    final out = <String, (Rect, TextPainter)>{};
+    for (final w in store.works) {
+      if ((workOpacity?.call(w) ?? 1.0) < .5) continue;
+      final anchor = w.route.first;
+      final tp = _text(w.id, GoogleFonts.inter(fontSize: math.max(9, 10 * k), fontWeight: FontWeight.w700, color: SvColors.canvas));
+      final lift = 16 * math.max(1, k * .8);
+      var rect = Rect.fromLTWH(anchor.dx - 2, anchor.dy - tp.height - lift, tp.width + 14, tp.height + 7);
+      if (out.values.any((c) => c.$1.overlaps(rect.inflate(2)))) {
+        rect = Rect.fromLTWH(anchor.dx + 40, anchor.dy + lift * .55, tp.width + 14, tp.height + 7);
+      }
+      out[w.id] = (rect, tp);
+    }
+    return out;
+  }
+
+  void _zone(Canvas canvas, StandZone z, _StandTheme th, List<Rect> avoid) {
     final r = z.rect;
     final rr = RRect.fromRectAndRadius(r, const Radius.circular(5));
     canvas.drawRRect(rr.shift(const Offset(2.5, 3.5)), Paint()..color = th.shadow);
@@ -641,7 +658,7 @@ class StandMapPainter extends CustomPainter {
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1
       ..color = th.wall.withValues(alpha: .55));
-    _zoneSign(canvas, z, th);
+    _zoneSign(canvas, z, th, _k, avoid);
   }
 
   IconData _zoneIcon(StandZone z) => switch (z.kind) {
@@ -657,20 +674,23 @@ class StandMapPainter extends CustomPainter {
       };
 
   /// Transit-style sign board naming the area.
-  void _zoneSign(Canvas canvas, StandZone z, _StandTheme th) {
-    final tp = _sign(z.name.toUpperCase(), 8, Colors.white, spacing: .8);
+  void _zoneSign(Canvas canvas, StandZone z, _StandTheme th, double k, List<Rect> avoid) {
+    final grow = (k * .8).clamp(1.0, 1.7);
+    final tp = _sign(z.name, 10 * grow, Colors.white, weight: FontWeight.w600, spacing: .1);
     final h = tp.height + 7;
     final strip = z.rect.height < 50;
-    final w = tp.width + 25;
+    final w = tp.width + 16 * grow + 12;
     final left = z.rect.left + 6;
-    final top = strip ? z.rect.center.dy - h / 2 : z.rect.top + 5;
+    var top = strip ? z.rect.center.dy - h / 2 : z.rect.top + 5;
+    // Step down to the bottom corner when a work label sits on the sign.
+    if (!strip && avoid.any((r) => r.overlaps(Rect.fromLTWH(left, top, w, h).inflate(2)))) top = z.rect.bottom - h - 5;
     final rr = RRect.fromRectAndRadius(Rect.fromLTWH(left, top, w, h), const Radius.circular(4));
     canvas.drawRRect(rr.shift(const Offset(0, 1.2)), Paint()..color = th.shadow);
     canvas.drawRRect(rr, Paint()..color = th.signDark.withValues(alpha: .9));
-    canvas.drawRRect(RRect.fromRectAndCorners(Rect.fromLTWH(left, top, 16, h), topLeft: const Radius.circular(4), bottomLeft: const Radius.circular(4)),
+    canvas.drawRRect(RRect.fromRectAndCorners(Rect.fromLTWH(left, top, 16 * grow, h), topLeft: const Radius.circular(4), bottomLeft: const Radius.circular(4)),
         Paint()..color = th.safety);
-    _icon(canvas, _zoneIcon(z), Offset(left + 8, top + h / 2), 10, th.signDark);
-    tp.paint(canvas, Offset(left + 20, top + (h - tp.height) / 2));
+    _icon(canvas, _zoneIcon(z), Offset(left + 8 * grow, top + h / 2), 10 * grow, th.signDark);
+    tp.paint(canvas, Offset(left + 16 * grow + 5, top + (h - tp.height) / 2));
   }
 
   static const _busColours = [Color(0xFFB4412D), Color(0xFF2C7A6B), Color(0xFFCF8A1E), Color(0xFF3D5F99)];
@@ -852,9 +872,9 @@ class StandMapPainter extends CustomPainter {
       ..style = PaintingStyle.stroke;
     canvas.drawRect(r.deflate(3), wall);
     const rooms = [
-      (Icons.confirmation_number_outlined, 'TICKETS'),
-      (Icons.info_outline, 'ENQUIRY'),
-      (Icons.wc, 'TOILETS'),
+      (Icons.confirmation_number_outlined, 'Tickets'),
+      (Icons.info_outline, 'Enquiry'),
+      (Icons.wc, 'Toilets'),
     ];
     final w = r.width / rooms.length;
     for (final (i, (icon, label)) in rooms.indexed) {
@@ -863,7 +883,7 @@ class StandMapPainter extends CustomPainter {
       final c = Offset(x0 + w / 2, r.center.dy + 8);
       canvas.drawCircle(c, 14, Paint()..color = th.signBlue);
       _icon(canvas, icon, c, 15, Colors.white);
-      final tp = _sign(label, 7, th.dark ? Colors.white70 : const Color(0xFF4A3B26), spacing: 1.2);
+      final tp = _sign(label, 7.8, th.dark ? Colors.white70 : const Color(0xFF4A3B26), weight: FontWeight.w600, spacing: .2);
       tp.paint(canvas, Offset(c.dx - tp.width / 2, c.dy + 18));
     }
   }
@@ -1035,7 +1055,7 @@ class StandMapPainter extends CustomPainter {
       }
       final c = (lo + hi) / 2;
       final mid = r.horizontal ? Offset(c, r.a.dy) : Offset(r.a.dx, c);
-      final tp = _sign(r.name.toUpperCase(), 7.8 * math.max(1, k * .9), Colors.white, spacing: .9);
+      final tp = _sign(r.name, 9.4 * math.max(1, k * .9), Colors.white, weight: FontWeight.w600, spacing: .2);
       canvas.save();
       canvas.translate(mid.dx, mid.dy);
       if (!r.horizontal) canvas.rotate(-math.pi / 2);
@@ -1060,7 +1080,7 @@ class StandMapPainter extends CustomPainter {
     _dashed(canvas, Offset(479, mainEntrance.dy - 20), Offset(500, mainEntrance.dy - 20), Paint()
       ..color = SvColors.error
       ..strokeWidth = 2.2, dash: 4, gap: 3);
-    final tp = _sign('MAIN ENTRANCE', 8, Colors.white, spacing: 1.2);
+    final tp = _sign('Main entrance', 8.6, Colors.white, weight: FontWeight.w600, spacing: .1);
     final rr = RRect.fromRectAndRadius(Rect.fromLTWH(mainEntrance.dx + 34, mainEntrance.dy - 28, tp.width + 26, tp.height + 7), const Radius.circular(4));
     canvas.drawRRect(rr.shift(const Offset(0, 1.2)), Paint()..color = th.shadow);
     canvas.drawRRect(rr, Paint()..color = th.signGreen);

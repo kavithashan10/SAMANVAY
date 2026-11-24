@@ -222,13 +222,22 @@ class LocalRepository implements SamanvayRepository {
 
   @override
   List<String> nextStatuses(CaseSummary c) {
-    final next = store.nextAction(_work(c.id));
+    final w = _work(c.id);
+    if (_awaitingInspection(w)) return const ['completed'];
+    final next = store.nextAction(w);
     return next == null ? const [] : [_status(next.$2)];
   }
 
+  /// Restored, not yet inspected, and this role may inspect. This app has no
+  /// separate inspection step, so closing records the passed inspection.
+  bool _awaitingInspection(WorkItem w) =>
+      store.canInspectRestoration(w) && w.restoration.stage != RestorationStage.inspectionPassed;
+
   @override
   Future<void> changeStatus(String caseId, String status, String remarks) async {
-    final error = store.advance(_work(caseId));
+    final w = _work(caseId);
+    if (status == 'completed' && _awaitingInspection(w)) store.recordInspection(w, true);
+    final error = store.advance(w);
     if (error != null) throw StateError(error);
   }
 

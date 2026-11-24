@@ -137,7 +137,7 @@ class _MapTabState extends State<MapTab> {
     Future.delayed(Duration(milliseconds: MediaQuery.of(context).disableAnimations ? 0 : 650), () {
       if (!mounted) return;
       setState(() => _scope = MapScope.stand);
-      _map.currentState?.recenter();
+      _map.currentState?.showOpening();
     });
   }
 

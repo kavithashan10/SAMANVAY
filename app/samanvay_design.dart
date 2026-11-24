@@ -556,7 +556,10 @@ class SvTag extends StatelessWidget {
       ),
       child: Row(mainAxisSize: MainAxisSize.min, children: [
         if (icon != null) ...[Icon(icon, size: 13, color: fg), const SizedBox(width: 5)],
-        Text(text, style: SvType.caption(fg).copyWith(fontWeight: FontWeight.w600, height: 1.1)),
+        Flexible(
+          child: Text(text,
+              maxLines: 1, overflow: TextOverflow.ellipsis, style: SvType.caption(fg).copyWith(fontWeight: FontWeight.w600, height: 1.1)),
+        ),
       ]),
     );
   }
