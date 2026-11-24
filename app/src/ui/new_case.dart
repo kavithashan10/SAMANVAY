@@ -39,7 +39,7 @@ class _NewCaseFlowState extends State<NewCaseFlow> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (context.repo.isDemo) _city.text = 'LPU Phagwara';
+      if (context.repo.isDemo) _city.text = 'Manaparai';
     });
   }
 

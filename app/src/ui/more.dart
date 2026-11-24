@@ -119,7 +119,7 @@ class _ReportFormState extends State<_ReportForm> {
   Future<void> _submit() async {
     final demo = context.repo.isDemo;
     final area = demo ? _place : _area.text.trim();
-    final city = demo ? 'LPU Phagwara' : _city.text.trim();
+    final city = demo ? 'Manaparai' : _city.text.trim();
     if (city.length < 2 || area.length < 2) return setState(() => _error = 'Add the city and the place.');
     if (_details.text.trim().length < 10) return setState(() => _error = 'Describe what you see in at least 10 characters.');
     setState(() {
@@ -287,7 +287,7 @@ class ProfileScreen extends StatelessWidget {
         ),
         const Gap(24),
         Text(
-          'Your works, checklists and reports are saved on this device. The utility records on the map are sample data for the LPU campus, not a survey. '
+          'Your works, checklists and reports are saved on this device. The utility records on the map are sample data for Manaparai Bus Stand, not a survey. '
           'Map records are advice, not clearance: field verification and the owning department’s approval always come first.',
           style: SvType.caption(p.muted),
         ),

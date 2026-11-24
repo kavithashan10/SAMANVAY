@@ -5,10 +5,10 @@ import 'package:flutter/material.dart';
 import 'samanvay_design.dart';
 
 // =============================================================================
-// SAMANVAY · LPU Phagwara demonstration data and in-memory store.
+// SAMANVAY · Manaparai Bus Stand demonstration data and in-memory store.
 //
 // Everything in this file is synthetic. The campus is an illustrative
-// schematic in local metres (x east, y south) — it is NOT LPU's real layout,
+// schematic in local metres (x east, y south) — it is NOT a real surveyed layout,
 // and no record here describes an actual underground asset.
 // =============================================================================
 
@@ -62,7 +62,7 @@ extension DataLabelText on DataLabel {
   String get meaning => switch (this) {
         DataLabel.verified => 'Supported by an authoritative source or field verification.',
         DataLabel.imported => 'Loaded from an external dataset; source and date recorded.',
-        DataLabel.demonstration => 'Sample record for the LPU campus map — not surveyed.',
+        DataLabel.demonstration => 'Sample record for Manaparai Bus Stand map — not surveyed.',
         DataLabel.estimated => 'Approximate; not suitable for excavation decisions.',
         DataLabel.pendingVerification => 'Submitted or collected but not yet checked.',
       };
@@ -383,7 +383,7 @@ List<UtilityAsset> buildDemoAssets() {
   String nextId(UtilityKind k) {
     final n = (counters[k] ?? 0) + 1;
     counters[k] = n;
-    return '${k.code}-LPU-${n.toString().padLeft(3, '0')}';
+    return '${k.code}-MNP-${n.toString().padLeft(3, '0')}';
   }
 
   // Line assets: each road split into segments at every crossing road.
@@ -449,7 +449,7 @@ List<UtilityAsset> buildDemoAssets() {
       final c = road.a + dir * d;
       if (road.utilities.contains(UtilityKind.sewer)) {
         assets.add(UtilityAsset(
-          id: 'MH-LPU-${(assets.where((a) => a.pointType == 'manhole').length + 1).toString().padLeft(3, '0')}',
+          id: 'MH-MNP-${(assets.where((a) => a.pointType == 'manhole').length + 1).toString().padLeft(3, '0')}',
           kind: UtilityKind.sewer,
           points: [_offsetAlong(road, c, UtilityKind.sewer.lane)],
           road: road.name,
@@ -467,7 +467,7 @@ List<UtilityAsset> buildDemoAssets() {
       final c = road.a + dir * d;
       if (road.utilities.contains(UtilityKind.water)) {
         assets.add(UtilityAsset(
-          id: 'VL-LPU-${(assets.where((a) => a.pointType == 'valve').length + 1).toString().padLeft(3, '0')}',
+          id: 'VL-MNP-${(assets.where((a) => a.pointType == 'valve').length + 1).toString().padLeft(3, '0')}',
           kind: UtilityKind.water,
           points: [_offsetAlong(road, c, UtilityKind.water.lane)],
           road: road.name,
@@ -825,7 +825,7 @@ const demoPeople = <DemoPerson>[
 // Store
 // ---------------------------------------------------------------------------
 
-/// In-memory, offline store for the LPU demonstration. Nothing here touches a
+/// In-memory, offline store for the Manaparai Bus Stand demonstration. Nothing here touches a
 /// backend: the role switch is a presentation aid, not an identity system.
 class LpuDemoStore extends ChangeNotifier {
   LpuDemoStore() {
@@ -1375,7 +1375,7 @@ class LpuDemoStore extends ChangeNotifier {
         title: 'LT cable replacement',
         road: 'Avenue 2 · west of Central Avenue',
         applicantDept: 'power',
-        contractor: 'Punjab Power Services',
+        contractor: 'Manaparai Power Services',
         workType: 'Open trench · 0.6 m wide · 1.0 m deep',
         description: 'Replace a faulted 415 V cable run feeding the library and laboratories.',
         route: const [Offset(140, 410), Offset(482, 410)],
@@ -1427,7 +1427,7 @@ class LpuDemoStore extends ChangeNotifier {
     a.trail.addAll([
       (d.subtract(const Duration(days: 2)), 'Submitted by citizen'),
       (d.subtract(const Duration(days: 2, hours: -2)), 'Routed to Water Supply'),
-      (d.subtract(const Duration(days: 1)), 'In progress · valve VL-LPU-001 inspected'),
+      (d.subtract(const Duration(days: 1)), 'In progress · valve VL-MNP-001 inspected'),
     ]);
     final b = Grievance(
       id: 'GR-2026-012',

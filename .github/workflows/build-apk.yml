@@ -480,10 +480,10 @@ jobs:
             - Runs entirely on the device: no account, no server
             - Roles: citizen, department officer, coordinator, administrator
             - Department checklists, three-part screening (spatial, data confidence, dig-once)
-            - LPU campus utility map with sample records, scale bar, north arrow and map metadata
+            - Manaparai Bus Stand utility map with sample records, scale bar, north arrow and map metadata
             - Works, decisions and reports are saved on the device
 
-            Note: utility records on the map are sample data for the LPU campus, not a survey.
+            Note: utility records on the map are sample data for Manaparai Bus Stand, not a survey.
 
           prerelease: true
           make_latest: false

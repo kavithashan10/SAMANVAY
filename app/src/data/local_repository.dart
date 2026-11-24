@@ -7,10 +7,10 @@ import '../core/geo.dart';
 import '../core/models.dart';
 import '../core/repository.dart';
 
-/// The LPU campus schematic is laid out in local metres (x east, y south).
+/// The Manaparai Bus Stand schematic is laid out in local metres (x east, y south).
 /// It is placed on the real campus location so that every distance in the app
 /// is a geodesic distance between WGS84 points: campus (500, 370) sits at the
-/// LPU centroid below. Positions remain illustrative — not surveyed.
+/// demo anchor below. Positions remain illustrative — not surveyed.
 const lpuAnchor = GeoPoint(31.2559, 75.7050);
 const _anchorLocal = Offset(500, 370);
 
@@ -136,7 +136,7 @@ class LocalRepository implements SamanvayRepository {
       activity: _filed[w.id]?.$2 ??
           workActivities.where((a) => a.$2.toLowerCase() == w.workType.toLowerCase()).map((a) => a.$1).firstOrNull,
       road: w.road,
-      city: 'LPU Phagwara',
+      city: 'Manaparai',
       location: campusToGeo(mid),
       radiusM: math.max(5, w.lengthM / 2),
       start: w.start,
@@ -289,7 +289,7 @@ class LocalRepository implements SamanvayRepository {
     final applicant = _categoryDept[d.category] ?? 'municipal';
     final w = store.addWork(
       title: d.title.trim().isEmpty ? categoryLabel(d.category) : d.title.trim(),
-      road: d.road.trim().isEmpty ? 'LPU campus' : d.road.trim(),
+      road: d.road.trim().isEmpty ? 'Manaparai Bus Stand' : d.road.trim(),
       applicantDept: applicant,
       workType: workActivities.firstWhere((a) => a.$1 == d.activity, orElse: () => workActivities.first).$2,
       description: d.description.trim().isEmpty ? 'No further details given.' : d.description.trim(),
@@ -346,7 +346,7 @@ class LocalRepository implements SamanvayRepository {
             // Demo grievances carry a human title; show it where the live app shows the report type.
             type: reportTypes.where((t) => t.$2 == g.title).map((t) => t.$1).firstOrNull ?? g.title,
             area: g.location,
-            city: 'LPU Phagwara',
+            city: 'Manaparai',
             details: g.description,
             status: g.status.name,
             createdAt: g.submitted,

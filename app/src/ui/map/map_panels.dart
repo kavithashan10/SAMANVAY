@@ -640,10 +640,10 @@ void showMapMetadata(BuildContext context) {
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             const SvEyebrow('About this map'),
             const Gap(6),
-            Text('LPU campus utility schematic', style: SvType.heading2(p.ink)),
+            Text('Manaparai Bus Stand utility schematic', style: SvType.heading2(p.ink)),
             const Gap(16),
             row('Reference', 'Local schematic grid in metres, anchored at ${lpuAnchor.format(decimals: 4)} (${GeoCrs.wgs84}). Distances and measurements are geodesic.'),
-            row('Source', 'SAMANVAY sample dataset for the LPU campus — synthetic records, not a survey.'),
+            row('Source', 'SAMANVAY sample dataset for Manaparai Bus Stand — synthetic records, not a survey.'),
             row('Date', 'Generated on this device (${fmtDate(DateTime.now())}). Works and reports you add are saved on this device.'),
             row('Accuracy', 'Illustrative only. Positions are not surveyed and the campus layout is schematic.'),
             const SvHairline(),

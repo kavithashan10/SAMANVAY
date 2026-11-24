@@ -31,13 +31,13 @@ class AtlasPick {
   final IndiaCity? city;
   final bool isCampus;
 
-  String get title => isCampus ? 'LPU campus' : city?.name ?? (region == null ? 'Open sea' : 'Point in ${region!.name}');
+  String get title => isCampus ? 'Manaparai Bus Stand' : city?.name ?? (region == null ? 'Open sea' : 'Point in ${region!.name}');
 }
 
 /// The dotted map of India. Tap anywhere for that place; dots ripple in on
 /// first show, a light band drifts across them, the touched state lights up
 /// outward from the finger, a pin drops and a great-circle arc runs from the
-/// LPU campus to the spot.
+/// Manaparai Bus Stand to the spot.
 class IndiaAtlasView extends StatefulWidget {
   const IndiaAtlasView({
     super.key,
@@ -558,7 +558,7 @@ class AtlasPainter extends CustomPainter {
         ..strokeWidth = 1.4 / s
         ..color = Colors.white.withValues(alpha: intro),
     );
-    _screenText(canvas, _campus, s, 'LPU campus', const Offset(9, 2), intro, bold: true, color: AtlasColors.campus);
+    _screenText(canvas, _campus, s, 'Manaparai Bus Stand', const Offset(9, 2), intro, bold: true, color: AtlasColors.campus);
   }
 
   void _pin(Canvas canvas, double s, double t) {

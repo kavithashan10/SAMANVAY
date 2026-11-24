@@ -5,7 +5,7 @@ import 'lpu_demo_map.dart';
 import 'samanvay_design.dart';
 
 // =============================================================================
-// SAMANVAY · LPU Phagwara demonstration
+// SAMANVAY · Manaparai Bus Stand demonstration
 //
 // A self-contained, offline walkthrough of the four roles. The role switch is
 // a presentation aid only — it is not authentication, and every record is a
@@ -17,7 +17,7 @@ class LpuDemoApp extends StatelessWidget {
   const LpuDemoApp({super.key});
   @override
   Widget build(BuildContext context) => MaterialApp(
-        title: 'SAMANVAY · LPU demo',
+        title: 'SAMANVAY · Manaparai demo',
         debugShowCheckedModeBanner: false,
         theme: samanvayFieldTheme(dark: false),
         home: const LpuDemoRoot(),
@@ -25,7 +25,7 @@ class LpuDemoApp extends StatelessWidget {
 }
 
 /// Opens the demo on top of the main application. With [map] it opens
-/// straight on the LPU campus utility schematic.
+/// straight at Manaparai Bus Stand utility schematic.
 Future<void> openLpuDemo(BuildContext context, {bool map = false}) => Navigator.of(context).push(
       MaterialPageRoute(builder: (_) => LpuDemoRoot(onExit: () => Navigator.of(context).pop(), startOnMap: map)),
     );
@@ -146,7 +146,7 @@ class LpuDemoWelcome extends StatelessWidget {
           padding: const EdgeInsets.fromLTRB(24, 16, 24, 40),
           children: [
             Row(children: [
-              const Expanded(child: SvEyebrow('LPU Phagwara · live demonstration')),
+              const Expanded(child: SvEyebrow('Manaparai Bus Stand · live demonstration')),
               const _ThemeToggle(),
             ]),
             const SizedBox(height: 32),
@@ -284,7 +284,7 @@ class _LpuDemoShellState extends State<LpuDemoShell> {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: SvType.ui(p.inkSoft).copyWith(fontWeight: FontWeight.w700, letterSpacing: 2.4)),
-              Text('LPU campus · demo', maxLines: 1, overflow: TextOverflow.ellipsis, style: SvType.caption(p.muted)),
+              Text('Manaparai Bus Stand · demo', maxLines: 1, overflow: TextOverflow.ellipsis, style: SvType.caption(p.muted)),
             ]),
           ),
         ]),
@@ -456,7 +456,7 @@ class _CitizenHome extends StatelessWidget {
     return _Page(children: [
       Text(_greeting(), style: SvType.heading1(p.ink)),
       const SizedBox(height: 8),
-      Text("Here is what is happening beneath LPU's roads this week.", style: SvType.lead(p.inkSoft)),
+      Text("Here is what is happening beneath Manaparai's roads this week.", style: SvType.lead(p.inkSoft)),
       const SizedBox(height: 24),
       SvBand(
         color: SvColors.clay,
@@ -749,7 +749,7 @@ class _AdminHome extends StatelessWidget {
         ]),
       ),
       const SizedBox(height: 36),
-      const SvSectionHeader(eyebrow: 'Departments', title: 'Configured for LPU'),
+      const SvSectionHeader(eyebrow: 'Departments', title: 'Configured for Manaparai'),
       const SizedBox(height: 16),
       SvCard(
         child: Column(children: [

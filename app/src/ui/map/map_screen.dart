@@ -20,7 +20,7 @@ enum MapTool { none, timeline, measure }
 enum MapScope { india, campus }
 
 /// The Map tab: the dotted India atlas (touch any place for its GIS mapping)
-/// and the animated LPU campus map with search, layers, timeline playback,
+/// and the animated Manaparai Bus Stand map with search, layers, timeline playback,
 /// measurement and screening, one tool at a time.
 class MapTab extends StatefulWidget {
   const MapTab({super.key, this.active = true});
@@ -286,7 +286,7 @@ class _MapTabState extends State<MapTab> {
         child: Column(children: [
           MapToolButton(icon: Icons.center_focus_strong_outlined, tooltip: 'Whole of India', onPressed: () => _atlas.currentState?.showAll()),
           const Gap(10),
-          MapToolButton(icon: Icons.school_outlined, tooltip: 'LPU campus', onPressed: () => _atlas.currentState?.flyToPoint(lpuAnchor, km: 40)),
+          MapToolButton(icon: Icons.school_outlined, tooltip: 'Manaparai Bus Stand', onPressed: () => _atlas.currentState?.flyToPoint(lpuAnchor, km: 40)),
           const Gap(10),
           MapToolButton(icon: Icons.language, tooltip: 'India as a 3D globe (Globestudio)', onPressed: () => openExternal(context, kGlobestudioIndiaUrl)),
           const Gap(10),

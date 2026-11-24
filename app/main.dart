@@ -43,7 +43,7 @@ Future<void> _samanvayBootFuture = Future<void>.value();
 /// Start modes:
 /// - default: the SAMANVAY app (one flow for every role, live or demonstration)
 /// - `--dart-define=SAMANVAY_START=lpu-demo`: presentation build that opens the
-///   standalone offline LPU demonstration
+///   standalone offline Manaparai Bus Stand demonstration
 /// - `--dart-define=SAMANVAY_START=classic`: the previous portal-based app
 const String samanvayStartMode = String.fromEnvironment('SAMANVAY_START');
 
@@ -4515,7 +4515,7 @@ class _AuthPageState extends State<AuthPage> {
                     child: OutlinedButton.icon(
                       onPressed: () => openLpuDemo(context),
                       icon: const Icon(Icons.map_outlined),
-                      label: const Text('Open the LPU campus demo · all four roles, offline'),
+                      label: const Text('Open the Manaparai Bus Stand demo · all four roles, offline'),
                     ),
                   ),
                   const SizedBox(height: 16),
@@ -5914,7 +5914,7 @@ class _StaffDemoPreviewState extends State<_StaffDemoPreview> {
         child: FilledButton.icon(
           onPressed: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const LpuCampusModelPage())),
           icon: const Icon(Icons.view_in_ar_rounded),
-          label: const Text('OPEN LPU LIVE GIS MAP'),
+          label: const Text('OPEN MANAPARAI LIVE GIS MAP'),
         ),
       ),
     ],
@@ -6769,8 +6769,8 @@ class _DashboardPageState extends State<DashboardPage>
               action('Track requests', Icons.track_changes_outlined, const Color(0xFFCBC1B3), const RequestsPage()),
               action('3D GIS map', Icons.layers_outlined, const Color(0xFFCFC7BB), const MapPage()),
               action('Notifications', Icons.notifications_none_rounded, const Color(0xFFDDCCC9), const NotificationsPage()),
-              action('LPU underground map', Icons.school_outlined, const Color(0xFF62AB6E), const LpuCampusModelPage()),
-              action('LPU utility schematic (demo data)', Icons.layers_outlined, const Color(0xFFAF751B), const LpuDemoRoot(startOnMap: true)),
+              action('Manaparai underground map', Icons.school_outlined, const Color(0xFF62AB6E), const LpuCampusModelPage()),
+              action('Manaparai utility schematic (demo data)', Icons.layers_outlined, const Color(0xFFAF751B), const LpuDemoRoot(startOnMap: true)),
             ]);
           }),
           const SizedBox(height: 19),
@@ -13100,10 +13100,10 @@ class _MapLocationPickerPageState
 }
 // ==========================================
 // ==========================================
-// LPU CAMPUS — LIVE BASEMAP VIEW
+// MANAPARAI BUS STAND — LIVE BASEMAP VIEW
 // ==========================================
 // Uses the same live national GIS map as every other region. No synthetic
-// routes or invented campus asset locations are rendered. LPU-owned utility
+// routes or invented campus asset locations are rendered. Owner-department utility
 // geometry will appear only after authorised, verified survey records exist.
 class LpuCampusModelPage extends StatelessWidget {
   const LpuCampusModelPage({super.key});
@@ -13115,7 +13115,7 @@ class LpuCampusModelPage extends StatelessWidget {
     initialCenter: _campusCentre,
     initialZoom: 16.1,
     initialTilt: 54,
-    contextLabel: 'LPU CAMPUS · PHAGWARA',
+    contextLabel: 'MANAPARAI BUS STAND · TAMIL NADU',
   );
 }
 
@@ -17069,112 +17069,6 @@ class _MapPageState extends State<MapPage> {
     );
   }
 
-  Future<void> _openLpuPublicSources() async {
-    const sources = <Map<String, String>>[
-      {
-        'title': 'Water conservation infrastructure and campus map',
-        'subtitle': 'LPU published infrastructure overview, including its rainwater-harvesting bore map',
-        'url': 'https://www.lpu.in/SUSTAINABLE/sdg6/lpu-building-plan-strategy.php',
-      },
-      {
-        'title': 'Sustainable water extraction',
-        'subtitle': 'Official information about campus extraction bores and water meters',
-        'url': 'https://www.lpu.in/SUSTAINABLE/sdg6/sustainable-water-extraction.php',
-      },
-      {
-        'title': 'Wastewater treatment',
-        'subtitle': 'Official overview of campus sewage-treatment and water-reuse facilities',
-        'url': 'https://www.lpu.in/SUSTAINABLE/sdg6/waste-water-treatment.php',
-      },
-    ];
-
-    await showModalBottomSheet<void>(
-      context: context,
-      backgroundColor: const Color(0xFF23211E),
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (sheetContext) => SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(18, 18, 18, 22),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                'LPU OFFICIAL PUBLIC REFERENCES',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 13,
-                  fontWeight: FontWeight.w900,
-                  letterSpacing: .8,
-                ),
-              ),
-              const SizedBox(height: 7),
-              const Text(
-                'These LPU pages document public water and wastewater infrastructure. They are reference material, not survey-grade underground utility geometry or excavation clearance.',
-                style: TextStyle(
-                  color: Color(0xFFD3CBC0),
-                  fontSize: 12,
-                  height: 1.4,
-                ),
-              ),
-              const SizedBox(height: 14),
-              ...sources.map((source) => Padding(
-                padding: const EdgeInsets.only(bottom: 9),
-                child: Material(
-                  color: const Color(0xFF312E2A),
-                  borderRadius: BorderRadius.circular(12),
-                  child: ListTile(
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 13, vertical: 4),
-                    title: Text(
-                      source['title']!,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w800,
-                      ),
-                    ),
-                    subtitle: Text(
-                      source['subtitle']!,
-                      style: const TextStyle(
-                        color: Color(0xFFD3CBC0),
-                        fontSize: 11,
-                        height: 1.3,
-                      ),
-                    ),
-                    trailing: const Icon(
-                      Icons.open_in_new_rounded,
-                      color: Color(0xFF78B682),
-                      size: 17,
-                    ),
-                    onTap: () async {
-                      Navigator.of(sheetContext).pop();
-                      final uri = Uri.parse(source['url']!);
-                      try {
-                        final opened = await launchUrl(
-                          uri,
-                          mode: LaunchMode.externalApplication,
-                        );
-                        if (!opened && mounted) {
-                          _showMessage('Unable to open the LPU official reference page.');
-                        }
-                      } catch (_) {
-                        if (mounted) {
-                          _showMessage('Unable to open the LPU official reference page.');
-                        }
-                      }
-                    },
-                  ),
-                ),
-              )),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
   Future<void> _jumpToIndiaRegion(String region) async {
     final controller = _controller;
     if (controller == null) {
@@ -17237,25 +17131,18 @@ class _MapPageState extends State<MapPage> {
         ),
         actions: [
           IconButton(
-            tooltip: 'LPU campus utility schematic (demonstration data)',
+            tooltip: 'Manaparai Bus Stand utility schematic (demonstration data)',
             onPressed: () => openLpuDemo(context, map: true),
             icon: const Icon(Icons.layers_outlined),
           ),
-          IconButton(
-            tooltip: widget.contextLabel == 'LPU CAMPUS · PHAGWARA'
-                ? 'LPU official public infrastructure references'
-                : 'Open LPU campus in the live GIS map',
-            onPressed: widget.contextLabel == 'LPU CAMPUS · PHAGWARA'
-                ? _openLpuPublicSources
-                : () => Navigator.of(context).push(
-                    MaterialPageRoute(builder: (_) => const LpuCampusModelPage()),
-                  ),
-            icon: Icon(
-              widget.contextLabel == 'LPU CAMPUS · PHAGWARA'
-                  ? Icons.account_balance_outlined
-                  : Icons.school_outlined,
+          if (widget.contextLabel != 'MANAPARAI BUS STAND · TAMIL NADU')
+            IconButton(
+              tooltip: 'Open Manaparai Bus Stand in the live GIS map',
+              onPressed: () => Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const LpuCampusModelPage()),
+              ),
+              icon: const Icon(Icons.school_outlined),
             ),
-          ),
           IconButton(
             tooltip: 'Import underground survey GeoJSON',
             onPressed: () {
@@ -17426,7 +17313,7 @@ class _MapPageState extends State<MapPage> {
                       height: 1.3,
                     ),
                   ),
-                  if (widget.contextLabel == 'LPU CAMPUS · PHAGWARA') ...[
+                  if (widget.contextLabel == 'MANAPARAI BUS STAND · TAMIL NADU') ...[
                     const SizedBox(height: 8),
                     Container(
                       padding: const EdgeInsets.all(8),
@@ -17437,8 +17324,8 @@ class _MapPageState extends State<MapPage> {
                       ),
                       child: Text(
                         _utilityCellCount == 0 && _verifiedAssetCount == 0
-                            ? 'LPU CAMPUS DATA STATUS: No verified underground utility records are currently loaded. This is a basemap-only view, not a utility survey and not proof that underground assets are absent.'
-                            : 'LPU CAMPUS DATA STATUS: $_utilityCellCount generalised coverage cell(s) and $_verifiedAssetCount owner-department verified feature(s) are available in this view. Exact routes remain restricted; this is not an excavation clearance.',
+                            ? 'MANAPARAI BUS STAND DATA STATUS: No verified underground utility records are currently loaded. This is a basemap-only view, not a utility survey and not proof that underground assets are absent.'
+                            : 'MANAPARAI BUS STAND DATA STATUS: $_utilityCellCount generalised coverage cell(s) and $_verifiedAssetCount owner-department verified feature(s) are available in this view. Exact routes remain restricted; this is not an excavation clearance.',
                         style: const TextStyle(
                           color: Color(0xFFEECD9C),
                           fontSize: 11,

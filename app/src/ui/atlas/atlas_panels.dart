@@ -83,7 +83,7 @@ class PlacePanel extends StatelessWidget {
         const SizedBox(height: 8),
         Wrap(spacing: 8, runSpacing: 8, children: [
           _Fact(icon: Icons.my_location, text: '${g.lat.toStringAsFixed(4)}° N, ${g.lon.toStringAsFixed(4)}° E'),
-          if (!pick.isCampus) _Fact(icon: Icons.school_outlined, text: '${formatKm(fromCampus)} from LPU', color: AtlasColors.campus),
+          if (!pick.isCampus) _Fact(icon: Icons.school_outlined, text: '${formatKm(fromCampus)} from Manaparai', color: AtlasColors.campus),
           if (pick.city == null && !pick.isCampus) _Fact(icon: Icons.location_city, text: '${near.$1.name} · ${formatKm(near.$2)} ${compassPoint(bearingBetween(GeoPoint(near.$1.lat, near.$1.lon), g))}'),
           if (pick.isCampus) const _Fact(icon: Icons.layers_outlined, text: 'Utility network mapped', color: AtlasColors.land),
         ]),
@@ -140,15 +140,15 @@ Future<AtlasPick?> showAtlasSearch(BuildContext context) {
       return StatefulBuilder(builder: (sheet, setSheet) {
         final p = SvPalette.of(sheet);
         final q = query.trim().toLowerCase();
-        final campus = q.isEmpty || 'lpu campus lovely professional university phagwara'.contains(q);
+        final campus = q.isEmpty || 'manaparai bus stand manapparai tamil nadu'.contains(q);
         final cities = [for (final c in kIndiaCities) if (q.isEmpty ? c.major : c.name.toLowerCase().contains(q)) c];
         final regs = [for (final r in regions) if (q.isNotEmpty && r.name.toLowerCase().contains(q)) r];
         final tiles = <Widget>[
           if (campus)
             ListTile(
               leading: const Icon(Icons.school_outlined, color: AtlasColors.campus),
-              title: const Text('LPU campus'),
-              subtitle: const Text('Phagwara, Punjab · utility network mapped'),
+              title: const Text('Manaparai Bus Stand'),
+              subtitle: const Text('Manaparai, Tamil Nadu · utility network mapped'),
               onTap: () => Navigator.pop(sheet, AtlasPick(point: lpuAnchor, region: atlas.regionAt(lpuAnchor), isCampus: true)),
             ),
           for (final r in regs)
@@ -237,7 +237,7 @@ class PlaceGisScreen extends StatelessWidget {
           if (neighbours.isNotEmpty) _Row('Shares a boundary with', neighbours.join(', ')),
         ]),
       _Section(title: 'Distances', icon: Icons.straighten, children: [
-        if (!pick.isCampus) _Row('LPU campus', '${formatKm(fromCampus)} · bearing ${bearingBetween(lpuAnchor, g).round().toString().padLeft(3, '0')}° from campus'),
+        if (!pick.isCampus) _Row('Manaparai Bus Stand', '${formatKm(fromCampus)} · bearing ${bearingBetween(lpuAnchor, g).round().toString().padLeft(3, '0')}° from campus'),
         for (final (c, d) in near) _Row(c.name, '${formatKm(d)} ${compassPoint(bearingBetween(g, GeoPoint(c.lat, c.lon)))}'),
         _Row('Method', 'Great-circle on the WGS 84 mean sphere'),
       ]),
@@ -251,8 +251,8 @@ class PlaceGisScreen extends StatelessWidget {
           padding: const EdgeInsets.only(top: 4),
           child: Text(
             pick.isCampus || fromCampus < 3000
-                ? 'This place is on the LPU campus, where SAMANVAY holds a utility network: water, sewer, storm, power, gas, telecom and fibre.'
-                : 'No utility records on this device for this place. SAMANVAY\'s mapped network covers the LPU campus; elsewhere, confirm with the departments before any digging.',
+                ? 'This place is at Manaparai Bus Stand, where SAMANVAY holds a utility network: water, sewer, storm, power, gas, telecom and fibre.'
+                : 'No utility records on this device for this place. SAMANVAY\'s mapped network covers Manaparai Bus Stand; elsewhere, confirm with the departments before any digging.',
             style: SvType.bodySm(p.inkSoft),
           ),
         ),
@@ -411,8 +411,8 @@ Future<void> showAtlasMetadata(BuildContext context) {
             row('Boundaries', '$kIndiaSource. The boundary of India follows its official depiction. Units follow the source (around 2014): Jammu and Kashmir and Ladakh are drawn as one shape, as are Dadra and Nagar Haveli and Daman and Diu, and shared boundaries are as the source draws them.'),
             row('Reference system', '${GeoCrs.wgs84}. Drawn in Mercator, so the north looks larger than it is; every distance, area and ring is computed on the coordinates, not the drawing.'),
             row('Touch', 'Touching a place gives its coordinates (decimal, DMS, UTM, plus code), its state or union territory, distances, and sunrise and sunset. Cities snap when touched.'),
-            row('Motion', 'Dots ripple out from the LPU campus when the map opens. A soft light band drifts across the land. The touched state lights up outward from your finger, a pin drops, and an orange great-circle arc runs from the campus to the place.'),
-            row('Utility records', 'Only the LPU campus (orange) has a mapped utility network on this device. Open it with the Campus switch at the top.'),
+            row('Motion', 'Dots ripple out from Manaparai Bus Stand when the map opens. A soft light band drifts across the land. The touched state lights up outward from your finger, a pin drops, and an orange great-circle arc runs from the campus to the place.'),
+            row('Utility records', 'Only Manaparai Bus Stand (orange) has a mapped utility network on this device. Open it with the Campus switch at the top.'),
             row('Globe', 'The globe button opens India as a dotted 3D globe in Globestudio, in your browser.'),
           ]),
         ),
