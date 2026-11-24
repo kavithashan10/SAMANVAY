@@ -7,7 +7,7 @@ import 'samanvay_design.dart';
 // =============================================================================
 // SAMANVAY · Manaparai Bus Stand demonstration data and in-memory store.
 //
-// Everything in this file is synthetic. The campus is an illustrative
+// Everything in this file is synthetic. The bus stand is an illustrative
 // schematic in local metres (x east, y south) — it is NOT a real surveyed layout,
 // and no record here describes an actual underground asset.
 // =============================================================================
@@ -34,7 +34,7 @@ extension DemoRoleText on DemoRole {
         DemoRole.admin => Icons.admin_panel_settings_outlined,
       };
   String get blurb => switch (this) {
-        DemoRole.citizen => 'See works on campus roads, explore the map, report a problem.',
+        DemoRole.citizen => 'See works on bus stand roads, explore the map, report a problem.',
         DemoRole.officer => 'Review work that touches your network, tick your department checklist.',
         DemoRole.coordinator => 'See every department at once, catch overlaps, move work forward.',
         DemoRole.admin => 'Departments, people, data labels and the audit trail.',
@@ -243,13 +243,13 @@ const demoDepartments = <Department>[
 Department deptById(String id) => demoDepartments.firstWhere((d) => d.id == id);
 
 // ---------------------------------------------------------------------------
-// Campus schematic geometry
+// Bus stand schematic geometry
 // ---------------------------------------------------------------------------
 
-const campusSize = Size(1000, 740);
+const standSize = Size(1000, 740);
 
-class CampusRoad {
-  const CampusRoad(this.name, this.a, this.b, this.utilities);
+class StandRoad {
+  const StandRoad(this.name, this.a, this.b, this.utilities);
   final String name;
   final Offset a;
   final Offset b;
@@ -257,8 +257,8 @@ class CampusRoad {
   bool get horizontal => (a.dy - b.dy).abs() < .1;
 }
 
-class CampusZone {
-  const CampusZone(this.name, this.rect, {this.kind = 'academic'});
+class StandZone {
+  const StandZone(this.name, this.rect, {this.kind = 'building'});
   final String name;
   final Rect rect;
   final String kind;
@@ -272,45 +272,45 @@ const _all = {
   UtilityKind.telecom,
 };
 
-final campusRoads = <CampusRoad>[
-  CampusRoad('Central Avenue', const Offset(500, 70), const Offset(500, 700), {..._all, UtilityKind.gas, UtilityKind.fibre}),
-  CampusRoad('Avenue 1', const Offset(120, 560), const Offset(880, 560), {..._all, UtilityKind.gas}),
-  CampusRoad('Avenue 2', const Offset(120, 420), const Offset(880, 420), {..._all, UtilityKind.fibre}),
-  CampusRoad('Avenue 3', const Offset(120, 280), const Offset(880, 280), {..._all, UtilityKind.gas, UtilityKind.fibre}),
-  CampusRoad('Avenue 4', const Offset(120, 140), const Offset(880, 140), {..._all}),
-  CampusRoad('West Ring Road', const Offset(120, 70), const Offset(120, 640), {UtilityKind.water, UtilityKind.electricity, UtilityKind.storm}),
-  CampusRoad('East Ring Road', const Offset(880, 70), const Offset(880, 640), {UtilityKind.water, UtilityKind.electricity, UtilityKind.storm, UtilityKind.telecom}),
-  CampusRoad('North Ring Road', const Offset(120, 70), const Offset(880, 70), {UtilityKind.water, UtilityKind.electricity}),
+final standRoads = <StandRoad>[
+  StandRoad('Bus Stand Main Road', const Offset(500, 70), const Offset(500, 700), {..._all, UtilityKind.gas, UtilityKind.fibre}),
+  StandRoad('Concourse Road', const Offset(120, 560), const Offset(880, 560), {..._all, UtilityKind.gas}),
+  StandRoad('Arrival Lane', const Offset(120, 420), const Offset(880, 420), {..._all, UtilityKind.fibre}),
+  StandRoad('Departure Lane', const Offset(120, 280), const Offset(880, 280), {..._all, UtilityKind.gas, UtilityKind.fibre}),
+  StandRoad('Depot Lane', const Offset(120, 140), const Offset(880, 140), {..._all}),
+  StandRoad('West Service Road', const Offset(120, 70), const Offset(120, 640), {UtilityKind.water, UtilityKind.electricity, UtilityKind.storm}),
+  StandRoad('East Service Road', const Offset(880, 70), const Offset(880, 640), {UtilityKind.water, UtilityKind.electricity, UtilityKind.storm, UtilityKind.telecom}),
+  StandRoad('North Service Road', const Offset(120, 70), const Offset(880, 70), {UtilityKind.water, UtilityKind.electricity}),
 ];
 
-const campusZones = <CampusZone>[
-  CampusZone('Sports complex', Rect.fromLTRB(140, 90, 480, 120), kind: 'green'),
-  CampusZone('Utility yard · WTP & substation', Rect.fromLTRB(520, 90, 860, 120), kind: 'utility'),
-  CampusZone('Hostel zone west', Rect.fromLTRB(140, 160, 480, 260), kind: 'hostel'),
-  CampusZone('Hostel zone east', Rect.fromLTRB(520, 160, 860, 260), kind: 'hostel'),
-  CampusZone('Library & laboratories', Rect.fromLTRB(140, 300, 480, 400)),
-  CampusZone('Food court & shops', Rect.fromLTRB(520, 300, 860, 400), kind: 'commons'),
-  CampusZone('Academic blocks west', Rect.fromLTRB(140, 440, 480, 540)),
-  CampusZone('Academic blocks east', Rect.fromLTRB(520, 440, 860, 540)),
-  CampusZone('Administration', Rect.fromLTRB(140, 580, 480, 640), kind: 'admin'),
-  CampusZone('Auditorium & lawns', Rect.fromLTRB(520, 580, 860, 640), kind: 'green'),
+const standZones = <StandZone>[
+  StandZone('Bus depot & workshop', Rect.fromLTRB(140, 90, 480, 120), kind: 'depot'),
+  StandZone('Utility yard · sump & transformer', Rect.fromLTRB(520, 90, 860, 120), kind: 'utility'),
+  StandZone('Halting bays · night parking', Rect.fromLTRB(140, 160, 480, 260), kind: 'bays'),
+  StandZone('Town bus platforms', Rect.fromLTRB(520, 160, 860, 260), kind: 'platform'),
+  StandZone('Mofussil platforms · bays 1–8', Rect.fromLTRB(140, 300, 480, 400), kind: 'platform'),
+  StandZone('Shops & food stalls', Rect.fromLTRB(520, 300, 860, 400), kind: 'commons'),
+  StandZone('Passenger waiting hall', Rect.fromLTRB(140, 440, 480, 540), kind: 'concourse'),
+  StandZone('Ticket counter · enquiry · toilets', Rect.fromLTRB(520, 440, 860, 540), kind: 'admin'),
+  StandZone('Auto & taxi stand', Rect.fromLTRB(140, 580, 480, 640), kind: 'parking'),
+  StandZone('Two-wheeler parking', Rect.fromLTRB(520, 580, 860, 640), kind: 'parking'),
 ];
 
-const mainGate = Offset(500, 700);
+const mainEntrance = Offset(500, 700);
 
 /// Named places a citizen can pick when reporting a problem.
-const campusPlaces = <(String, Offset)>[
-  ('Central Avenue · main gate', Offset(514, 664)),
-  ('Avenue 1 · academic blocks', Offset(330, 552)),
-  ('Avenue 2 · library side', Offset(300, 412)),
-  ('Avenue 3 · food court', Offset(640, 300)),
-  ('Avenue 3 · hostel zone east', Offset(700, 268)),
-  ('Avenue 4 · hostel zone west', Offset(300, 150)),
-  ('East Ring Road · utility yard', Offset(872, 104)),
+const standPlaces = <(String, Offset)>[
+  ('Bus Stand Main Road · main entrance', Offset(514, 664)),
+  ('Concourse Road · waiting hall', Offset(330, 552)),
+  ('Arrival Lane · platform side', Offset(300, 412)),
+  ('Departure Lane · food stalls', Offset(640, 300)),
+  ('Departure Lane · town bus platforms', Offset(700, 268)),
+  ('Depot Lane · halting bays', Offset(300, 150)),
+  ('East Service Road · utility yard', Offset(872, 104)),
 ];
 
 Offset placePoint(String name) =>
-    campusPlaces.firstWhere((p) => p.$1 == name, orElse: () => campusPlaces.first).$2;
+    standPlaces.firstWhere((p) => p.$1 == name, orElse: () => standPlaces.first).$2;
 
 // ---------------------------------------------------------------------------
 // Assets
@@ -374,7 +374,7 @@ String _sizeFor(UtilityKind k, int i) => switch (k) {
       UtilityKind.fibre => '2 × 40 mm',
     };
 
-Offset _offsetAlong(CampusRoad r, Offset p, double lane) =>
+Offset _offsetAlong(StandRoad r, Offset p, double lane) =>
     r.horizontal ? p.translate(0, lane) : p.translate(-lane, 0);
 
 List<UtilityAsset> buildDemoAssets() {
@@ -387,9 +387,9 @@ List<UtilityAsset> buildDemoAssets() {
   }
 
   // Line assets: each road split into segments at every crossing road.
-  for (final road in campusRoads) {
+  for (final road in standRoads) {
     final cuts = <double>{};
-    for (final other in campusRoads) {
+    for (final other in standRoads) {
       if (identical(other, road) || other.horizontal == road.horizontal) continue;
       final c = road.horizontal ? other.a.dx : other.a.dy;
       final lo = road.horizontal ? math.min(road.a.dx, road.b.dx) : math.min(road.a.dy, road.b.dy);
@@ -420,7 +420,7 @@ List<UtilityAsset> buildDemoAssets() {
     }
   }
 
-  // Service connections that cross Avenue 3 east (they create the crossings
+  // Service connections that cross Departure Lane east (they create the crossings
   // the SR-2026-003 screening finds). One LT cable record is unverified.
   void service(UtilityKind kind, double x, DataLabel label, String road) {
     final idx = counters[kind] ?? 0;
@@ -437,12 +437,12 @@ List<UtilityAsset> buildDemoAssets() {
     ));
   }
 
-  service(UtilityKind.water, 640, DataLabel.demonstration, 'Avenue 3');
-  service(UtilityKind.water, 790, DataLabel.demonstration, 'Avenue 3');
-  service(UtilityKind.electricity, 712, DataLabel.pendingVerification, 'Avenue 3');
+  service(UtilityKind.water, 640, DataLabel.demonstration, 'Departure Lane');
+  service(UtilityKind.water, 790, DataLabel.demonstration, 'Departure Lane');
+  service(UtilityKind.electricity, 712, DataLabel.pendingVerification, 'Departure Lane');
 
   // Point assets: manholes on sewers, valves on water mains, telecom chambers.
-  for (final road in campusRoads) {
+  for (final road in standRoads) {
     final len = (road.b - road.a).distance;
     final dir = (road.b - road.a) / len;
     for (var d = 40.0; d < len - 20; d += 70) {
@@ -817,7 +817,7 @@ const demoPeople = <DemoPerson>[
   DemoPerson('Gas officer', DemoRole.officer, 'gas'),
   DemoPerson('Telecom officer', DemoRole.officer, 'telecom'),
   DemoPerson('Municipal engineer', DemoRole.officer, 'municipal'),
-  DemoPerson('Campus works coordinator', DemoRole.coordinator, null),
+  DemoPerson('Bus stand works coordinator', DemoRole.coordinator, null),
   DemoPerson('Platform administrator', DemoRole.admin, null),
 ];
 
@@ -827,8 +827,8 @@ const demoPeople = <DemoPerson>[
 
 /// In-memory, offline store for the Manaparai Bus Stand demonstration. Nothing here touches a
 /// backend: the role switch is a presentation aid, not an identity system.
-class LpuDemoStore extends ChangeNotifier {
-  LpuDemoStore() {
+class BusStandDemoStore extends ChangeNotifier {
+  BusStandDemoStore() {
     reset(notify: false);
   }
 
@@ -854,7 +854,7 @@ class LpuDemoStore extends ChangeNotifier {
   String get actorName => switch (role) {
         DemoRole.citizen => 'Citizen · Ananya',
         DemoRole.officer => '${deptById(officerDept).name} officer',
-        DemoRole.coordinator => 'Campus works coordinator',
+        DemoRole.coordinator => 'Bus stand works coordinator',
         DemoRole.admin => 'Platform administrator',
       };
 
@@ -1310,11 +1310,11 @@ class LpuDemoStore extends ChangeNotifier {
       WorkItem(
         id: 'SR-2026-003',
         title: 'Optical fibre laying',
-        road: 'Avenue 3 · east of Central Avenue',
+        road: 'Departure Lane · east of Bus Stand Main Road',
         applicantDept: 'telecom',
         contractor: 'FibreLink Contractors',
         workType: 'Open trench · 0.45 m wide · 1.65 m deep',
-        description: 'Lay 2 × 40 mm HDPE ducts with 48F optical fibre between Central Avenue and the East Ring Road.',
+        description: 'Lay 2 × 40 mm HDPE ducts with 48F optical fibre between Bus Stand Main Road and the East Service Road.',
         route: const [Offset(512, 286), Offset(868, 286)],
         start: d.add(const Duration(days: 4)),
         end: d.add(const Duration(days: 22)),
@@ -1332,9 +1332,9 @@ class LpuDemoStore extends ChangeNotifier {
       WorkItem(
         id: 'SR-2026-004',
         title: 'Water main replacement',
-        road: 'Central Avenue · Avenue 1 to Avenue 2',
+        road: 'Bus Stand Main Road · Concourse Road to Arrival Lane',
         applicantDept: 'water',
-        contractor: 'Doaba Pipeline Works',
+        contractor: 'Cauvery Pipeline Works',
         workType: 'Open trench · 0.9 m wide · 1.5 m deep',
         description: 'Replace 140 m of ageing 200 mm main with 250 mm ductile iron and reconnect two service lines.',
         route: const [Offset(494, 548), Offset(494, 432)],
@@ -1353,11 +1353,11 @@ class LpuDemoStore extends ChangeNotifier {
       WorkItem(
         id: 'SR-2026-005',
         title: 'Storm drain desilting & culvert rebuild',
-        road: 'Avenue 3 · east of Central Avenue',
+        road: 'Departure Lane · east of Bus Stand Main Road',
         applicantDept: 'sewer',
         contractor: 'Municipal drainage crew',
         workType: 'Open trench · 1.2 m wide · 1.0 m deep',
-        description: 'Desilt the Avenue 3 storm drain and rebuild one cross culvert before the monsoon.',
+        description: 'Desilt the Departure Lane storm drain and rebuild one cross culvert before the monsoon.',
         route: const [Offset(560, 291), Offset(840, 291)],
         start: d.add(const Duration(days: 80)),
         end: d.add(const Duration(days: 102)),
@@ -1373,11 +1373,11 @@ class LpuDemoStore extends ChangeNotifier {
       WorkItem(
         id: 'SR-2026-001',
         title: 'LT cable replacement',
-        road: 'Avenue 2 · west of Central Avenue',
+        road: 'Arrival Lane · west of Bus Stand Main Road',
         applicantDept: 'power',
         contractor: 'Manaparai Power Services',
         workType: 'Open trench · 0.6 m wide · 1.0 m deep',
-        description: 'Replace a faulted 415 V cable run feeding the library and laboratories.',
+        description: 'Replace a faulted 415 V cable run feeding the mofussil platform lights.',
         route: const [Offset(140, 410), Offset(482, 410)],
         start: d.subtract(const Duration(days: 26)),
         end: d.subtract(const Duration(days: 9)),
@@ -1393,11 +1393,11 @@ class LpuDemoStore extends ChangeNotifier {
       WorkItem(
         id: 'SR-2026-002',
         title: 'Gas service connection',
-        road: 'Avenue 1 · east of Central Avenue',
+        road: 'Concourse Road · east of Bus Stand Main Road',
         applicantDept: 'gas',
         contractor: 'City gas crew',
         workType: 'Narrow trench · 0.3 m wide · 1.0 m deep',
-        description: 'New 32 mm MDPE service connection to the academic blocks east kitchen.',
+        description: 'New 32 mm MDPE service connection to the canteen beside the ticket counter.',
         route: const [Offset(610, 556), Offset(700, 556)],
         start: d.subtract(const Duration(days: 60)),
         end: d.subtract(const Duration(days: 52)),
@@ -1417,8 +1417,8 @@ class LpuDemoStore extends ChangeNotifier {
     final a = Grievance(
       id: 'GR-2026-011',
       category: 'water',
-      title: 'Water leaking near the main gate',
-      location: 'Central Avenue · main gate',
+      title: 'Water leaking near the main entrance',
+      location: 'Bus Stand Main Road · main entrance',
       description: 'Clean water has been pooling beside the footpath since yesterday morning.',
       status: GrievanceStatus.inProgress,
       submitted: d.subtract(const Duration(days: 2)),
@@ -1432,8 +1432,8 @@ class LpuDemoStore extends ChangeNotifier {
     final b = Grievance(
       id: 'GR-2026-012',
       category: 'road',
-      title: 'Trench on Avenue 2 still not resurfaced',
-      location: 'Avenue 2 · library side',
+      title: 'Trench on Arrival Lane still not resurfaced',
+      location: 'Arrival Lane · platform side',
       description: 'The cable trench was filled but the surface is uneven and loose.',
       status: GrievanceStatus.acknowledged,
       submitted: d.subtract(const Duration(days: 1)),
@@ -1447,8 +1447,8 @@ class LpuDemoStore extends ChangeNotifier {
     final c = Grievance(
       id: 'GR-2026-013',
       category: 'drainage',
-      title: 'Waterlogging outside the hostels after rain',
-      location: 'Avenue 3 · hostel zone east',
+      title: 'Waterlogging at the town bus platforms after rain',
+      location: 'Departure Lane · town bus platforms',
       description: 'Water stands for hours after rain; the side drain looks blocked.',
       status: GrievanceStatus.submitted,
       submitted: d.subtract(const Duration(hours: 5)),
@@ -1464,9 +1464,9 @@ class LpuDemoStore extends ChangeNotifier {
       ActivityEntry(d.subtract(const Duration(minutes: 40)), 'Municipal engineer', 'Dig-once flag: SR-2026-005 drainage work on the same segment within 90 days', ref: 'SR-2026-003', icon: Icons.merge_type_outlined),
       ActivityEntry(d.subtract(const Duration(hours: 2)), 'Electricity officer', 'Field verification requested: LT service record $unverified is unverified', ref: 'SR-2026-003', icon: Icons.fact_check_outlined),
       ActivityEntry(d.subtract(const Duration(hours: 3)), 'Water Supply officer', 'Water Supply: cleared with conditions — hand-dig near service connections', ref: 'SR-2026-003', icon: Icons.fact_check_outlined),
-      ActivityEntry(d.subtract(const Duration(hours: 5)), 'Citizen · Rohan', 'Report submitted: Waterlogging outside the hostels after rain', ref: 'GR-2026-013', public: true, icon: Icons.campaign_outlined),
+      ActivityEntry(d.subtract(const Duration(hours: 5)), 'Citizen · Rohan', 'Report submitted: Waterlogging at the town bus platforms after rain', ref: 'GR-2026-013', public: true, icon: Icons.campaign_outlined),
       ActivityEntry(d.subtract(const Duration(hours: 20)), 'Municipal engineer', 'GR-2026-012 acknowledged and linked to SR-2026-001 restoration', ref: 'GR-2026-012', public: true, icon: Icons.campaign_outlined),
-      ActivityEntry(d.subtract(const Duration(days: 1)), 'Campus works coordinator', 'Status → Coordination pending', ref: 'SR-2026-003', public: true, icon: Icons.flag_outlined),
+      ActivityEntry(d.subtract(const Duration(days: 1)), 'Bus stand works coordinator', 'Status → Coordination pending', ref: 'SR-2026-003', public: true, icon: Icons.flag_outlined),
       ActivityEntry(d.subtract(const Duration(days: 3)), 'Electricity officer', 'Status → Restoration pending', ref: 'SR-2026-001', public: true, icon: Icons.flag_outlined),
       ActivityEntry(d.subtract(const Duration(days: 6)), 'Platform administrator', 'Sample dataset loaded: ${assets.length} synthetic records across 7 utility layers', icon: Icons.dataset_outlined),
     ];
@@ -1474,9 +1474,9 @@ class LpuDemoStore extends ChangeNotifier {
 }
 
 /// Makes the store available to the demo widget tree.
-class LpuDemoScope extends InheritedNotifier<LpuDemoStore> {
-  const LpuDemoScope({super.key, required LpuDemoStore store, required super.child}) : super(notifier: store);
+class BusStandDemoScope extends InheritedNotifier<BusStandDemoStore> {
+  const BusStandDemoScope({super.key, required BusStandDemoStore store, required super.child}) : super(notifier: store);
 
-  static LpuDemoStore of(BuildContext context) =>
-      context.dependOnInheritedWidgetOfExactType<LpuDemoScope>()!.notifier!;
+  static BusStandDemoStore of(BuildContext context) =>
+      context.dependOnInheritedWidgetOfExactType<BusStandDemoScope>()!.notifier!;
 }

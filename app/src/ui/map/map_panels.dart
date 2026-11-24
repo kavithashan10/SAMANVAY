@@ -2,11 +2,11 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
-import '../../../lpu_demo_data.dart';
-import '../../../lpu_demo_map.dart' show UndergroundCrossSection;
+import '../../../busstand_demo_data.dart';
+import '../../../busstand_demo_map.dart' show UndergroundCrossSection;
 import '../../../samanvay_design.dart';
 import '../../core/geo.dart';
-import '../../data/local_repository.dart' show lpuAnchor;
+import '../../data/local_repository.dart' show busStandAnchor;
 import '../common.dart';
 import 'map_analysis.dart';
 import 'map_view.dart';
@@ -86,7 +86,7 @@ class MapPanel extends StatelessWidget {
 
 class MapLegendPill extends StatelessWidget {
   const MapLegendPill({super.key, required this.store, required this.flow});
-  final LpuDemoStore store;
+  final BusStandDemoStore store;
   final bool flow;
 
   @override
@@ -139,7 +139,7 @@ class SelectionPanel extends StatelessWidget {
     required this.onReplay,
     required this.onOpenReports,
   });
-  final LpuDemoStore store;
+  final BusStandDemoStore store;
   final MapSelection selection;
   final WorkAnalysis? analysis;
   final VoidCallback onClose;
@@ -274,7 +274,7 @@ class TimelinePanel extends StatelessWidget {
     required this.onPlay,
     required this.onClose,
   });
-  final LpuDemoStore store;
+  final BusStandDemoStore store;
   final DateTime day;
   final (DateTime, DateTime) range;
   final bool playing;
@@ -435,7 +435,7 @@ class MeasurePanel extends StatelessWidget {
 // Layers
 // -----------------------------------------------------------------------------
 
-Future<void> showLayerSheet(BuildContext context, {required LpuDemoStore store, required ValueNotifier<bool> flow}) {
+Future<void> showLayerSheet(BuildContext context, {required BusStandDemoStore store, required ValueNotifier<bool> flow}) {
   return showModalBottomSheet<void>(
     context: context,
     isScrollControlled: true,
@@ -525,18 +525,18 @@ class MapTarget {
   final Grievance? grievance;
 }
 
-List<MapTarget> mapTargets(LpuDemoStore store) => [
+List<MapTarget> mapTargets(BusStandDemoStore store) => [
       for (final w in store.works.where((w) => w.isPublicActive))
         MapTarget(title: '${w.id} · ${w.title}', subtitle: '${w.road} · ${w.status.label}', icon: Icons.construction_outlined, work: w),
-      for (final r in campusRoads)
+      for (final r in standRoads)
         MapTarget(title: r.name, subtitle: 'Road · ${formatDistance((r.b - r.a).distance)}', icon: Icons.add_road, rect: Rect.fromPoints(r.a, r.b).inflate(40)),
-      for (final (name, pt) in campusPlaces) MapTarget(title: name, subtitle: 'Place', icon: Icons.place_outlined, point: pt),
-      for (final z in campusZones) MapTarget(title: z.name, subtitle: 'Campus zone', icon: Icons.crop_square, rect: z.rect.inflate(30)),
+      for (final (name, pt) in standPlaces) MapTarget(title: name, subtitle: 'Place', icon: Icons.place_outlined, point: pt),
+      for (final z in standZones) MapTarget(title: z.name, subtitle: 'Bus stand area', icon: Icons.crop_square, rect: z.rect.inflate(30)),
       for (final g in store.grievances)
         MapTarget(title: '${g.id} · ${g.title}', subtitle: '${g.location} · ${g.status.label}', icon: Icons.campaign_outlined, point: g.point, grievance: g),
     ];
 
-Future<MapTarget?> showMapSearch(BuildContext context, LpuDemoStore store) {
+Future<MapTarget?> showMapSearch(BuildContext context, BusStandDemoStore store) {
   final all = mapTargets(store);
   return showModalBottomSheet<MapTarget>(
     context: context,
@@ -565,7 +565,7 @@ Future<MapTarget?> showMapSearch(BuildContext context, LpuDemoStore store) {
                 child: hits.isEmpty
                     ? const Padding(
                         padding: EdgeInsets.all(24),
-                        child: SvEmptyState(title: 'Nothing found', message: 'Try a road name such as “Avenue 3”, or a reference like SR-2026-004.', icon: Icons.search_off),
+                        child: SvEmptyState(title: 'Nothing found', message: 'Try a road name such as “Departure Lane”, or a reference like SR-2026-004.', icon: Icons.search_off),
                       )
                     : ListView.builder(
                         padding: const EdgeInsets.fromLTRB(8, 0, 8, 24),
@@ -593,7 +593,7 @@ Future<MapTarget?> showMapSearch(BuildContext context, LpuDemoStore store) {
 // Cross-section and metadata
 // -----------------------------------------------------------------------------
 
-Future<void> showCrossSection(BuildContext context, LpuDemoStore store, WorkItem work) {
+Future<void> showCrossSection(BuildContext context, BusStandDemoStore store, WorkItem work) {
   return showModalBottomSheet<void>(
     context: context,
     isScrollControlled: true,
@@ -642,10 +642,10 @@ void showMapMetadata(BuildContext context) {
             const Gap(6),
             Text('Manaparai Bus Stand utility schematic', style: SvType.heading2(p.ink)),
             const Gap(16),
-            row('Reference', 'Local schematic grid in metres, anchored at ${lpuAnchor.format(decimals: 4)} (${GeoCrs.wgs84}). Distances and measurements are geodesic.'),
+            row('Reference', 'Local schematic grid in metres, anchored at ${busStandAnchor.format(decimals: 4)} (${GeoCrs.wgs84}). Distances and measurements are geodesic.'),
             row('Source', 'SAMANVAY sample dataset for Manaparai Bus Stand — synthetic records, not a survey.'),
             row('Date', 'Generated on this device (${fmtDate(DateTime.now())}). Works and reports you add are saved on this device.'),
-            row('Accuracy', 'Illustrative only. Positions are not surveyed and the campus layout is schematic.'),
+            row('Accuracy', 'Illustrative only. Positions are not surveyed and the bus stand layout is schematic.'),
             const SvHairline(),
             row('Solid line', 'Sample record.'),
             row('Dashed line', 'Estimated or pending verification — field-verify before digging.'),

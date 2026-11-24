@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../lpu_demo_data.dart' show campusPlaces;
+import '../../busstand_demo_data.dart' show standPlaces;
 import '../../samanvay_design.dart';
 import '../core/models.dart';
 import '../core/repository.dart';
@@ -104,7 +104,7 @@ class _ReportFormState extends State<_ReportForm> {
   final _city = TextEditingController();
   final _area = TextEditingController();
   final _details = TextEditingController();
-  String _place = campusPlaces.first.$1;
+  String _place = standPlaces.first.$1;
   bool _busy = false;
   String? _error;
 
@@ -159,7 +159,7 @@ class _ReportFormState extends State<_ReportForm> {
         if (demo)
           DropdownButtonFormField<String>(
             initialValue: _place,
-            items: [for (final (name, _) in campusPlaces) DropdownMenuItem(value: name, child: Text(name))],
+            items: [for (final (name, _) in standPlaces) DropdownMenuItem(value: name, child: Text(name))],
             onChanged: (v) => setState(() => _place = v ?? _place),
           )
         else ...[

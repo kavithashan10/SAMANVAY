@@ -3,22 +3,22 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 
-import '../../../lpu_demo_data.dart';
-import '../../../lpu_demo_map.dart' show CampusMapPainter, MapFurniture, MapSelection, AssetSelection, WorkSelection, GrievanceSelection;
+import '../../../busstand_demo_data.dart';
+import '../../../busstand_demo_map.dart' show StandMapPainter, MapFurniture, standGroundColor, MapSelection, AssetSelection, WorkSelection, GrievanceSelection;
 import '../../../samanvay_design.dart';
 import 'map_analysis.dart';
 import 'map_overlay.dart';
 
-export '../../../lpu_demo_map.dart' show MapSelection, AssetSelection, WorkSelection, GrievanceSelection;
+export '../../../busstand_demo_map.dart' show MapSelection, AssetSelection, WorkSelection, GrievanceSelection;
 
-/// The animated campus map.
+/// The animated bus stand map.
 ///
 /// Two layers inside one pan/zoom surface: the static base map (roads, zones,
 /// utilities, works, pins) and an animated overlay (flow, pulses, screening
 /// sweep, timeline clashes, measurement). A single ticker drives the overlay;
 /// it stops when [ambient] is false or the system asks for reduced motion.
-class CampusMapView extends StatefulWidget {
-  const CampusMapView({
+class StandMapView extends StatefulWidget {
+  const StandMapView({
     super.key,
     required this.store,
     this.onSelect,
@@ -35,7 +35,7 @@ class CampusMapView extends StatefulWidget {
     this.viewPadding = EdgeInsets.zero,
   });
 
-  final LpuDemoStore store;
+  final BusStandDemoStore store;
   final ValueChanged<MapSelection?>? onSelect;
   final VoidCallback? onViewChanged;
 
@@ -62,10 +62,10 @@ class CampusMapView extends StatefulWidget {
   final EdgeInsets viewPadding;
 
   @override
-  State<CampusMapView> createState() => CampusMapViewState();
+  State<StandMapView> createState() => StandMapViewState();
 }
 
-class CampusMapViewState extends State<CampusMapView> with TickerProviderStateMixin {
+class StandMapViewState extends State<StandMapView> with TickerProviderStateMixin {
   final _controller = TransformationController();
   final _clock = ValueNotifier<double>(0);
   late final Ticker _ticker = createTicker(_tick);
@@ -89,8 +89,8 @@ class CampusMapViewState extends State<CampusMapView> with TickerProviderStateMi
   double get _scale => _controller.value.getMaxScaleOnAxis();
   bool get _still => MediaQuery.maybeOf(context)?.disableAnimations ?? false;
 
-  /// The campus point (local metres) under the centre of the view.
-  Offset? get centreInCampus {
+  /// The bus stand point (local metres) under the centre of the view.
+  Offset? get centreInStand {
     final v = _viewport;
     return v == null ? null : _controller.toScene(v.center(Offset.zero));
   }
@@ -107,7 +107,7 @@ class CampusMapViewState extends State<CampusMapView> with TickerProviderStateMi
   }
 
   @override
-  void didUpdateWidget(covariant CampusMapView oldWidget) {
+  void didUpdateWidget(covariant StandMapView oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.store != widget.store) {
       oldWidget.store.removeListener(_storeChanged);
@@ -211,16 +211,16 @@ class CampusMapViewState extends State<CampusMapView> with TickerProviderStateMi
       _apply(c, s);
       return;
     }
-    final fitAll = math.min(viewport.width / campusSize.width, viewport.height / campusSize.height);
+    final fitAll = math.min(viewport.width / standSize.width, viewport.height / standSize.height);
     if (viewport.width < 700) {
       _apply(const Offset(600, 360), math.max(fitAll, math.min(.95, viewport.height / 560)));
     } else {
-      _apply(campusSize.center(Offset.zero), fitAll);
+      _apply(standSize.center(Offset.zero), fitAll);
     }
   }
 
   /// Centre and scale that fit [scene] into the part of the view not covered
-  /// by [CampusMapView.viewPadding].
+  /// by [StandMapView.viewPadding].
   (Offset, double) _frame(Rect scene, {EdgeInsets? padding, double maxScale = 4}) {
     final v = _viewport!;
     final pad = padding ?? widget.viewPadding;
@@ -234,7 +234,7 @@ class CampusMapViewState extends State<CampusMapView> with TickerProviderStateMi
   void flyTo(Offset centre, double scale) {
     final v = _viewport;
     if (v == null) return;
-    final from = centreInCampus ?? centre;
+    final from = centreInStand ?? centre;
     _fromC = from;
     _fromS = _scale;
     _toC = centre;
@@ -251,7 +251,7 @@ class CampusMapViewState extends State<CampusMapView> with TickerProviderStateMi
     _flight.forward(from: 0);
   }
 
-  /// [padding] overrides [CampusMapView.viewPadding] for this flight, for
+  /// [padding] overrides [StandMapView.viewPadding] for this flight, for
   /// when a panel is about to open.
   void flyToRect(Rect scene, {EdgeInsets? padding, double maxScale = 4}) {
     if (_viewport == null) return;
@@ -267,7 +267,7 @@ class CampusMapViewState extends State<CampusMapView> with TickerProviderStateMi
 
   void flyToPoint(Offset p, {double zoom = 2.2}) => flyTo(p, zoom);
 
-  /// Whole campus.
+  /// Whole bus stand.
   void recenter() => flyToRect(const Rect.fromLTRB(80, 30, 920, 730));
 
   void _flightStep() {
@@ -357,7 +357,7 @@ class CampusMapViewState extends State<CampusMapView> with TickerProviderStateMi
       final size = constraints.biggest;
       if (_viewport != size) {
         final first = _viewport == null;
-        final keep = first ? null : centreInCampus;
+        final keep = first ? null : centreInStand;
         _viewport = size;
         if (first) {
           _initialView(size);
@@ -366,7 +366,7 @@ class CampusMapViewState extends State<CampusMapView> with TickerProviderStateMi
         }
       }
       final date = widget.timelineDate;
-      final base = CampusMapPainter(
+      final base = StandMapPainter(
         store: widget.store,
         palette: p,
         selected: _selected,
@@ -398,7 +398,7 @@ class CampusMapViewState extends State<CampusMapView> with TickerProviderStateMi
         child: Stack(children: [
           Positioned.fill(
             child: ColoredBox(
-              color: p.isDark ? const Color(0xFF1E1D20) : const Color(0xFFF3ECE1),
+              color: standGroundColor(p.isDark),
               child: InteractiveViewer(
                 transformationController: _controller,
                 constrained: false,
@@ -416,7 +416,7 @@ class CampusMapViewState extends State<CampusMapView> with TickerProviderStateMi
                   behavior: HitTestBehavior.opaque,
                   onTapUp: widget.interactive ? (d) => _handleTap(d.localPosition) : null,
                   child: SizedBox.fromSize(
-                    size: campusSize,
+                    size: standSize,
                     child: Stack(children: [
                       Positioned.fill(child: RepaintBoundary(child: CustomPaint(painter: base))),
                       Positioned.fill(child: RepaintBoundary(child: CustomPaint(painter: overlay))),

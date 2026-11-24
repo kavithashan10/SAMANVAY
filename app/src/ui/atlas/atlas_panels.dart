@@ -4,7 +4,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../../../samanvay_design.dart';
 import '../../core/geo.dart';
-import '../../data/local_repository.dart' show lpuAnchor;
+import '../../data/local_repository.dart' show busStandAnchor;
 import '../common.dart';
 import 'india_data.dart';
 import 'india_geo.dart';
@@ -42,7 +42,7 @@ class AtlasHint extends StatelessWidget {
         const Icon(Icons.touch_app_outlined, size: 18, color: AtlasColors.pin),
         const SizedBox(width: 8),
         Expanded(child: Text('Touch any place in India for its GIS mapping', style: SvType.bodySm(p.inkSoft))),
-        Container(width: 9, height: 9, decoration: const BoxDecoration(color: AtlasColors.campus, shape: BoxShape.circle)),
+        Container(width: 9, height: 9, decoration: const BoxDecoration(color: AtlasColors.stand, shape: BoxShape.circle)),
         const SizedBox(width: 5),
         Text('Mapped', style: SvType.caption(p.muted)),
       ]),
@@ -52,18 +52,18 @@ class AtlasHint extends StatelessWidget {
 
 /// The card for a touched place.
 class PlacePanel extends StatelessWidget {
-  const PlacePanel({super.key, required this.pick, required this.onClose, required this.onDetails, required this.onCampus});
+  const PlacePanel({super.key, required this.pick, required this.onClose, required this.onDetails, required this.onStand});
   final AtlasPick pick;
   final VoidCallback onClose;
   final VoidCallback onDetails;
-  final VoidCallback onCampus;
+  final VoidCallback onStand;
 
   @override
   Widget build(BuildContext context) {
     final p = SvPalette.of(context);
     final g = pick.point;
     final r = pick.region;
-    final fromCampus = haversineMetres(lpuAnchor, g);
+    final fromStand = haversineMetres(busStandAnchor, g);
     final near = nearestCities(g, count: 1).first;
     return SvCard(
       elevated: true,
@@ -72,10 +72,10 @@ class PlacePanel extends StatelessWidget {
         Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Expanded(
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text((pick.isCampus ? 'Mapped campus' : r?.data.kind ?? 'Outside the land boundary').toUpperCase(), style: SvType.eyebrow(p.accent(AtlasColors.pin))),
+              Text((pick.isStand ? 'Mapped bus stand' : r?.data.kind ?? 'Outside the land boundary').toUpperCase(), style: SvType.eyebrow(p.accent(AtlasColors.pin))),
               const SizedBox(height: 2),
               Text(pick.title, maxLines: 1, overflow: TextOverflow.ellipsis, style: SvType.title(p.ink).copyWith(fontSize: 19)),
-              if (r != null && (pick.city != null || pick.isCampus)) Text(r.name, style: SvType.caption(p.muted)),
+              if (r != null && (pick.city != null || pick.isStand)) Text(r.name, style: SvType.caption(p.muted)),
             ]),
           ),
           IconButton(onPressed: onClose, icon: const Icon(Icons.close), tooltip: 'Close', visualDensity: VisualDensity.compact),
@@ -83,14 +83,14 @@ class PlacePanel extends StatelessWidget {
         const SizedBox(height: 8),
         Wrap(spacing: 8, runSpacing: 8, children: [
           _Fact(icon: Icons.my_location, text: '${g.lat.toStringAsFixed(4)}° N, ${g.lon.toStringAsFixed(4)}° E'),
-          if (!pick.isCampus) _Fact(icon: Icons.school_outlined, text: '${formatKm(fromCampus)} from Manaparai', color: AtlasColors.campus),
-          if (pick.city == null && !pick.isCampus) _Fact(icon: Icons.location_city, text: '${near.$1.name} · ${formatKm(near.$2)} ${compassPoint(bearingBetween(GeoPoint(near.$1.lat, near.$1.lon), g))}'),
-          if (pick.isCampus) const _Fact(icon: Icons.layers_outlined, text: 'Utility network mapped', color: AtlasColors.land),
+          if (!pick.isStand) _Fact(icon: Icons.directions_bus_outlined, text: '${formatKm(fromStand)} from Manaparai', color: AtlasColors.stand),
+          if (pick.city == null && !pick.isStand) _Fact(icon: Icons.location_city, text: '${near.$1.name} · ${formatKm(near.$2)} ${compassPoint(bearingBetween(GeoPoint(near.$1.lat, near.$1.lon), g))}'),
+          if (pick.isStand) const _Fact(icon: Icons.layers_outlined, text: 'Utility network mapped', color: AtlasColors.land),
         ]),
         const SizedBox(height: 12),
         Row(children: [
-          if (pick.isCampus) ...[
-            Expanded(child: FilledButton.icon(onPressed: onCampus, icon: const Icon(Icons.map_outlined, size: 18), label: const Text('Open campus map'))),
+          if (pick.isStand) ...[
+            Expanded(child: FilledButton.icon(onPressed: onStand, icon: const Icon(Icons.map_outlined, size: 18), label: const Text('Open bus stand map'))),
             const SizedBox(width: 8),
             OutlinedButton(onPressed: onDetails, child: const Text('GIS details')),
           ] else ...[
@@ -140,16 +140,16 @@ Future<AtlasPick?> showAtlasSearch(BuildContext context) {
       return StatefulBuilder(builder: (sheet, setSheet) {
         final p = SvPalette.of(sheet);
         final q = query.trim().toLowerCase();
-        final campus = q.isEmpty || 'manaparai bus stand manapparai tamil nadu'.contains(q);
+        final stand = q.isEmpty || 'manaparai bus stand manapparai tamil nadu'.contains(q);
         final cities = [for (final c in kIndiaCities) if (q.isEmpty ? c.major : c.name.toLowerCase().contains(q)) c];
         final regs = [for (final r in regions) if (q.isNotEmpty && r.name.toLowerCase().contains(q)) r];
         final tiles = <Widget>[
-          if (campus)
+          if (stand)
             ListTile(
-              leading: const Icon(Icons.school_outlined, color: AtlasColors.campus),
+              leading: const Icon(Icons.directions_bus_outlined, color: AtlasColors.stand),
               title: const Text('Manaparai Bus Stand'),
               subtitle: const Text('Manaparai, Tamil Nadu · utility network mapped'),
-              onTap: () => Navigator.pop(sheet, AtlasPick(point: lpuAnchor, region: atlas.regionAt(lpuAnchor), isCampus: true)),
+              onTap: () => Navigator.pop(sheet, AtlasPick(point: busStandAnchor, region: atlas.regionAt(busStandAnchor), isStand: true)),
             ),
           for (final r in regs)
             ListTile(
@@ -202,9 +202,9 @@ Future<AtlasPick?> showAtlasSearch(BuildContext context) {
 /// then location, administrative, network and sun facts, each computed on
 /// the device from the coordinates.
 class PlaceGisScreen extends StatelessWidget {
-  const PlaceGisScreen({super.key, required this.pick, this.onCampus});
+  const PlaceGisScreen({super.key, required this.pick, this.onStand});
   final AtlasPick pick;
-  final VoidCallback? onCampus;
+  final VoidCallback? onStand;
 
   @override
   Widget build(BuildContext context) {
@@ -215,7 +215,7 @@ class PlaceGisScreen extends StatelessWidget {
     final utm = toUtm(g);
     final sun = sunTimesIst(g, DateTime.now());
     final near = nearestCities(g, count: 4).where((c) => c.$2 > 500).take(3).toList();
-    final fromCampus = haversineMetres(lpuAnchor, g);
+    final fromStand = haversineMetres(busStandAnchor, g);
     final neighbours = r == null ? <String>[] : ({for (final i in atlas.neighboursOf(r.index)) atlas.regions[i].name}..remove(r.name)).toList()
       ..sort();
     final ext = r?.extent;
@@ -237,7 +237,7 @@ class PlaceGisScreen extends StatelessWidget {
           if (neighbours.isNotEmpty) _Row('Shares a boundary with', neighbours.join(', ')),
         ]),
       _Section(title: 'Distances', icon: Icons.straighten, children: [
-        if (!pick.isCampus) _Row('Manaparai Bus Stand', '${formatKm(fromCampus)} · bearing ${bearingBetween(lpuAnchor, g).round().toString().padLeft(3, '0')}° from campus'),
+        if (!pick.isStand) _Row('Manaparai Bus Stand', '${formatKm(fromStand)} · bearing ${bearingBetween(busStandAnchor, g).round().toString().padLeft(3, '0')}° from stand'),
         for (final (c, d) in near) _Row(c.name, '${formatKm(d)} ${compassPoint(bearingBetween(g, GeoPoint(c.lat, c.lon)))}'),
         _Row('Method', 'Great-circle on the WGS 84 mean sphere'),
       ]),
@@ -250,21 +250,21 @@ class PlaceGisScreen extends StatelessWidget {
         Padding(
           padding: const EdgeInsets.only(top: 4),
           child: Text(
-            pick.isCampus || fromCampus < 3000
+            pick.isStand || fromStand < 3000
                 ? 'This place is at Manaparai Bus Stand, where SAMANVAY holds a utility network: water, sewer, storm, power, gas, telecom and fibre.'
                 : 'No utility records on this device for this place. SAMANVAY\'s mapped network covers Manaparai Bus Stand; elsewhere, confirm with the departments before any digging.',
             style: SvType.bodySm(p.inkSoft),
           ),
         ),
-        if ((pick.isCampus || fromCampus < 3000) && onCampus != null) ...[
+        if ((pick.isStand || fromStand < 3000) && onStand != null) ...[
           const SizedBox(height: 10),
           FilledButton.icon(
             onPressed: () {
               Navigator.pop(context);
-              onCampus!();
+              onStand!();
             },
             icon: const Icon(Icons.map_outlined, size: 18),
-            label: const Text('Open campus map'),
+            label: const Text('Open bus stand map'),
           ),
         ],
       ]),
@@ -292,8 +292,8 @@ class PlaceGisScreen extends StatelessWidget {
               IndiaAtlasView(
                 pick: pick,
                 intro: false,
-                buffersKm: pick.isCampus ? const [2, 5, 10] : const [10, 25, 50],
-                initialFocusKm: pick.isCampus ? 14 : 70,
+                buffersKm: pick.isStand ? const [2, 5, 10] : const [10, 25, 50],
+                initialFocusKm: pick.isStand ? 14 : 70,
                 viewPadding: const EdgeInsets.fromLTRB(12, 90, 12, 12),
               ),
               Positioned(
@@ -302,7 +302,7 @@ class PlaceGisScreen extends StatelessWidget {
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                   decoration: BoxDecoration(color: Colors.black.withValues(alpha: .45), borderRadius: BorderRadius.circular(SvRadius.full)),
-                  child: Text('Rings: ${pick.isCampus ? '2 · 5 · 10' : '10 · 25 · 50'} km from the point',
+                  child: Text('Rings: ${pick.isStand ? '2 · 5 · 10' : '10 · 25 · 50'} km from the point',
                       style: SvType.caption(Colors.white).copyWith(fontWeight: FontWeight.w600)),
                 ),
               ),
@@ -411,8 +411,8 @@ Future<void> showAtlasMetadata(BuildContext context) {
             row('Boundaries', '$kIndiaSource. The boundary of India follows its official depiction. Units follow the source (around 2014): Jammu and Kashmir and Ladakh are drawn as one shape, as are Dadra and Nagar Haveli and Daman and Diu, and shared boundaries are as the source draws them.'),
             row('Reference system', '${GeoCrs.wgs84}. Drawn in Mercator, so the north looks larger than it is; every distance, area and ring is computed on the coordinates, not the drawing.'),
             row('Touch', 'Touching a place gives its coordinates (decimal, DMS, UTM, plus code), its state or union territory, distances, and sunrise and sunset. Cities snap when touched.'),
-            row('Motion', 'Dots ripple out from Manaparai Bus Stand when the map opens. A soft light band drifts across the land. The touched state lights up outward from your finger, a pin drops, and an orange great-circle arc runs from the campus to the place.'),
-            row('Utility records', 'Only Manaparai Bus Stand (orange) has a mapped utility network on this device. Open it with the Campus switch at the top.'),
+            row('Motion', 'Dots ripple out from Manaparai Bus Stand when the map opens. A soft light band drifts across the land. The touched state lights up outward from your finger, a pin drops, and an orange great-circle arc runs from the stand to the place.'),
+            row('Utility records', 'Only Manaparai Bus Stand (orange) has a mapped utility network on this device. Open it with the Bus stand switch at the top.'),
             row('Globe', 'The globe button opens India as a dotted 3D globe in Globestudio, in your browser.'),
           ]),
         ),

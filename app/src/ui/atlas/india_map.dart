@@ -6,7 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 
 import '../../core/geo.dart';
-import '../../data/local_repository.dart' show lpuAnchor;
+import '../../data/local_repository.dart' show busStandAnchor;
 import 'india_data.dart';
 import 'india_geo.dart';
 
@@ -18,20 +18,20 @@ class AtlasColors {
   static const dot = Color(0xFF3D7BFF);
   static const glow = Color(0xFF4FD8FF);
   static const pin = Color(0xFFE8434F);
-  static const campus = Color(0xFFFF9F2E);
+  static const stand = Color(0xFFFF9F2E);
   static const land = Color(0xFF2EC27E);
   static const label = Color(0xFFE6EEFF);
 }
 
 /// What the person touched on the atlas.
 class AtlasPick {
-  const AtlasPick({required this.point, this.region, this.city, this.isCampus = false});
+  const AtlasPick({required this.point, this.region, this.city, this.isStand = false});
   final GeoPoint point;
   final IndiaRegion? region;
   final IndiaCity? city;
-  final bool isCampus;
+  final bool isStand;
 
-  String get title => isCampus ? 'Manaparai Bus Stand' : city?.name ?? (region == null ? 'Open sea' : 'Point in ${region!.name}');
+  String get title => isStand ? 'Manaparai Bus Stand' : city?.name ?? (region == null ? 'Open sea' : 'Point in ${region!.name}');
 }
 
 /// The dotted map of India. Tap anywhere for that place; dots ripple in on
@@ -193,9 +193,9 @@ class IndiaAtlasViewState extends State<IndiaAtlasView> with TickerProviderState
 
   void _tap(Offset scene) {
     final s = scale;
-    final campus = AtlasProjection.projectPoint(lpuAnchor);
-    if ((scene - campus).distance * s < 22) {
-      return _emit(AtlasPick(point: lpuAnchor, region: atlas.regionAt(lpuAnchor), isCampus: true));
+    final stand = AtlasProjection.projectPoint(busStandAnchor);
+    if ((scene - stand).distance * s < 22) {
+      return _emit(AtlasPick(point: busStandAnchor, region: atlas.regionAt(busStandAnchor), isStand: true));
     }
     IndiaCity? city;
     var best = 18.0;
@@ -217,10 +217,10 @@ class IndiaAtlasViewState extends State<IndiaAtlasView> with TickerProviderState
     widget.onPick?.call(p);
     // Frame the state when moving to a new one; never zoom out past it.
     final r = p.region;
-    if (r != null && r != prev && !p.isCampus) {
+    if (r != null && r != prev && !p.isStand) {
       final target = _frame(r.bounds.inflate(r.bounds.shortestSide * .15 + 6));
       if (target.$2 > scale * 1.15 || !_onScreen(AtlasProjection.projectPoint(p.point))) flyToRect(r.bounds.inflate(r.bounds.shortestSide * .15 + 6));
-    } else if (p.isCampus) {
+    } else if (p.isStand) {
       flyToPoint(p.point, km: 40);
     }
   }
@@ -312,7 +312,7 @@ class AtlasPainter extends CustomPainter {
   final double pickAt, introAt;
   final List<double> buffersKm;
 
-  static final Offset _campus = AtlasProjection.projectPoint(lpuAnchor);
+  static final Offset _stand = AtlasProjection.projectPoint(busStandAnchor);
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -372,7 +372,7 @@ class AtlasPainter extends CustomPainter {
         if (x < view.left || x > view.right) continue;
         var a = 1.0;
         if (introR < 4000) {
-          final d = math.sqrt((x - _campus.dx) * (x - _campus.dx) + (y - _campus.dy) * (y - _campus.dy));
+          final d = math.sqrt((x - _stand.dx) * (x - _stand.dx) + (y - _stand.dy) * (y - _stand.dy));
           a = ((introR - d) / 120).clamp(0.0, 1.0);
           if (a <= 0) continue;
         }
@@ -481,11 +481,11 @@ class AtlasPainter extends CustomPainter {
 
   void _arc(Canvas canvas, double s, double t) {
     final p = pick;
-    if (p == null || p.isCampus) return;
-    if (haversineMetres(lpuAnchor, p.point) < 3000) return;
+    if (p == null || p.isStand) return;
+    if (haversineMetres(busStandAnchor, p.point) < 3000) return;
     final k = Curves.easeInOutCubic.transform(((t - pickAt - .15) / .9).clamp(0.0, 1.0));
     if (k <= 0) return;
-    final pts = [for (final g in greatCircle(lpuAnchor, p.point)) AtlasProjection.projectPoint(g)];
+    final pts = [for (final g in greatCircle(busStandAnchor, p.point)) AtlasProjection.projectPoint(g)];
     final path = Path()..moveTo(pts.first.dx, pts.first.dy);
     final upto = (pts.length - 1) * k;
     for (var i = 1; i <= upto.floor(); i++) {
@@ -501,7 +501,7 @@ class AtlasPainter extends CustomPainter {
       Paint()
         ..style = PaintingStyle.stroke
         ..strokeWidth = 4 / s
-        ..color = AtlasColors.campus.withValues(alpha: .25)
+        ..color = AtlasColors.stand.withValues(alpha: .25)
         ..maskFilter = MaskFilter.blur(BlurStyle.normal, 3 / s),
     );
     canvas.drawPath(
@@ -509,7 +509,7 @@ class AtlasPainter extends CustomPainter {
       Paint()
         ..style = PaintingStyle.stroke
         ..strokeWidth = 1.4 / s
-        ..color = AtlasColors.campus.withValues(alpha: .9),
+        ..color = AtlasColors.stand.withValues(alpha: .9),
     );
     // Travelling sparks once drawn.
     if (k >= 1) {
@@ -523,7 +523,7 @@ class AtlasPainter extends CustomPainter {
       }
       final mid = metric.getTangentForOffset(len / 2);
       if (mid != null) {
-        _screenText(canvas, mid.position, s, formatKm(haversineMetres(lpuAnchor, p.point)), const Offset(8, -8), .95, bold: true, color: AtlasColors.campus);
+        _screenText(canvas, mid.position, s, formatKm(haversineMetres(busStandAnchor, p.point)), const Offset(8, -8), .95, bold: true, color: AtlasColors.stand);
       }
     }
   }
@@ -539,26 +539,26 @@ class AtlasPainter extends CustomPainter {
       canvas.drawCircle(o, (c.major ? 2.6 : 2) / s, fill);
       if (c.major || s > 2.4) _screenText(canvas, o, s, c.name, const Offset(6, -7), .75 * intro);
     }
-    // The campus: the one place with a mapped utility network.
+    // The bus stand: the one place with a mapped utility network.
     final pulse = (t * .8) % 1.0;
     canvas.drawCircle(
-      _campus,
+      _stand,
       (5 + 18 * pulse) / s,
       Paint()
         ..style = PaintingStyle.stroke
         ..strokeWidth = 1.6 / s
-        ..color = AtlasColors.campus.withValues(alpha: (1 - pulse) * .9 * intro),
+        ..color = AtlasColors.stand.withValues(alpha: (1 - pulse) * .9 * intro),
     );
-    canvas.drawCircle(_campus, 4.2 / s, Paint()..color = AtlasColors.campus.withValues(alpha: intro));
+    canvas.drawCircle(_stand, 4.2 / s, Paint()..color = AtlasColors.stand.withValues(alpha: intro));
     canvas.drawCircle(
-      _campus,
+      _stand,
       4.2 / s,
       Paint()
         ..style = PaintingStyle.stroke
         ..strokeWidth = 1.4 / s
         ..color = Colors.white.withValues(alpha: intro),
     );
-    _screenText(canvas, _campus, s, 'Manaparai Bus Stand', const Offset(9, 2), intro, bold: true, color: AtlasColors.campus);
+    _screenText(canvas, _stand, s, 'Manaparai Bus Stand', const Offset(9, 2), intro, bold: true, color: AtlasColors.stand);
   }
 
   void _pin(Canvas canvas, double s, double t) {

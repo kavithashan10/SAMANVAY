@@ -24,7 +24,7 @@ import 'public_excavation_tracker_page.dart';
 import 'samanvay_ai_chat_page.dart';
 import 'coordinated_work_calendar_page.dart';
 import 'public_transparency_dashboard_page.dart';
-import 'lpu_demo_app.dart';
+import 'busstand_demo_app.dart';
 import 'samanvay_design.dart';
 import 'department_checklists.dart';
 import 'case_screening.dart';
@@ -42,15 +42,15 @@ Future<void> _samanvayBootFuture = Future<void>.value();
 
 /// Start modes:
 /// - default: the SAMANVAY app (one flow for every role, live or demonstration)
-/// - `--dart-define=SAMANVAY_START=lpu-demo`: presentation build that opens the
+/// - `--dart-define=SAMANVAY_START=busstand-demo`: presentation build that opens the
 ///   standalone offline Manaparai Bus Stand demonstration
 /// - `--dart-define=SAMANVAY_START=classic`: the previous portal-based app
 const String samanvayStartMode = String.fromEnvironment('SAMANVAY_START');
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  if (samanvayStartMode == 'lpu-demo') {
-    runApp(const LpuDemoApp());
+  if (samanvayStartMode == 'busstand-demo') {
+    runApp(const BusStandDemoApp());
     return;
   }
   if (samanvayStartMode == 'classic') {
@@ -4513,7 +4513,7 @@ class _AuthPageState extends State<AuthPage> {
                   SizedBox(
                     width: double.infinity,
                     child: OutlinedButton.icon(
-                      onPressed: () => openLpuDemo(context),
+                      onPressed: () => openBusStandDemo(context),
                       icon: const Icon(Icons.map_outlined),
                       label: const Text('Open the Manaparai Bus Stand demo · all four roles, offline'),
                     ),
@@ -5912,7 +5912,7 @@ class _StaffDemoPreviewState extends State<_StaffDemoPreview> {
       SizedBox(
         width: double.infinity,
         child: FilledButton.icon(
-          onPressed: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const LpuCampusModelPage())),
+          onPressed: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const BusStandModelPage())),
           icon: const Icon(Icons.view_in_ar_rounded),
           label: const Text('OPEN MANAPARAI LIVE GIS MAP'),
         ),
@@ -6769,8 +6769,8 @@ class _DashboardPageState extends State<DashboardPage>
               action('Track requests', Icons.track_changes_outlined, const Color(0xFFCBC1B3), const RequestsPage()),
               action('3D GIS map', Icons.layers_outlined, const Color(0xFFCFC7BB), const MapPage()),
               action('Notifications', Icons.notifications_none_rounded, const Color(0xFFDDCCC9), const NotificationsPage()),
-              action('Manaparai underground map', Icons.school_outlined, const Color(0xFF62AB6E), const LpuCampusModelPage()),
-              action('Manaparai utility schematic (demo data)', Icons.layers_outlined, const Color(0xFFAF751B), const LpuDemoRoot(startOnMap: true)),
+              action('Manaparai underground map', Icons.directions_bus_outlined, const Color(0xFF62AB6E), const BusStandModelPage()),
+              action('Manaparai utility schematic (demo data)', Icons.layers_outlined, const Color(0xFFAF751B), const BusStandDemoRoot(startOnMap: true)),
             ]);
           }),
           const SizedBox(height: 19),
@@ -13103,16 +13103,16 @@ class _MapLocationPickerPageState
 // MANAPARAI BUS STAND — LIVE BASEMAP VIEW
 // ==========================================
 // Uses the same live national GIS map as every other region. No synthetic
-// routes or invented campus asset locations are rendered. Owner-department utility
+// routes or invented bus stand asset locations are rendered. Owner-department utility
 // geometry will appear only after authorised, verified survey records exist.
-class LpuCampusModelPage extends StatelessWidget {
-  const LpuCampusModelPage({super.key});
+class BusStandModelPage extends StatelessWidget {
+  const BusStandModelPage({super.key});
 
-  static const LatLng _campusCentre = LatLng(10.6064, 78.4203);
+  static const LatLng _standCentre = LatLng(10.6064, 78.4203);
 
   @override
   Widget build(BuildContext context) => const MapPage(
-    initialCenter: _campusCentre,
+    initialCenter: _standCentre,
     initialZoom: 16.1,
     initialTilt: 54,
     contextLabel: 'MANAPARAI BUS STAND · TAMIL NADU',
@@ -17120,7 +17120,7 @@ class _MapPageState extends State<MapPage> {
             Text(
               widget.contextLabel == null
                   ? 'GEOSPATIAL INFRASTRUCTURE WORKSPACE'
-                  : 'CAMPUS BASEMAP · VERIFIED DATA ONLY',
+                  : 'BUS STAND BASEMAP · VERIFIED DATA ONLY',
               style: TextStyle(
                 fontSize: 11,
                 letterSpacing: 1.35,
@@ -17132,16 +17132,16 @@ class _MapPageState extends State<MapPage> {
         actions: [
           IconButton(
             tooltip: 'Manaparai Bus Stand utility schematic (demonstration data)',
-            onPressed: () => openLpuDemo(context, map: true),
+            onPressed: () => openBusStandDemo(context, map: true),
             icon: const Icon(Icons.layers_outlined),
           ),
           if (widget.contextLabel != 'MANAPARAI BUS STAND · TAMIL NADU')
             IconButton(
               tooltip: 'Open Manaparai Bus Stand in the live GIS map',
               onPressed: () => Navigator.of(context).push(
-                MaterialPageRoute(builder: (_) => const LpuCampusModelPage()),
+                MaterialPageRoute(builder: (_) => const BusStandModelPage()),
               ),
-              icon: const Icon(Icons.school_outlined),
+              icon: const Icon(Icons.directions_bus_outlined),
             ),
           IconButton(
             tooltip: 'Import underground survey GeoJSON',

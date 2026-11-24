@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 
-import '../../lpu_demo_data.dart' show campusPlaces, campusRoads, campusSize, distanceToSegment;
+import '../../busstand_demo_data.dart' show standPlaces, standRoads, standSize, distanceToSegment;
 import 'map/map_view.dart';
 import '../../samanvay_design.dart';
 import '../core/geo.dart';
@@ -121,12 +121,12 @@ class _NewCaseFlowState extends State<NewCaseFlow> {
   Future<void> _pickOnMap() async {
     final repo = context.repo as LocalRepository;
     final picked = await Navigator.of(context).push<(Offset, String?)>(MaterialPageRoute(
-      builder: (_) => CampusPointPicker(repo: repo),
+      builder: (_) => StandPointPicker(repo: repo),
     ));
     if (picked == null) return;
     final (point, label) = picked;
     if (label != null) _road.text = label.split(' · ').first;
-    _setPoint(campusToGeo(point), 'map');
+    _setPoint(standToGeo(point), 'map');
   }
 
   void _applyManual() {
@@ -286,7 +286,7 @@ class _NewCaseFlowState extends State<NewCaseFlow> {
                   ]),
                   const Gap(6),
                   Text(
-                    '${switch (d.locationSource) { 'gps' => 'From device GPS', 'map' => 'Picked on the map', 'place' => 'Campus location', _ => 'Entered by hand' }}'
+                    '${switch (d.locationSource) { 'gps' => 'From device GPS', 'map' => 'Picked on the map', 'place' => 'Bus stand location', _ => 'Entered by hand' }}'
                     ' · ${d.locationSource == 'gps' ? describeAccuracy(d.locationAccuracyM) : 'position accuracy as entered'} · ${GeoCrs.wgs84}',
                     style: SvType.caption(p.muted),
                   ),
@@ -417,22 +417,22 @@ class _Submitted extends StatelessWidget {
 }
 
 
-/// Pick a work location on the campus map: pan and zoom until the crosshair
-/// sits on the spot, or jump to a named place. Returns the campus point and,
+/// Pick a work location on the bus stand map: pan and zoom until the crosshair
+/// sits on the spot, or jump to a named place. Returns the bus stand point and,
 /// for named places, the place name.
-class CampusPointPicker extends StatefulWidget {
-  const CampusPointPicker({super.key, required this.repo});
+class StandPointPicker extends StatefulWidget {
+  const StandPointPicker({super.key, required this.repo});
   final LocalRepository repo;
   @override
-  State<CampusPointPicker> createState() => _CampusPointPickerState();
+  State<StandPointPicker> createState() => _StandPointPickerState();
 }
 
-class _CampusPointPickerState extends State<CampusPointPicker> {
-  final _map = GlobalKey<CampusMapViewState>();
+class _StandPointPickerState extends State<StandPointPicker> {
+  final _map = GlobalKey<StandMapViewState>();
   Offset? _centre;
 
   void _refresh() {
-    final c = _map.currentState?.centreInCampus;
+    final c = _map.currentState?.centreInStand;
     if (c != null && c != _centre) setState(() => _centre = c);
   }
 
@@ -442,10 +442,10 @@ class _CampusPointPickerState extends State<CampusPointPicker> {
     WidgetsBinding.instance.addPostFrameCallback((_) => _refresh());
   }
 
-  /// Closest campus road centreline (local metres are ground metres).
+  /// Closest bus stand road centreline (local metres are ground metres).
   static (String, double)? _nearestRoad(Offset c) {
     (String, double)? best;
-    for (final road in campusRoads) {
+    for (final road in standRoads) {
       final d = distanceToSegment(c, road.a, road.b);
       if (best == null || d < best.$2) best = (road.name, d);
     }
@@ -459,7 +459,7 @@ class _CampusPointPickerState extends State<CampusPointPicker> {
       builder: (sheet) => SafeArea(
         child: ListView(shrinkWrap: true, padding: const EdgeInsets.fromLTRB(16, 0, 16, 16), children: [
           const Padding(padding: EdgeInsets.all(8), child: SvEyebrow('Named places')),
-          for (final pl in campusPlaces)
+          for (final pl in standPlaces)
             ListTile(leading: const Icon(Icons.place_outlined), title: Text(pl.$1), onTap: () => Navigator.pop(sheet, pl)),
         ]),
       ),
@@ -471,8 +471,8 @@ class _CampusPointPickerState extends State<CampusPointPicker> {
   Widget build(BuildContext context) {
     final p = SvPalette.of(context);
     final c = _centre;
-    final inside = c != null && c.dx >= 0 && c.dy >= 0 && c.dx <= campusSize.width && c.dy <= campusSize.height;
-    final geo = c == null ? null : campusToGeo(c);
+    final inside = c != null && c.dx >= 0 && c.dy >= 0 && c.dx <= standSize.width && c.dy <= standSize.height;
+    final geo = c == null ? null : standToGeo(c);
     final road = c == null || !inside ? null : _nearestRoad(c);
     return Scaffold(
       appBar: AppBar(
@@ -484,7 +484,7 @@ class _CampusPointPickerState extends State<CampusPointPicker> {
           child: Listener(
             onPointerUp: (_) => WidgetsBinding.instance.addPostFrameCallback((_) => _refresh()),
             onPointerSignal: (_) => WidgetsBinding.instance.addPostFrameCallback((_) => _refresh()),
-            child: CampusMapView(key: _map, store: widget.repo.store, onViewChanged: _refresh, showFlow: false),
+            child: StandMapView(key: _map, store: widget.repo.store, onViewChanged: _refresh, showFlow: false),
           ),
         ),
         // Crosshair at the exact centre of the map view.
@@ -516,8 +516,8 @@ class _CampusPointPickerState extends State<CampusPointPicker> {
                 const Gap(4),
                 Text(
                   inside
-                      ? 'Crosshair position · ${GeoCrs.wgs84} · from the campus schematic, not surveyed'
-                      : 'Outside the mapped campus — there are no utility records here, which does not mean nothing is buried.',
+                      ? 'Crosshair position · ${GeoCrs.wgs84} · from the bus stand schematic, not surveyed'
+                      : 'Outside the mapped bus stand — there are no utility records here, which does not mean nothing is buried.',
                   style: SvType.caption(inside ? p.muted : SvColors.clay),
                 ),
                 const Gap(12),

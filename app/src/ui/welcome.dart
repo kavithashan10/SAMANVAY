@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../lpu_demo_data.dart' show demoDepartments;
+import '../../busstand_demo_data.dart' show demoDepartments;
 import '../../samanvay_design.dart';
 import '../core/models.dart';
 import 'brand.dart';

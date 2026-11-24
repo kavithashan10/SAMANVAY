@@ -2,7 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
-import '../../../lpu_demo_data.dart';
+import '../../../busstand_demo_data.dart';
 import '../../../samanvay_design.dart';
 import '../../data/local_repository.dart';
 import '../common.dart';
@@ -17,7 +17,7 @@ import 'map_view.dart';
 
 enum MapTool { none, timeline, measure }
 
-enum MapScope { india, campus }
+enum MapScope { india, stand }
 
 /// The Map tab: the dotted India atlas (touch any place for its GIS mapping)
 /// and the animated Manaparai Bus Stand map with search, layers, timeline playback,
@@ -33,7 +33,7 @@ class MapTab extends StatefulWidget {
 }
 
 class _MapTabState extends State<MapTab> {
-  final _map = GlobalKey<CampusMapViewState>();
+  final _map = GlobalKey<StandMapViewState>();
   final _flow = ValueNotifier<bool>(true);
   MapTool _tool = MapTool.none;
   MapSelection? _selection;
@@ -46,7 +46,7 @@ class _MapTabState extends State<MapTab> {
   MapScope _scope = MapScope.india;
   AtlasPick? _pick;
 
-  LpuDemoStore get _store => (context.repo as LocalRepository).store;
+  BusStandDemoStore get _store => (context.repo as LocalRepository).store;
 
   @override
   void initState() {
@@ -93,7 +93,7 @@ class _MapTabState extends State<MapTab> {
       _focus?.value = null;
       final w = _store.works.where((w) => w.id == id).firstOrNull;
       if (w == null) return;
-      setState(() => _scope = MapScope.campus);
+      setState(() => _scope = MapScope.stand);
       _setTool(MapTool.none);
       _map.currentState?.flyToWork(w, padding: _withSelectionPanel);
     });
@@ -131,12 +131,12 @@ class _MapTabState extends State<MapTab> {
     if (_playing && mounted) setState(() => _playing = false);
   }
 
-  /// India → campus: dive into the campus on the atlas, then cross-fade.
-  void _openCampus() {
-    _atlas.currentState?.flyToPoint(lpuAnchor, km: 3);
+  /// India → bus stand: dive into the bus stand on the atlas, then cross-fade.
+  void _openStand() {
+    _atlas.currentState?.flyToPoint(busStandAnchor, km: 3);
     Future.delayed(Duration(milliseconds: MediaQuery.of(context).disableAnimations ? 0 : 650), () {
       if (!mounted) return;
-      setState(() => _scope = MapScope.campus);
+      setState(() => _scope = MapScope.stand);
       _map.currentState?.recenter();
     });
   }
@@ -144,12 +144,12 @@ class _MapTabState extends State<MapTab> {
   void _setScope(MapScope s) {
     if (s == _scope) return;
     _stop();
-    if (s == MapScope.campus) return _openCampus();
+    if (s == MapScope.stand) return _openStand();
     setState(() => _scope = s);
   }
 
   void _openPlace(AtlasPick pick) {
-    Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => PlaceGisScreen(pick: pick, onCampus: _openCampus)));
+    Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => PlaceGisScreen(pick: pick, onStand: _openStand)));
   }
 
   Future<void> _searchIndia() async {
@@ -158,8 +158,8 @@ class _MapTabState extends State<MapTab> {
     setState(() => _pick = pick);
     final atlas = _atlas.currentState;
     final r = pick.region;
-    if (pick.city != null || pick.isCampus || r == null) {
-      atlas?.flyToPoint(pick.point, km: pick.isCampus ? 40 : 160);
+    if (pick.city != null || pick.isStand || r == null) {
+      atlas?.flyToPoint(pick.point, km: pick.isStand ? 40 : 160);
     } else {
       atlas?.flyToRect(r.bounds.inflate(r.bounds.shortestSide * .15 + 6));
     }
@@ -233,7 +233,7 @@ class _MapTabState extends State<MapTab> {
         child: layer(
           visible: !india,
           hiddenScale: .82,
-          child: _campus(context, store, mapState),
+          child: _stand(context, store, mapState),
         ),
       ),
       Positioned(left: 12, right: 12, top: 12, child: _topBar(context)),
@@ -249,7 +249,7 @@ class _MapTabState extends State<MapTab> {
         padding: const EdgeInsets.all(3),
         child: Row(children: [
           _ScopeChip(label: 'India', icon: Icons.public, selected: india, onTap: () => _setScope(MapScope.india)),
-          _ScopeChip(label: 'Campus', icon: Icons.school_outlined, selected: !india, onTap: () => _setScope(MapScope.campus)),
+          _ScopeChip(label: 'Bus stand', icon: Icons.directions_bus_outlined, selected: !india, onTap: () => _setScope(MapScope.stand)),
         ]),
       ),
       const SizedBox(width: 8),
@@ -286,7 +286,7 @@ class _MapTabState extends State<MapTab> {
         child: Column(children: [
           MapToolButton(icon: Icons.center_focus_strong_outlined, tooltip: 'Whole of India', onPressed: () => _atlas.currentState?.showAll()),
           const Gap(10),
-          MapToolButton(icon: Icons.school_outlined, tooltip: 'Manaparai Bus Stand', onPressed: () => _atlas.currentState?.flyToPoint(lpuAnchor, km: 40)),
+          MapToolButton(icon: Icons.directions_bus_outlined, tooltip: 'Manaparai Bus Stand', onPressed: () => _atlas.currentState?.flyToPoint(busStandAnchor, km: 40)),
           const Gap(10),
           MapToolButton(icon: Icons.language, tooltip: 'India as a 3D globe (Globestudio)', onPressed: () => openExternal(context, kGlobestudioIndiaUrl)),
           const Gap(10),
@@ -312,20 +312,20 @@ class _MapTabState extends State<MapTab> {
                   pick: pick,
                   onClose: () => setState(() => _pick = null),
                   onDetails: () => _openPlace(pick),
-                  onCampus: _openCampus,
+                  onStand: _openStand,
                 ),
         ),
       ),
     ];
   }
 
-  Widget _campus(BuildContext context, LpuDemoStore store, CampusMapViewState? mapState) {
+  Widget _stand(BuildContext context, BusStandDemoStore store, StandMapViewState? mapState) {
     return Stack(children: [
       Positioned.fill(
-        child: CampusMapView(
+        child: StandMapView(
           key: _map,
           store: store,
-          ambient: widget.active && _scope == MapScope.campus,
+          ambient: widget.active && _scope == MapScope.stand,
           showFlow: _flow.value,
           timelineDate: _tool == MapTool.timeline ? _day : null,
           measurePoints: List.unmodifiable(_measure),
@@ -352,7 +352,7 @@ class _MapTabState extends State<MapTab> {
           const Gap(10),
           MapToolButton(icon: Icons.straighten, tooltip: 'Measure', active: _tool == MapTool.measure, onPressed: () => _setTool(MapTool.measure)),
           const Gap(10),
-          MapToolButton(icon: Icons.center_focus_strong_outlined, tooltip: 'Whole campus', onPressed: () => mapState?.recenter()),
+          MapToolButton(icon: Icons.center_focus_strong_outlined, tooltip: 'Whole bus stand', onPressed: () => mapState?.recenter()),
           const Gap(10),
           MapToolButton(icon: Icons.info_outline, tooltip: 'About this map', onPressed: () => showMapMetadata(context)),
         ]),
@@ -377,7 +377,7 @@ class _MapTabState extends State<MapTab> {
     ]);
   }
 
-  Widget _panel(LpuDemoStore store) {
+  Widget _panel(BusStandDemoStore store) {
     final map = _map.currentState;
     switch (_tool) {
       case MapTool.timeline:

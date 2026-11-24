@@ -2,23 +2,23 @@ import 'dart:math' as math;
 import 'dart:ui' show Offset;
 
 import '../../department_checklists.dart' show ReviewChecklistItem;
-import '../../lpu_demo_data.dart' hide Department;
+import '../../busstand_demo_data.dart' hide Department;
 import '../core/geo.dart';
 import '../core/models.dart';
 import '../core/repository.dart';
 
 /// The Manaparai Bus Stand schematic is laid out in local metres (x east, y south).
-/// It is placed on the real campus location so that every distance in the app
-/// is a geodesic distance between WGS84 points: campus (500, 370) sits at the
+/// It is placed on the real bus stand location so that every distance in the app
+/// is a geodesic distance between WGS84 points: bus stand (500, 370) sits at the
 /// demo anchor below. Positions remain illustrative — not surveyed.
-const lpuAnchor = GeoPoint(10.6064, 78.4203);
+const busStandAnchor = GeoPoint(10.6064, 78.4203);
 const _anchorLocal = Offset(500, 370);
 
-GeoPoint campusToGeo(Offset p) => lpuAnchor.offsetMetres(northM: _anchorLocal.dy - p.dy, eastM: p.dx - _anchorLocal.dx);
+GeoPoint standToGeo(Offset p) => busStandAnchor.offsetMetres(northM: _anchorLocal.dy - p.dy, eastM: p.dx - _anchorLocal.dx);
 
-Offset geoToCampus(GeoPoint g) {
-  final north = (g.lat - lpuAnchor.lat) * math.pi / 180 * GeoCrs.earthRadiusM;
-  final east = (g.lon - lpuAnchor.lon) * math.pi / 180 * GeoCrs.earthRadiusM * math.cos(lpuAnchor.lat * math.pi / 180);
+Offset geoToStand(GeoPoint g) {
+  final north = (g.lat - busStandAnchor.lat) * math.pi / 180 * GeoCrs.earthRadiusM;
+  final east = (g.lon - busStandAnchor.lon) * math.pi / 180 * GeoCrs.earthRadiusM * math.cos(busStandAnchor.lat * math.pi / 180);
   return Offset(_anchorLocal.dx + east, _anchorLocal.dy - north);
 }
 
@@ -68,7 +68,7 @@ class LocalRepository implements SamanvayRepository {
     switchRole(role, departmentId: departmentId);
   }
 
-  final LpuDemoStore store = LpuDemoStore();
+  final BusStandDemoStore store = BusStandDemoStore();
   late AppUser _user;
 
   /// Requests filed on this device: case id → (filer's user id, activity id).
@@ -88,7 +88,7 @@ class LocalRepository implements SamanvayRepository {
       name: switch (role) {
         AppRole.citizen => 'Ananya',
         AppRole.department => '${deptById(dept).name} officer',
-        AppRole.coordinator => 'Campus works coordinator',
+        AppRole.coordinator => 'Bus stand works coordinator',
         AppRole.admin => 'Platform administrator',
       },
       role: role,
@@ -137,7 +137,7 @@ class LocalRepository implements SamanvayRepository {
           workActivities.where((a) => a.$2.toLowerCase() == w.workType.toLowerCase()).map((a) => a.$1).firstOrNull,
       road: w.road,
       city: 'Manaparai',
-      location: campusToGeo(mid),
+      location: standToGeo(mid),
       radiusM: math.max(5, w.lengthM / 2),
       start: w.start,
       end: w.end,
@@ -284,7 +284,7 @@ class LocalRepository implements SamanvayRepository {
 
   @override
   Future<String> createCase(NewCaseDraft d) async {
-    final centre = d.location == null ? const Offset(640, 300) : geoToCampus(d.location!);
+    final centre = d.location == null ? const Offset(640, 300) : geoToStand(d.location!);
     final half = math.max(4.0, d.radiusM);
     final applicant = _categoryDept[d.category] ?? 'municipal';
     final w = store.addWork(

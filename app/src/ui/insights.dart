@@ -16,7 +16,7 @@ class NetworkDashboard extends StatelessWidget {
     final p = SvPalette.of(context);
     return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
       sectionHeader(context, 'Network & data', 'What the map holds',
-          lead: 'Lengths come from the campus records; confidence says how far each record can be trusted.'),
+          lead: 'Lengths come from the bus stand records; confidence says how far each record can be trusted.'),
       const Gap(14),
       Loader<NetworkStats>(
         load: (r) => r.networkStats(),

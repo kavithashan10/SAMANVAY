@@ -3,12 +3,12 @@ import 'dart:ui' show Offset, Rect;
 
 import 'package:flutter/material.dart' show DateUtils;
 
-import '../../../lpu_demo_data.dart';
+import '../../../busstand_demo_data.dart';
 import '../../core/geo.dart';
-import '../../data/local_repository.dart' show campusToGeo;
+import '../../data/local_repository.dart' show standToGeo;
 
 // =============================================================================
-// Spatial analysis behind the map animations. Pure functions over the campus
+// Spatial analysis behind the map animations. Pure functions over the bus stand
 // data (local metres, x east / y south), so they are easy to reason about and
 // the painters only draw what these return.
 // =============================================================================
@@ -20,10 +20,10 @@ const kClearanceM = 10.0;
 const kSameStretchM = 15.0;
 
 /// Water is pumped out from the treatment plant; sewage and storm water run
-/// by gravity to the outfall at the main gate. Schematic assumption, shown as
+/// by gravity to the outfall at the main entrance. Schematic assumption, shown as
 /// such in the map's metadata.
 const kTreatmentPlant = Offset(690, 105);
-const kOutfall = mainGate;
+const kOutfall = mainEntrance;
 
 /// Utility kinds drawn with moving flow particles.
 const flowKinds = {UtilityKind.water, UtilityKind.sewer, UtilityKind.storm};
@@ -89,16 +89,16 @@ Rect routeBounds(List<Offset> route) {
   return Rect.fromLTRB(xs.reduce(math.min), ys.reduce(math.min), xs.reduce(math.max), ys.reduce(math.max));
 }
 
-/// Geodesic length (WGS84 haversine) of a campus polyline.
+/// Geodesic length (WGS84 haversine) of a bus stand polyline.
 double geodesicLength(List<Offset> pts) {
   var t = 0.0;
   for (var i = 1; i < pts.length; i++) {
-    t += haversineMetres(campusToGeo(pts[i - 1]), campusToGeo(pts[i]));
+    t += haversineMetres(standToGeo(pts[i - 1]), standToGeo(pts[i]));
   }
   return t;
 }
 
-/// Compass bearing (0° = north, clockwise) from [a] to [b] on the campus grid.
+/// Compass bearing (0° = north, clockwise) from [a] to [b] on the bus stand grid.
 double bearingDeg(Offset a, Offset b) {
   final d = b - a;
   final deg = math.atan2(d.dx, -d.dy) * 180 / math.pi;
@@ -133,7 +133,7 @@ class WorkAnalysis {
   int get nearbyCount => hits.where((h) => !h.inside).length;
   int get uncertainCount => hits.where((h) => h.uncertain).length;
 
-  static WorkAnalysis of(LpuDemoStore store, WorkItem w) {
+  static WorkAnalysis of(BusStandDemoStore store, WorkItem w) {
     final s = store.screen(w, clearance: kClearanceM);
     final uncertain = s.uncertain.toSet();
     final hits = <BufferHit>[

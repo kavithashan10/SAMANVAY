@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-import 'lpu_demo_data.dart';
-import 'lpu_demo_map.dart';
+import 'busstand_demo_data.dart';
+import 'busstand_demo_map.dart';
 import 'samanvay_design.dart';
 
 // =============================================================================
@@ -12,38 +12,38 @@ import 'samanvay_design.dart';
 // synthetic demonstration record.
 // =============================================================================
 
-/// Standalone app (used with --dart-define=SAMANVAY_START=lpu-demo).
-class LpuDemoApp extends StatelessWidget {
-  const LpuDemoApp({super.key});
+/// Standalone app (used with --dart-define=SAMANVAY_START=busstand-demo).
+class BusStandDemoApp extends StatelessWidget {
+  const BusStandDemoApp({super.key});
   @override
   Widget build(BuildContext context) => MaterialApp(
         title: 'SAMANVAY · Manaparai demo',
         debugShowCheckedModeBanner: false,
         theme: samanvayFieldTheme(dark: false),
-        home: const LpuDemoRoot(),
+        home: const BusStandDemoRoot(),
       );
 }
 
 /// Opens the demo on top of the main application. With [map] it opens
 /// straight at Manaparai Bus Stand utility schematic.
-Future<void> openLpuDemo(BuildContext context, {bool map = false}) => Navigator.of(context).push(
-      MaterialPageRoute(builder: (_) => LpuDemoRoot(onExit: () => Navigator.of(context).pop(), startOnMap: map)),
+Future<void> openBusStandDemo(BuildContext context, {bool map = false}) => Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => BusStandDemoRoot(onExit: () => Navigator.of(context).pop(), startOnMap: map)),
     );
 
 /// Owns the demo store, theme and a nested navigator so every demo screen
 /// shares the field-journal theme regardless of the host app's theme.
-class LpuDemoRoot extends StatefulWidget {
-  const LpuDemoRoot({super.key, this.onExit, this.startOnMap = false});
+class BusStandDemoRoot extends StatefulWidget {
+  const BusStandDemoRoot({super.key, this.onExit, this.startOnMap = false});
   final VoidCallback? onExit;
 
   /// Skip the welcome screen and open the shell on its Map tab.
   final bool startOnMap;
   @override
-  State<LpuDemoRoot> createState() => _LpuDemoRootState();
+  State<BusStandDemoRoot> createState() => _BusStandDemoRootState();
 }
 
-class _LpuDemoRootState extends State<LpuDemoRoot> {
-  final store = LpuDemoStore();
+class _BusStandDemoRootState extends State<BusStandDemoRoot> {
+  final store = BusStandDemoStore();
   final _navKey = GlobalKey<NavigatorState>();
 
   @override
@@ -54,7 +54,7 @@ class _LpuDemoRootState extends State<LpuDemoRoot> {
 
   @override
   Widget build(BuildContext context) {
-    return LpuDemoScope(
+    return BusStandDemoScope(
       store: store,
       child: ListenableBuilder(
         listenable: store,
@@ -67,8 +67,8 @@ class _LpuDemoRootState extends State<LpuDemoRoot> {
                 key: _navKey,
                 onGenerateRoute: (_) => MaterialPageRoute(
                   builder: (_) => widget.startOnMap
-                      ? const LpuDemoShell(initialTab: 1)
-                      : LpuDemoWelcome(onExit: widget.onExit),
+                      ? const BusStandDemoShell(initialTab: 1)
+                      : BusStandDemoWelcome(onExit: widget.onExit),
                 ),
               ),
             ),
@@ -114,7 +114,7 @@ class _ThemeToggle extends StatelessWidget {
   const _ThemeToggle();
   @override
   Widget build(BuildContext context) {
-    final store = LpuDemoScope.of(context);
+    final store = BusStandDemoScope.of(context);
     return SvIconCircle(
       icon: store.dark ? Icons.light_mode_outlined : Icons.dark_mode_outlined,
       tooltip: store.dark ? 'Switch to light theme' : 'Switch to dark theme',
@@ -127,19 +127,19 @@ class _ThemeToggle extends StatelessWidget {
 // Welcome
 // =============================================================================
 
-class LpuDemoWelcome extends StatelessWidget {
-  const LpuDemoWelcome({super.key, this.onExit});
+class BusStandDemoWelcome extends StatelessWidget {
+  const BusStandDemoWelcome({super.key, this.onExit});
   final VoidCallback? onExit;
 
   void _enter(BuildContext context, DemoRole role) {
-    LpuDemoScope.of(context).setRole(role);
-    Navigator.of(context).push(MaterialPageRoute(builder: (_) => const LpuDemoShell()));
+    BusStandDemoScope.of(context).setRole(role);
+    Navigator.of(context).push(MaterialPageRoute(builder: (_) => const BusStandDemoShell()));
   }
 
   @override
   Widget build(BuildContext context) {
     final p = SvPalette.of(context);
-    final store = LpuDemoScope.of(context);
+    final store = BusStandDemoScope.of(context);
     return Scaffold(
       body: SafeArea(
         child: ListView(
@@ -209,7 +209,7 @@ class LpuDemoWelcome extends StatelessWidget {
                 Text('Everything here is synthetic.', style: SvType.heading2(SvColors.canvas)),
                 const SizedBox(height: 10),
                 Text(
-                  'The campus layout is an illustrative schematic and every utility record, department reply and person is '
+                  'The bus stand layout is an illustrative schematic and every utility record, department reply and person is '
                   'demonstration data. Nothing on these screens may be used for excavation or construction decisions.',
                   style: SvType.bodySm(SvColors.mute),
                 ),
@@ -247,14 +247,14 @@ class _InkStat extends StatelessWidget {
 // Shell
 // =============================================================================
 
-class LpuDemoShell extends StatefulWidget {
-  const LpuDemoShell({super.key, this.initialTab = 0});
+class BusStandDemoShell extends StatefulWidget {
+  const BusStandDemoShell({super.key, this.initialTab = 0});
   final int initialTab;
   @override
-  State<LpuDemoShell> createState() => _LpuDemoShellState();
+  State<BusStandDemoShell> createState() => _BusStandDemoShellState();
 }
 
-class _LpuDemoShellState extends State<LpuDemoShell> {
+class _BusStandDemoShellState extends State<BusStandDemoShell> {
   late int _tab = widget.initialTab;
 
   void goTo(int tab) => setState(() => _tab = tab);
@@ -262,10 +262,10 @@ class _LpuDemoShellState extends State<LpuDemoShell> {
   @override
   Widget build(BuildContext context) {
     final p = SvPalette.of(context);
-    final store = LpuDemoScope.of(context);
+    final store = BusStandDemoScope.of(context);
     final pages = [
       _HomeTab(onOpenMap: () => goTo(1), onOpenReports: () => goTo(3)),
-      const LpuDemoMapTab(),
+      const BusStandDemoMapTab(),
       const _WorksTab(),
       const _ReportsTab(),
       const _ActivityTab(),
@@ -335,7 +335,7 @@ class _LpuDemoShellState extends State<LpuDemoShell> {
 }
 
 void _showRoleSwitcher(BuildContext context) {
-  final store = LpuDemoScope.of(context);
+  final store = BusStandDemoScope.of(context);
   showModalBottomSheet<void>(
     context: context,
     isScrollControlled: true,
@@ -415,7 +415,7 @@ class _HomeTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final store = LpuDemoScope.of(context);
+    final store = BusStandDemoScope.of(context);
     return switch (store.role) {
       DemoRole.citizen => _CitizenHome(onOpenMap: onOpenMap, onOpenReports: onOpenReports),
       DemoRole.officer => const _OfficerHome(),
@@ -448,7 +448,7 @@ class _CitizenHome extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final p = SvPalette.of(context);
-    final store = LpuDemoScope.of(context);
+    final store = BusStandDemoScope.of(context);
     final active = store.works.where((w) => w.isPublicActive && w.status != WorkStatus.completed).toList();
     final restoring = store.works.where((w) => w.status == WorkStatus.restorationPending).length;
     final open = store.grievances.where((g) => g.status.index < GrievanceStatus.resolved.index).length;
@@ -477,7 +477,7 @@ class _CitizenHome extends StatelessWidget {
       const SizedBox(height: 12),
       SvPillButton(label: 'Explore the underground map', icon: Icons.layers_outlined, expand: true, onPressed: onOpenMap),
       const SizedBox(height: 40),
-      const SvSectionHeader(eyebrow: 'Public works', title: 'On campus roads now'),
+      const SvSectionHeader(eyebrow: 'Public works', title: 'On bus stand roads now'),
       const SizedBox(height: 16),
       for (final w in active) ...[_WorkCard(work: w), const SizedBox(height: 12)],
       const SizedBox(height: 28),
@@ -512,7 +512,7 @@ class _OfficerHome extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final p = SvPalette.of(context);
-    final store = LpuDemoScope.of(context);
+    final store = BusStandDemoScope.of(context);
     final dept = deptById(store.officerDept);
     final queue = store.works.where((w) => w.reviews.any((r) => r.deptId == dept.id) && w.status != WorkStatus.completed).toList()
       ..sort((a, b) {
@@ -558,7 +558,7 @@ class _CoordinatorHome extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final p = SvPalette.of(context);
-    final store = LpuDemoScope.of(context);
+    final store = BusStandDemoScope.of(context);
     final open = store.works.where((w) => w.status != WorkStatus.completed && w.isPublicActive).toList();
     final pendingReviews = open.expand((w) => w.reviews).where((r) => !r.status.isCleared).length;
     final screenings = {for (final w in open) w.id: store.screen(w)};
@@ -573,7 +573,7 @@ class _CoordinatorHome extends StatelessWidget {
     return _Page(children: [
       const SvEyebrow('Coordinator · demo'),
       const SizedBox(height: 10),
-      Text('Campus\ncoordination', style: SvType.heading1(p.ink)),
+      Text('Bus stand\ncoordination', style: SvType.heading1(p.ink)),
       const SizedBox(height: 24),
       Row(mainAxisAlignment: MainAxisAlignment.spaceAround, children: [
         SvStatBadge(value: '$pendingReviews', label: 'department reviews open', size: 84),
@@ -691,7 +691,7 @@ class _DigOnceCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final p = SvPalette.of(context);
-    final store = LpuDemoScope.of(context);
+    final store = BusStandDemoScope.of(context);
     final gap = b.start.isAfter(a.end) ? b.start.difference(a.end).inDays : a.start.difference(b.end).inDays.abs();
     final proposed = a.jointWith == b.id;
     return SvCard(
@@ -726,7 +726,7 @@ class _AdminHome extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final p = SvPalette.of(context);
-    final store = LpuDemoScope.of(context);
+    final store = BusStandDemoScope.of(context);
     final labelCounts = {for (final l in DataLabel.values) l: store.assets.where((a) => a.label == l).length};
     return _Page(children: [
       const SvEyebrow('Administrator · demo'),
@@ -809,18 +809,18 @@ class _AdminHome extends StatelessWidget {
 // =============================================================================
 
 /// Lets a host app (the main SAMANVAY app) open work items and reports from
-/// the campus map in its own screens instead of the standalone demo pages.
-class LpuDemoActions extends InheritedWidget {
-  const LpuDemoActions({super.key, required this.openWork, required this.openGrievance, required super.child});
+/// the bus stand map in its own screens instead of the standalone demo pages.
+class BusStandDemoActions extends InheritedWidget {
+  const BusStandDemoActions({super.key, required this.openWork, required this.openGrievance, required super.child});
   final void Function(BuildContext context, String workId) openWork;
   final void Function(BuildContext context, String grievanceId) openGrievance;
-  static LpuDemoActions? maybeOf(BuildContext context) => context.dependOnInheritedWidgetOfExactType<LpuDemoActions>();
+  static BusStandDemoActions? maybeOf(BuildContext context) => context.dependOnInheritedWidgetOfExactType<BusStandDemoActions>();
   @override
-  bool updateShouldNotify(LpuDemoActions oldWidget) => false;
+  bool updateShouldNotify(BusStandDemoActions oldWidget) => false;
 }
 
 void _openWork(BuildContext context, WorkItem w) {
-  final host = LpuDemoActions.maybeOf(context);
+  final host = BusStandDemoActions.maybeOf(context);
   if (host != null) return host.openWork(context, w.id);
   _openWorkLocal(context, w);
 }
@@ -836,7 +836,7 @@ class _WorkCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final p = SvPalette.of(context);
-    final store = LpuDemoScope.of(context);
+    final store = BusStandDemoScope.of(context);
     final citizen = store.role == DemoRole.citizen;
     final review = focusDept == null ? null : work.reviews.where((r) => r.deptId == focusDept).firstOrNull;
     return SvCard(
@@ -886,7 +886,7 @@ class _WorksTabState extends State<_WorksTab> {
   @override
   Widget build(BuildContext context) {
     final p = SvPalette.of(context);
-    final store = LpuDemoScope.of(context);
+    final store = BusStandDemoScope.of(context);
     bool keep(WorkItem w) => switch (_filter) {
           'review' => w.status == WorkStatus.underDepartmentReview || w.status == WorkStatus.coordinationPending || w.status == WorkStatus.clarificationRequired,
           'active' => w.status == WorkStatus.scheduled || w.status == WorkStatus.inProgress || w.status == WorkStatus.approvedForDemonstration,
@@ -919,7 +919,7 @@ class WorkDetailPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final p = SvPalette.of(context);
-    final store = LpuDemoScope.of(context);
+    final store = BusStandDemoScope.of(context);
     final w = store.work(workId);
     final citizen = store.role == DemoRole.citizen;
     final screening = store.screen(w);
@@ -950,7 +950,7 @@ class WorkDetailPage extends StatelessWidget {
           const SizedBox(height: 24),
           ClipRRect(
             borderRadius: BorderRadius.circular(SvRadius.lg),
-            child: SizedBox(height: 210, child: LpuCampusMap(store: store, focusWork: w, interactive: false)),
+            child: SizedBox(height: 210, child: BusStandMap(store: store, focusWork: w, interactive: false)),
           ),
           const SizedBox(height: 24),
           SvCard(
@@ -1149,7 +1149,7 @@ class _DepartmentChecklists extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final p = SvPalette.of(context);
-    final store = LpuDemoScope.of(context);
+    final store = BusStandDemoScope.of(context);
     final totalDone = work.reviews.fold<int>(0, (s, r) => s + r.done);
     final total = work.reviews.fold<int>(0, (s, r) => s + r.total);
     final mine = work.reviews.where(store.canEditReview).toList();
@@ -1192,7 +1192,7 @@ class _DepartmentChecklistBoxState extends State<DepartmentChecklistBox> {
   bool? _expanded;
 
   Future<void> _decide(ReviewStatus decision) async {
-    final store = LpuDemoScope.of(context);
+    final store = BusStandDemoScope.of(context);
     var note = '';
     if (decision != ReviewStatus.cleared) {
       final controller = TextEditingController();
@@ -1229,7 +1229,7 @@ class _DepartmentChecklistBoxState extends State<DepartmentChecklistBox> {
   @override
   Widget build(BuildContext context) {
     final p = SvPalette.of(context);
-    final store = LpuDemoScope.of(context);
+    final store = BusStandDemoScope.of(context);
     final r = widget.review;
     final d = r.dept;
     final editable = store.canEditReview(r);
@@ -1348,7 +1348,7 @@ class _RestorationSection extends StatelessWidget {
   final WorkItem work;
   @override
   Widget build(BuildContext context) {
-    final store = LpuDemoScope.of(context);
+    final store = BusStandDemoScope.of(context);
     final r = work.restoration;
     final stageColor = switch (r.stage) {
       RestorationStage.inspectionPassed => SvColors.forest,
@@ -1412,23 +1412,23 @@ class _TimelineRow extends StatelessWidget {
 // Map tab
 // =============================================================================
 
-class LpuDemoMapTab extends StatefulWidget {
-  const LpuDemoMapTab({super.key});
+class BusStandDemoMapTab extends StatefulWidget {
+  const BusStandDemoMapTab({super.key});
   @override
-  State<LpuDemoMapTab> createState() => _MapTabState();
+  State<BusStandDemoMapTab> createState() => _MapTabState();
 }
 
-class _MapTabState extends State<LpuDemoMapTab> {
-  final _mapKey = GlobalKey<LpuCampusMapState>();
+class _MapTabState extends State<BusStandDemoMapTab> {
+  final _mapKey = GlobalKey<BusStandMapState>();
   MapSelection? _selection;
 
   @override
   Widget build(BuildContext context) {
     final p = SvPalette.of(context);
-    final store = LpuDemoScope.of(context);
+    final store = BusStandDemoScope.of(context);
     return Stack(children: [
       Positioned.fill(
-        child: LpuCampusMap(key: _mapKey, store: store, onSelect: (s) => setState(() => _selection = s)),
+        child: BusStandMap(key: _mapKey, store: store, onSelect: (s) => setState(() => _selection = s)),
       ),
       Positioned(
         left: 16,
@@ -1464,7 +1464,7 @@ class _MapTabState extends State<LpuDemoMapTab> {
             ),
           ),
           const SizedBox(height: 10),
-          SvIconCircle(icon: Icons.center_focus_strong_outlined, filled: true, tooltip: 'Fit campus', onPressed: () => _mapKey.currentState?.recenter()),
+          SvIconCircle(icon: Icons.center_focus_strong_outlined, filled: true, tooltip: 'Fit bus stand', onPressed: () => _mapKey.currentState?.recenter()),
         ]),
       ),
       Positioned(
@@ -1503,7 +1503,7 @@ class _SelectionCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final p = SvPalette.of(context);
-    final store = LpuDemoScope.of(context);
+    final store = BusStandDemoScope.of(context);
     final citizen = store.role == DemoRole.citizen;
     final (String eyebrow, String title, List<Widget> body) = switch (selection) {
       AssetSelection(:final asset) => (
@@ -1605,7 +1605,7 @@ class _ReportsTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final p = SvPalette.of(context);
-    final store = LpuDemoScope.of(context);
+    final store = BusStandDemoScope.of(context);
     final citizen = store.role == DemoRole.citizen;
     final visible = store.role == DemoRole.officer ? store.grievances.where((g) => g.routedTo == store.officerDept).toList() : store.grievances;
     return _Page(children: [
@@ -1631,7 +1631,7 @@ class _ReportsTab extends StatelessWidget {
 }
 
 void _openGrievance(BuildContext context, Grievance g) {
-  final host = LpuDemoActions.maybeOf(context);
+  final host = BusStandDemoActions.maybeOf(context);
   if (host != null) return host.openGrievance(context, g.id);
   Navigator.of(context).push(MaterialPageRoute(builder: (_) => _GrievanceDetail(id: g.id)));
 }
@@ -1645,7 +1645,7 @@ class _GrievanceDetail extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final p = SvPalette.of(context);
-    final store = LpuDemoScope.of(context);
+    final store = BusStandDemoScope.of(context);
     final g = store.grievances.firstWhere((x) => x.id == id);
     final canAct = store.canHandleGrievance(g) && g.status != GrievanceStatus.closed;
     final nextLabel = g.status == GrievanceStatus.closed ? null : GrievanceStatus.values[GrievanceStatus.values.indexOf(g.status) + 1].label;
@@ -1714,7 +1714,7 @@ class _GrievanceForm extends StatefulWidget {
 
 class _GrievanceFormState extends State<_GrievanceForm> {
   String _category = grievanceCategories.first.$1;
-  String _place = campusPlaces.first.$1;
+  String _place = standPlaces.first.$1;
   final _title = TextEditingController();
   final _description = TextEditingController();
   int _photos = 0;
@@ -1731,7 +1731,7 @@ class _GrievanceFormState extends State<_GrievanceForm> {
       _toast(context, 'Add a short title for the report.');
       return;
     }
-    final store = LpuDemoScope.of(context);
+    final store = BusStandDemoScope.of(context);
     final g = store.submitGrievance(
       category: _category,
       title: _title.text.trim(),
@@ -1786,7 +1786,7 @@ class _GrievanceFormState extends State<_GrievanceForm> {
         const SizedBox(height: 10),
         DropdownButtonFormField<String>(
           initialValue: _place,
-          items: [for (final (name, _) in campusPlaces) DropdownMenuItem(value: name, child: Text(name, style: SvType.bodySm(p.ink)))],
+          items: [for (final (name, _) in standPlaces) DropdownMenuItem(value: name, child: Text(name, style: SvType.bodySm(p.ink)))],
           onChanged: (v) => setState(() => _place = v ?? _place),
           dropdownColor: p.surface,
         ),
@@ -1821,13 +1821,13 @@ class _ActivityTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final p = SvPalette.of(context);
-    final store = LpuDemoScope.of(context);
+    final store = BusStandDemoScope.of(context);
     final citizen = store.role == DemoRole.citizen;
     final entries = store.activity.where((a) => !citizen || a.public).toList();
     return _Page(children: [
       SvEyebrow(citizen ? 'Public updates' : 'Audit trail'),
       const SizedBox(height: 10),
-      Text(citizen ? 'What changed\non campus' : 'Who did what,\nand when', style: SvType.heading1(p.ink)),
+      Text(citizen ? 'What changed\nat the bus stand' : 'Who did what,\nand when', style: SvType.heading1(p.ink)),
       const SizedBox(height: 8),
       Text(
         citizen ? 'Public status changes for works and reports.' : 'Every tick, decision and status change is recorded.',

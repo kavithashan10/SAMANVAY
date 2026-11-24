@@ -6,7 +6,7 @@ import 'package:flutter/foundation.dart' show ValueListenable;
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-import '../../../lpu_demo_data.dart';
+import '../../../busstand_demo_data.dart';
 import '../../../samanvay_design.dart';
 import '../../core/geo.dart';
 import 'map_analysis.dart';
@@ -30,7 +30,7 @@ class OverlayScene {
     required this.still,
   });
 
-  final LpuDemoStore store;
+  final BusStandDemoStore store;
   final SvPalette palette;
   final double scale;
   final Map<UtilityKind, double> layerAlpha;
@@ -48,7 +48,7 @@ class OverlayScene {
   final bool still;
 }
 
-/// The animated layer above the base map, drawn in campus coordinates.
+/// The animated layer above the base map, drawn in bus stand coordinates.
 /// Repaints from [clock] alone so the base map is never redrawn for motion.
 class MapOverlayPainter extends CustomPainter {
   MapOverlayPainter(this.scene, this.clock) : super(repaint: clock);
