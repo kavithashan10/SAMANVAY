@@ -1,0 +1,305 @@
+{
+ "road": "Departure Lane",
+ "facing": "east",
+ "place": "Manaparai Bus Stand",
+ "width": 30,
+ "length": 24.0,
+ "roadAhead": 592.0,
+ "depthScale": 2.5,
+ "sizeScale": 2.5,
+ "crossScale": 0.55,
+ "leftName": "Halting bays",
+ "rightName": "Mofussil platforms",
+ "assets": [
+  {
+   "id": "WS-MNP-010",
+   "kind": "water",
+   "depth": 1.2,
+   "sizeMm": 200,
+   "size": "200 mm",
+   "material": "HDPE",
+   "label": "Sample record",
+   "installYear": 2022,
+   "owner": "Water Supply",
+   "road": "Departure Lane",
+   "x": -7.0,
+   "z0": 0.0,
+   "z1": -24.0
+  },
+  {
+   "id": "SW-MNP-010",
+   "kind": "sewer",
+   "depth": 2.4,
+   "sizeMm": 300,
+   "size": "300 mm",
+   "material": "Stoneware",
+   "label": "Sample record",
+   "installYear": 2022,
+   "owner": "Sewage and Drainage",
+   "road": "Departure Lane",
+   "x": 1.5,
+   "z0": 0.0,
+   "z1": -24.0
+  },
+  {
+   "id": "SD-MNP-010",
+   "kind": "storm",
+   "depth": 0.9,
+   "sizeMm": 600,
+   "size": "600 mm",
+   "material": "RCC pipe",
+   "label": "Estimated",
+   "installYear": 2022,
+   "owner": "Sewage and Drainage",
+   "road": "Departure Lane",
+   "x": 11.0,
+   "z0": 0.0,
+   "z1": -24.0
+  },
+  {
+   "id": "EL-MNP-010",
+   "kind": "electricity",
+   "depth": 0.9,
+   "sizeMm": 240,
+   "size": "3C × 240 mm²",
+   "material": "XLPE 11 kV",
+   "label": "Sample record",
+   "installYear": 2022,
+   "owner": "Electricity",
+   "road": "Departure Lane",
+   "x": -10.0,
+   "z0": 0.0,
+   "z1": -24.0
+  },
+  {
+   "id": "GS-MNP-008",
+   "kind": "gas",
+   "depth": 1.15,
+   "sizeMm": 90,
+   "size": "90 mm",
+   "material": "MDPE",
+   "label": "Sample record",
+   "installYear": 2016,
+   "owner": "Gas",
+   "road": "Departure Lane",
+   "x": -4.0,
+   "z0": 0.0,
+   "z1": -24.0
+  },
+  {
+   "id": "TC-MNP-010",
+   "kind": "telecom",
+   "depth": 0.8,
+   "sizeMm": 40,
+   "size": "2 × 40 mm",
+   "material": "PLB duct",
+   "label": "Sample record",
+   "installYear": 2022,
+   "owner": "Telecommunications",
+   "road": "Departure Lane",
+   "x": 5.0,
+   "z0": 0.0,
+   "z1": -24.0
+  },
+  {
+   "id": "OF-MNP-008",
+   "kind": "fibre",
+   "depth": 1.25,
+   "sizeMm": 40,
+   "size": "2 × 40 mm",
+   "material": "HDPE duct · 48F",
+   "label": "Sample record",
+   "installYear": 2016,
+   "owner": "Telecommunications",
+   "road": "Departure Lane",
+   "x": 8.0,
+   "z0": 0.0,
+   "z1": -24.0
+  }
+ ],
+ "points": [
+  {
+   "id": "MH-MNP-032",
+   "kind": "sewer",
+   "type": "manhole",
+   "x": 1.5,
+   "z": -12.0,
+   "depth": 2.6
+  }
+ ],
+ "works": [],
+ "world": {
+  "zones": [
+   {
+    "name": "Bus depot & workshop",
+    "kind": "depot",
+    "x0": -190.0,
+    "x1": -160.0,
+    "z0": -192.0,
+    "z1": 148.0
+   },
+   {
+    "name": "Utility yard",
+    "kind": "utility",
+    "x0": -190.0,
+    "x1": -160.0,
+    "z0": -572.0,
+    "z1": -232.0
+   },
+   {
+    "name": "Halting bays",
+    "kind": "bays",
+    "x0": -120.0,
+    "x1": -20.0,
+    "z0": -192.0,
+    "z1": 148.0
+   },
+   {
+    "name": "Town bus platforms",
+    "kind": "platform",
+    "x0": -120.0,
+    "x1": -20.0,
+    "z0": -572.0,
+    "z1": -232.0
+   },
+   {
+    "name": "Mofussil platforms",
+    "kind": "platform",
+    "x0": 20.0,
+    "x1": 120.0,
+    "z0": -192.0,
+    "z1": 148.0
+   },
+   {
+    "name": "Shops & food stalls",
+    "kind": "commons",
+    "x0": 20.0,
+    "x1": 120.0,
+    "z0": -572.0,
+    "z1": -232.0
+   },
+   {
+    "name": "Passenger waiting hall",
+    "kind": "concourse",
+    "x0": 160.0,
+    "x1": 260.0,
+    "z0": -192.0,
+    "z1": 148.0
+   },
+   {
+    "name": "Ticket counter and toilets",
+    "kind": "admin",
+    "x0": 160.0,
+    "x1": 260.0,
+    "z0": -572.0,
+    "z1": -232.0
+   },
+   {
+    "name": "Auto & taxi stand",
+    "kind": "parking",
+    "x0": 300.0,
+    "x1": 360.0,
+    "z0": -192.0,
+    "z1": 148.0
+   },
+   {
+    "name": "Two-wheeler parking",
+    "kind": "parking",
+    "x0": 300.0,
+    "x1": 360.0,
+    "z0": -572.0,
+    "z1": -232.0
+   }
+  ],
+  "roads": [
+   {
+    "name": "Bus Stand Main Road",
+    "self": false,
+    "alongZ": false,
+    "x0": -225.0,
+    "x1": 435.0,
+    "z0": -227.0,
+    "z1": -197.0
+   },
+   {
+    "name": "Concourse Road",
+    "self": false,
+    "alongZ": true,
+    "x0": 265.0,
+    "x1": 295.0,
+    "z0": -607.0,
+    "z1": 183.0
+   },
+   {
+    "name": "Arrival Lane",
+    "self": false,
+    "alongZ": true,
+    "x0": 125.0,
+    "x1": 155.0,
+    "z0": -607.0,
+    "z1": 183.0
+   },
+   {
+    "name": "Departure Lane",
+    "self": true,
+    "alongZ": true,
+    "x0": -15.0,
+    "x1": 15.0,
+    "z0": -607.0,
+    "z1": 183.0
+   },
+   {
+    "name": "Depot Lane",
+    "self": false,
+    "alongZ": true,
+    "x0": -155.0,
+    "x1": -125.0,
+    "z0": -607.0,
+    "z1": 183.0
+   },
+   {
+    "name": "West Service Road",
+    "self": false,
+    "alongZ": false,
+    "x0": -225.0,
+    "x1": 375.0,
+    "z0": 153.0,
+    "z1": 183.0
+   },
+   {
+    "name": "East Service Road",
+    "self": false,
+    "alongZ": false,
+    "x0": -225.0,
+    "x1": 375.0,
+    "z0": -607.0,
+    "z1": -577.0
+   },
+   {
+    "name": "North Service Road",
+    "self": false,
+    "alongZ": true,
+    "x0": -225.0,
+    "x1": -195.0,
+    "z0": -607.0,
+    "z1": 183.0
+   }
+  ],
+  "compound": {
+   "x0": -240.0,
+   "x1": 400.0,
+   "z0": -622.0,
+   "z1": 198.0
+  },
+  "highway": {
+   "x0": 414.0,
+   "x1": 454.0,
+   "z0": -1112.0,
+   "z1": 688.0
+  },
+  "gate": {
+   "x": 420.0,
+   "z": -212.0
+  }
+ }
+}

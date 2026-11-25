@@ -1,0 +1,290 @@
+{
+ "road": "Concourse Road",
+ "facing": "east",
+ "place": "Manaparai Bus Stand",
+ "width": 30,
+ "length": 24.0,
+ "roadAhead": 592.0,
+ "depthScale": 2.5,
+ "sizeScale": 2.5,
+ "crossScale": 0.55,
+ "leftName": "Passenger waiting hall",
+ "rightName": "Auto & taxi stand",
+ "assets": [
+  {
+   "id": "WS-MNP-006",
+   "kind": "water",
+   "depth": 1.5,
+   "sizeMm": 200,
+   "size": "200 mm",
+   "material": "HDPE",
+   "label": "Sample record",
+   "installYear": 2010,
+   "owner": "Water Supply",
+   "road": "Concourse Road",
+   "x": -7.0,
+   "z0": 0.0,
+   "z1": -24.0
+  },
+  {
+   "id": "SW-MNP-006",
+   "kind": "sewer",
+   "depth": 2.6999999999999997,
+   "sizeMm": 450,
+   "size": "450 mm",
+   "material": "Stoneware",
+   "label": "Sample record",
+   "installYear": 2010,
+   "owner": "Sewage and Drainage",
+   "road": "Concourse Road",
+   "x": 1.5,
+   "z0": 0.0,
+   "z1": -24.0
+  },
+  {
+   "id": "SD-MNP-006",
+   "kind": "storm",
+   "depth": 1.2,
+   "sizeMm": 600,
+   "size": "600 mm",
+   "material": "RCC pipe",
+   "label": "Sample record",
+   "installYear": 2010,
+   "owner": "Sewage and Drainage",
+   "road": "Concourse Road",
+   "x": 11.0,
+   "z0": 0.0,
+   "z1": -24.0
+  },
+  {
+   "id": "EL-MNP-006",
+   "kind": "electricity",
+   "depth": 1.2,
+   "sizeMm": 185,
+   "size": "4C × 185 mm²",
+   "material": "XLPE 415 V",
+   "label": "Sample record",
+   "installYear": 2010,
+   "owner": "Electricity",
+   "road": "Concourse Road",
+   "x": -10.0,
+   "z0": 0.0,
+   "z1": -24.0
+  },
+  {
+   "id": "GS-MNP-006",
+   "kind": "gas",
+   "depth": 1.3,
+   "sizeMm": 90,
+   "size": "90 mm",
+   "material": "MDPE",
+   "label": "Estimated",
+   "installYear": 2010,
+   "owner": "Gas",
+   "road": "Concourse Road",
+   "x": -4.0,
+   "z0": 0.0,
+   "z1": -24.0
+  },
+  {
+   "id": "TC-MNP-006",
+   "kind": "telecom",
+   "depth": 1.1,
+   "sizeMm": 40,
+   "size": "2 × 40 mm",
+   "material": "PLB duct",
+   "label": "Sample record",
+   "installYear": 2010,
+   "owner": "Telecommunications",
+   "road": "Concourse Road",
+   "x": 5.0,
+   "z0": 0.0,
+   "z1": -24.0
+  }
+ ],
+ "points": [
+  {
+   "id": "MH-MNP-012",
+   "kind": "sewer",
+   "type": "manhole",
+   "x": 1.5,
+   "z": -12.0,
+   "depth": 2.6
+  }
+ ],
+ "works": [],
+ "world": {
+  "zones": [
+   {
+    "name": "Bus depot & workshop",
+    "kind": "depot",
+    "x0": -470.0,
+    "x1": -440.0,
+    "z0": -192.0,
+    "z1": 148.0
+   },
+   {
+    "name": "Utility yard",
+    "kind": "utility",
+    "x0": -470.0,
+    "x1": -440.0,
+    "z0": -572.0,
+    "z1": -232.0
+   },
+   {
+    "name": "Halting bays",
+    "kind": "bays",
+    "x0": -400.0,
+    "x1": -300.0,
+    "z0": -192.0,
+    "z1": 148.0
+   },
+   {
+    "name": "Town bus platforms",
+    "kind": "platform",
+    "x0": -400.0,
+    "x1": -300.0,
+    "z0": -572.0,
+    "z1": -232.0
+   },
+   {
+    "name": "Mofussil platforms",
+    "kind": "platform",
+    "x0": -260.0,
+    "x1": -160.0,
+    "z0": -192.0,
+    "z1": 148.0
+   },
+   {
+    "name": "Shops & food stalls",
+    "kind": "commons",
+    "x0": -260.0,
+    "x1": -160.0,
+    "z0": -572.0,
+    "z1": -232.0
+   },
+   {
+    "name": "Passenger waiting hall",
+    "kind": "concourse",
+    "x0": -120.0,
+    "x1": -20.0,
+    "z0": -192.0,
+    "z1": 148.0
+   },
+   {
+    "name": "Ticket counter and toilets",
+    "kind": "admin",
+    "x0": -120.0,
+    "x1": -20.0,
+    "z0": -572.0,
+    "z1": -232.0
+   },
+   {
+    "name": "Auto & taxi stand",
+    "kind": "parking",
+    "x0": 20.0,
+    "x1": 80.0,
+    "z0": -192.0,
+    "z1": 148.0
+   },
+   {
+    "name": "Two-wheeler parking",
+    "kind": "parking",
+    "x0": 20.0,
+    "x1": 80.0,
+    "z0": -572.0,
+    "z1": -232.0
+   }
+  ],
+  "roads": [
+   {
+    "name": "Bus Stand Main Road",
+    "self": false,
+    "alongZ": false,
+    "x0": -505.0,
+    "x1": 155.0,
+    "z0": -227.0,
+    "z1": -197.0
+   },
+   {
+    "name": "Concourse Road",
+    "self": true,
+    "alongZ": true,
+    "x0": -15.0,
+    "x1": 15.0,
+    "z0": -607.0,
+    "z1": 183.0
+   },
+   {
+    "name": "Arrival Lane",
+    "self": false,
+    "alongZ": true,
+    "x0": -155.0,
+    "x1": -125.0,
+    "z0": -607.0,
+    "z1": 183.0
+   },
+   {
+    "name": "Departure Lane",
+    "self": false,
+    "alongZ": true,
+    "x0": -295.0,
+    "x1": -265.0,
+    "z0": -607.0,
+    "z1": 183.0
+   },
+   {
+    "name": "Depot Lane",
+    "self": false,
+    "alongZ": true,
+    "x0": -435.0,
+    "x1": -405.0,
+    "z0": -607.0,
+    "z1": 183.0
+   },
+   {
+    "name": "West Service Road",
+    "self": false,
+    "alongZ": false,
+    "x0": -505.0,
+    "x1": 95.0,
+    "z0": 153.0,
+    "z1": 183.0
+   },
+   {
+    "name": "East Service Road",
+    "self": false,
+    "alongZ": false,
+    "x0": -505.0,
+    "x1": 95.0,
+    "z0": -607.0,
+    "z1": -577.0
+   },
+   {
+    "name": "North Service Road",
+    "self": false,
+    "alongZ": true,
+    "x0": -505.0,
+    "x1": -475.0,
+    "z0": -607.0,
+    "z1": 183.0
+   }
+  ],
+  "compound": {
+   "x0": -520.0,
+   "x1": 120.0,
+   "z0": -622.0,
+   "z1": 198.0
+  },
+  "highway": {
+   "x0": 134.0,
+   "x1": 174.0,
+   "z0": -1112.0,
+   "z1": 688.0
+  },
+  "gate": {
+   "x": 140.0,
+   "z": -212.0
+  }
+ }
+}

@@ -1,0 +1,7 @@
+00:00 +0: loading /home/runner/work/SAMANVAY/SAMANVAY/test/ui_preview_test.dart
+00:00 +0: (setUpAll)
+00:00 +0: 3D payloads
+00:00 +1: main app screens
+00:00 +1 ~1: bus stand demo app
+00:00 +1 ~2: (tearDownAll)
+00:00 +1 ~2: All tests passed!
