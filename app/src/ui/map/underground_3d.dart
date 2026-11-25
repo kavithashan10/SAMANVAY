@@ -53,23 +53,30 @@ double? _metres(String text, String word) {
   return m == null ? null : double.tryParse(m.group(1)!);
 }
 
-String _zoneKind(String kind) => switch (kind) {
-      'platform' || 'bays' => 'platform',
-      'parking' => 'parking',
-      'commons' || 'admin' || 'concourse' || 'depot' || 'utility' => 'commons',
-      _ => 'commons',
-    };
-
 /// Everything the 3D page needs for the stretch of road around [centre].
 ///
-/// The view looks along the road: east along horizontal roads, north along
-/// the vertical ones. x is metres across the road (+ to the right), z is
-/// metres along it (0 at the cut face, negative away from the viewer).
+/// The view looks along the road from [centre] towards its farther end (the
+/// main road looks at the gate when you zoom in near it). x is metres across
+/// the road (+ to the right), z is metres along it (0 at the cut face,
+/// negative away from the viewer). The whole bus stand layout is sent in this
+/// frame, so every place you zoom into shows what is really around it.
 Map<String, dynamic> undergroundPayload(BusStandDemoStore store, Offset centre, {String? focusId}) {
   final road = nearestStandRoad(centre);
   final h = road.horizontal;
-  double along(Offset p) => h ? p.dx : -p.dy;
-  double lateral(Offset p) => h ? p.dy - road.a.dy : p.dx - road.a.dx;
+  final mid = Offset.lerp(road.a, road.b, .5)!;
+  // Facing direction (screen coordinates: y grows south).
+  final Offset f;
+  if (h) {
+    f = centre.dx <= mid.dx ? const Offset(1, 0) : const Offset(-1, 0);
+  } else if (road.name == 'Bus Stand Main Road' && centre.dy > 520) {
+    f = const Offset(0, 1); // towards the main entrance and the highway
+  } else {
+    f = centre.dy >= mid.dy ? const Offset(0, -1) : const Offset(0, 1);
+  }
+  final r = Offset(-f.dy, f.dx); // to the right of the viewer
+  double dot(Offset a, Offset b) => a.dx * b.dx + a.dy * b.dy;
+  double along(Offset p) => dot(p, f);
+  double lateral(Offset p) => dot(p - road.a, r);
   final lo = math.min(along(road.a), along(road.b)), hi = math.max(along(road.a), along(road.b));
   final len = math.min(_cutLength, hi - lo);
   final start = (along(centre) - len / 2).clamp(lo, hi - len).toDouble();
@@ -78,6 +85,14 @@ Map<String, dynamic> undergroundPayload(BusStandDemoStore store, Offset centre, 
     final z0 = math.min(0.0, math.max(a, b)), z1 = math.max(-len, math.min(a, b));
     return z0 - z1 < .5 ? null : (z0, z1);
   }
+
+  Map<String, double> rect(Rect q) {
+    final xs = [q.topLeft, q.topRight, q.bottomLeft, q.bottomRight].map(lateral).toList();
+    final zs = [q.topLeft, q.topRight, q.bottomLeft, q.bottomRight].map(z).toList();
+    return {'x0': xs.reduce(math.min), 'x1': xs.reduce(math.max), 'z0': zs.reduce(math.min), 'z1': zs.reduce(math.max)};
+  }
+
+  bool parallel(StandRoad o) => o.horizontal == h;
 
   // Line records on this road, clipped to the opened stretch. Only the longest
   // piece of each utility gets a label, so a junction does not double them.
@@ -102,22 +117,31 @@ Map<String, dynamic> undergroundPayload(BusStandDemoStore store, Offset centre, 
         'label': a.label.label,
         'installYear': a.installYear,
         'owner': a.owner.name,
+        'road': a.road,
       };
+  final roadNames = {for (final o in standRoads) o.name: o};
   final assets = <Map<String, dynamic>>[
     for (final (a, z0, z1) in runs)
       {...record(a), 'x': lateral(a.points.first), 'z0': z0, 'z1': z1, if (labelled[a.kind]?.$1 != a) 'noTag': true},
-    // Service connections that leave this road: drawn across the trench.
+  ];
+  for (final a in store.assets) {
+    if (a.isPoint || a.road == road.name) continue;
+    final p0 = a.points.first, p1 = a.points.last;
+    final zz = z(p0);
+    if ((z(p1) - zz).abs() > 1 || zz > 0 || zz < -len) continue; // only pieces running across the cut
+    final x0 = lateral(p0), x1 = lateral(p1);
+    if (math.min(x0, x1) > 4 || math.max(x0, x1) < -4) continue; // must pass under this road
+    final service = a.road.startsWith('${road.name} · service');
+    final cross = roadNames[a.road];
+    if (!service && (cross == null || parallel(cross))) continue;
+    assets.add({...record(a), 'crossing': true, 'z': zz, 'x0': x0, 'x1': x1, if (!service) 'junction': true});
+  }
+
+  // Manholes and valves on this stretch: drawn as chambers down from the road.
+  final points = [
     for (final a in store.assets)
-      if (!a.isPoint && a.road.startsWith('${road.name} · service')) ...[
-        if (z(a.points.first) <= 0 && z(a.points.first) >= -len)
-          {
-            ...record(a),
-            'crossing': true,
-            'z': z(a.points.first),
-            'x0': lateral(a.points.first),
-            'x1': lateral(a.points.last) + 40 * lateral(a.points.last).sign,
-          },
-      ],
+      if (a.isPoint && a.road == road.name && z(a.points.first) <= 0 && z(a.points.first) >= -len)
+        {'id': a.id, 'kind': a.kind.name, 'type': a.pointType ?? 'manhole', 'x': lateral(a.points.first), 'z': z(a.points.first), 'depth': a.depthM},
   ];
 
   // Works whose trench runs along this stretch.
@@ -132,6 +156,7 @@ Map<String, dynamic> undergroundPayload(BusStandDemoStore store, Offset centre, 
     works.add({
       'id': w.id,
       'title': w.title,
+      'status': w.status.label,
       'x': lateral(a),
       'z0': c.$1,
       'z1': c.$2,
@@ -140,26 +165,38 @@ Map<String, dynamic> undergroundPayload(BusStandDemoStore store, Offset centre, 
     });
   }
 
-  // What lies either side of the road, for the surface around the cut.
-  final midAlong = start + len / 2;
-  Offset side(double s) => h ? Offset(midAlong, road.a.dy + s * 42) : Offset(road.a.dx + s * 42, -midAlong);
-  StandZone? zoneAt(Offset p) => standZones.where((z) => z.rect.inflate(8).contains(p)).firstOrNull;
-  final left = zoneAt(side(-1)), right = zoneAt(side(1));
+  // The bus stand around the cut, in the view's frame.
+  final world = {
+    'zones': [for (final zn in standZones) {'name': zn.name, 'kind': zn.kind, ...rect(zn.rect)}],
+    'roads': [
+      for (final o in standRoads)
+        {'name': o.name, 'self': o.name == road.name, 'alongZ': parallel(o), ...rect(Rect.fromPoints(o.a, o.b).inflate(15))},
+    ],
+    'compound': rect(const Rect.fromLTRB(90, 40, 910, 680)),
+    'highway': rect(const Rect.fromLTRB(-400, 694, 1400, 734)),
+    'gate': {'x': lateral(mainEntrance), 'z': z(const Offset(500, 680))},
+  };
+
+  final leftZone = standZones.where((zn) => zn.rect.inflate(8).contains(road.a + r * -42 + f * (start + len / 2 - along(road.a)))).firstOrNull;
+  final rightZone = standZones.where((zn) => zn.rect.inflate(8).contains(road.a + r * 42 + f * (start + len / 2 - along(road.a)))).firstOrNull;
+  const facingName = {'1.0,0.0': 'east', '-1.0,0.0': 'west', '0.0,-1.0': 'north', '0.0,1.0': 'south'};
 
   return {
     'road': road.name,
+    'facing': facingName['${f.dx},${f.dy}'] ?? '',
     'place': 'Manaparai Bus Stand',
     'width': 30,
     'length': len,
+    'roadAhead': hi - start,
     'depthScale': 2.5,
     'sizeScale': 2.5,
     'crossScale': .55,
-    'left': left == null ? 'commons' : _zoneKind(left.kind),
-    'leftName': left?.name,
-    'right': right == null ? 'commons' : _zoneKind(right.kind),
-    'rightName': right?.name,
+    'leftName': leftZone?.name,
+    'rightName': rightZone?.name,
     'assets': assets,
+    'points': points,
     'works': works,
+    'world': world,
     if (focusId != null) 'focusId': focusId,
   };
 }
