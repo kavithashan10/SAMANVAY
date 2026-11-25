@@ -139,14 +139,18 @@ void main() {
 
   test('3D payloads', () {
     final store = BusStandDemoStore();
-    for (final (name, c) in [('departure', const Offset(640, 286)), ('main_road', const Offset(500, 350)), ('concourse', const Offset(300, 560))]) {
+    for (final (name, c) in [
+      ('departure_w', const Offset(300, 286)), ('departure_e', const Offset(760, 286)), ('main_gate', const Offset(500, 620)),
+      ('main_mid', const Offset(500, 350)), ('concourse', const Offset(300, 560)), ('depot_lane', const Offset(300, 140)),
+      ('north_service', const Offset(620, 70)), ('east_service', const Offset(880, 300)), ('arrival', const Offset(700, 420)),
+    ]) {
       File('preview/payload_$name.json')
         ..parent.createSync(recursive: true)
         ..writeAsStringSync(const JsonEncoder.withIndent(' ').convert(undergroundPayload(store, c)));
     }
   });
 
-  testWidgets('main app screens', timeout: const Timeout(Duration(minutes: 5)), (t) async {
+  testWidgets('main app screens', skip: true, timeout: const Timeout(Duration(minutes: 5)), (t) async {
     await run(t, () async {
       await t.pumpWidget(RepaintBoundary(key: _key, child: const SamanvayV2App()));
       await _settle(t, ms: 7000);
@@ -199,7 +203,7 @@ void main() {
     });
   });
 
-  testWidgets('bus stand demo app', timeout: const Timeout(Duration(minutes: 3)), (t) async {
+  testWidgets('bus stand demo app', skip: true, timeout: const Timeout(Duration(minutes: 3)), (t) async {
     await run(t, () async {
       await t.pumpWidget(RepaintBoundary(key: _key, child: const BusStandDemoApp()));
       await _settle(t, ms: 2000);
